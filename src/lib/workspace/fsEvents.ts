@@ -1,6 +1,8 @@
 import { listen } from "@tauri-apps/api/event";
 import type { FsEventPayload } from "./types";
 import { workspace } from "./workspace.svelte";
+import { updateBacklinksForFile } from "./backlinkIndex.svelte";
+import { notifyTransclusionTargets } from "$lib/editor/milkdown/transclusion/nodeView";
 import { tree } from "$lib/tree/treeState.svelte";
 
 function parentDir(path: string): string {
@@ -22,6 +24,10 @@ function handleFsEvent(payload: FsEventPayload): void {
   for (const path of payload.paths) {
     parents.add(parentDir(path));
     workspace.notifyExternalChange(path, payload.kind);
+    if (path.toLowerCase().endsWith(".md")) {
+      void updateBacklinksForFile(path, payload.kind === "remove");
+      notifyTransclusionTargets(path);
+    }
   }
   for (const parent of parents) {
     // Only refresh directories the user has already expanded / loaded.

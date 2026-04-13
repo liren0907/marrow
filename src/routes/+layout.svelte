@@ -8,6 +8,11 @@
   import { initShortcuts } from "$lib/workspace/shortcuts.svelte";
   import QuickOpen from "$lib/quickopen/QuickOpen.svelte";
   import ConflictModal from "$lib/conflict/ConflictModal.svelte";
+  import BottomPanel from "$lib/panels/BottomPanel.svelte";
+  import { bottomPanel } from "$lib/panels/bottomPanelState.svelte";
+  import ContextMenu from "$lib/components/ui/ContextMenu.svelte";
+  import NamePromptModal from "$lib/tree/NamePromptModal.svelte";
+  import RenameModal from "$lib/tree/RenameModal.svelte";
   import { showError, showSuccess } from "$lib/stores/toastStore.svelte";
   import "../app.css";
 
@@ -119,7 +124,13 @@
         </div>
       {/if}
 
-      {@render children()}
+      <div class="flex-1 flex flex-col min-h-0 min-w-0">
+        {@render children()}
+      </div>
+
+      {#if bottomPanel.isOpen}
+        <BottomPanel />
+      {/if}
 
       {#if dragOver}
         <div
@@ -158,6 +169,9 @@
 <Toast />
 <QuickOpen />
 <ConflictModal />
+<ContextMenu />
+<NamePromptModal />
+<RenameModal />
 
 <style>
   .app.resizing {

@@ -50,3 +50,23 @@ export function writeTextFile(
     expectedMtime: expectedMtime ?? null,
   });
 }
+
+export function writeBinaryFile(path: string, bytes: Uint8Array): Promise<void> {
+  return invoke<void>("write_binary_file", { path, bytes: Array.from(bytes) });
+}
+
+export function createFile(path: string): Promise<void> {
+  return invoke<void>("create_file", { path });
+}
+
+export function createDirectory(path: string): Promise<void> {
+  return invoke<void>("create_directory", { path });
+}
+
+export function deletePath(path: string): Promise<void> {
+  return invoke<void>("delete_path", { path });
+}
+
+export function renamePath(from: string, to: string): Promise<void> {
+  return invoke<void>("rename_path", { from, to });
+}

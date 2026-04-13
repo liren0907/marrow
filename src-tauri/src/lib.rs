@@ -19,6 +19,11 @@ pub fn run() {
             commands::workspace::read_text_file,
             commands::workspace::read_binary_file,
             commands::workspace::write_text_file,
+            commands::workspace::write_binary_file,
+            commands::workspace::create_file,
+            commands::workspace::create_directory,
+            commands::workspace::delete_path,
+            commands::workspace::rename_path,
             commands::dialog::open_directory_dialog,
         ])
         .run(tauri::generate_context!())

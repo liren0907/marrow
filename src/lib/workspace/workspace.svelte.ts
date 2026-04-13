@@ -61,7 +61,10 @@ export const workspace = {
     state.panes = [newPane()];
     state.activePaneId = state.panes[0].id;
     state.fileIndex = [];
-    void this.refreshFileIndex();
+    await this.refreshFileIndex();
+    // Backlink build runs after file index so resolveBasename works.
+    const { rebuildBacklinks } = await import("./backlinkIndex.svelte");
+    void rebuildBacklinks();
   },
 
   close(): void {
@@ -192,6 +195,61 @@ export const workspace = {
     const idx = pane.tabs.findIndex((t) => t.id === pane.activeTabId);
     const prev = pane.tabs[(idx - 1 + pane.tabs.length) % pane.tabs.length];
     pane.activeTabId = prev.id;
+  },
+
+  moveTab(
+    srcPaneId: string,
+    tabId: string,
+    dstPaneId: string,
+    dstIndex: number,
+  ): void {
+    const srcPane = findPane(srcPaneId);
+    const dstPane = findPane(dstPaneId);
+    if (!srcPane || !dstPane) return;
+    const srcIdx = srcPane.tabs.findIndex((t) => t.id === tabId);
+    if (srcIdx < 0) return;
+    const tab = srcPane.tabs[srcIdx];
+
+    if (srcPane === dstPane) {
+      // In-place reorder.
+      srcPane.tabs.splice(srcIdx, 1);
+      const insertAt = dstIndex > srcIdx ? dstIndex - 1 : dstIndex;
+      srcPane.tabs.splice(
+        Math.max(0, Math.min(insertAt, srcPane.tabs.length)),
+        0,
+        tab,
+      );
+      srcPane.activeTabId = tab.id;
+      return;
+    }
+
+    // Cross-pane move: dedupe if destination already has this path.
+    const existingDst = dstPane.tabs.find((t) => t.path === tab.path);
+    if (existingDst) {
+      // Just focus the existing destination tab; close source's copy.
+      srcPane.tabs.splice(srcIdx, 1);
+      if (srcPane.activeTabId === tabId) {
+        const fallback = srcPane.tabs[Math.min(srcIdx, srcPane.tabs.length - 1)];
+        srcPane.activeTabId = fallback?.id ?? null;
+      }
+      dstPane.activeTabId = existingDst.id;
+      state.activePaneId = dstPaneId;
+    } else {
+      srcPane.tabs.splice(srcIdx, 1);
+      const insertAt = Math.max(0, Math.min(dstIndex, dstPane.tabs.length));
+      dstPane.tabs.splice(insertAt, 0, tab);
+      if (srcPane.activeTabId === tabId) {
+        const fallback = srcPane.tabs[Math.min(srcIdx, srcPane.tabs.length - 1)];
+        srcPane.activeTabId = fallback?.id ?? null;
+      }
+      dstPane.activeTabId = tab.id;
+      state.activePaneId = dstPaneId;
+    }
+
+    // Collapse the source pane if it became empty AND it isn't the only pane.
+    if (srcPane.tabs.length === 0 && state.panes.length > 1) {
+      this.closePane(srcPaneId);
+    }
   },
 
   replaceCurrentTab(path: string): void {

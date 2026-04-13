@@ -23,13 +23,37 @@
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   }
+
+  function onKeyDown(e: KeyboardEvent) {
+    // ~2% step on each tap; Shift = ~5%.
+    const step = e.shiftKey ? 0.05 : 0.02;
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      workspace.setSplitRatio(workspace.splitRatio - step);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      workspace.setSplitRatio(workspace.splitRatio + step);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      workspace.setSplitRatio(0.5);
+    }
+  }
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
   class="pane-resizer"
   class:dragging
   onmousedown={onMouseDown}
+  onkeydown={onKeyDown}
+  role="separator"
+  aria-orientation="vertical"
+  aria-label="Resize pane split"
+  aria-valuenow={Math.round(workspace.splitRatio * 100)}
+  aria-valuemin="15"
+  aria-valuemax="85"
+  tabindex="0"
 ></div>
 
 <style>
@@ -41,7 +65,9 @@
     flex-shrink: 0;
   }
   .pane-resizer:hover,
-  .pane-resizer.dragging {
+  .pane-resizer.dragging,
+  .pane-resizer:focus-visible {
     background-color: oklch(var(--p) / 0.4);
+    outline: none;
   }
 </style>

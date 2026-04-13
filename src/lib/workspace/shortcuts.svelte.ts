@@ -1,5 +1,6 @@
 import { workspace } from "./workspace.svelte";
 import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
+import { toggleBottomPanel } from "$lib/panels/bottomPanelState.svelte";
 
 // Per-tab save dispatcher. Tab viewers (e.g. MarkdownTab) register their
 // save fn on mount and unregister on destroy. The global Cmd+S handler
@@ -57,6 +58,12 @@ export function initShortcuts(): () => void {
     if (k === "\\") {
       e.preventDefault();
       workspace.splitPane();
+      return;
+    }
+    // Cmd+J — toggle bottom panel (backlinks / unresolved)
+    if (k === "j" && !e.shiftKey) {
+      e.preventDefault();
+      toggleBottomPanel();
       return;
     }
     // Cmd+1 / Cmd+2 — focus pane by index

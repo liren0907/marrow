@@ -10,6 +10,7 @@
   import { openConflict } from "$lib/conflict/conflictState.svelte";
   import MilkdownEditor from "$lib/editor/milkdown/MilkdownEditor.svelte";
   import type { WikiLinkSuggestion } from "$lib/editor/milkdown/wikiLink/suggest";
+  import type { TransclusionSuggestion } from "$lib/editor/milkdown/transclusion/suggest";
   import { debounce } from "$lib/utils/debounce";
   import { showError, showWarning } from "$lib/stores/toastStore.svelte";
 
@@ -52,6 +53,15 @@
     } else {
       workspace.replaceCurrentTab(path);
     }
+  }
+
+  function getTransclusionSuggestions(query: string): TransclusionSuggestion[] {
+    return getWikiLinkSuggestions(query);
+  }
+
+  function handleTransclusionClick(target: string): void {
+    const path = workspace.resolveBasename(target);
+    if (path) workspace.replaceCurrentTab(path);
   }
 
   let { tab }: { tab: Tab } = $props();
@@ -163,6 +173,8 @@
         onWikiLinkClick={handleWikiLinkClick}
         {getWikiLinkSuggestions}
         {isWikiLinkResolved}
+        onTransclusionClick={handleTransclusionClick}
+        {getTransclusionSuggestions}
       />
     {/key}
   {:else}

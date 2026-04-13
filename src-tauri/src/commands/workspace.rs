@@ -194,6 +194,104 @@ pub fn list_workspace_files(root: String) -> Result<Vec<FileMeta>, String> {
 }
 
 #[tauri::command]
+pub fn create_file(
+    path: String,
+    state: State<'_, WatcherState>,
+) -> Result<(), String> {
+    let p = Path::new(&path);
+    if p.exists() {
+        return Err(format!("Already exists: {}", path));
+    }
+    if let Some(parent) = p.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent).map_err(|e| format!("create parent dir: {}", e))?;
+        }
+    }
+    state.note_own_write(p);
+    fs::write(p, "").map_err(|e| format!("create file: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn create_directory(
+    path: String,
+    state: State<'_, WatcherState>,
+) -> Result<(), String> {
+    let p = Path::new(&path);
+    if p.exists() {
+        return Err(format!("Already exists: {}", path));
+    }
+    state.note_own_write(p);
+    fs::create_dir_all(p).map_err(|e| format!("create dir: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_path(
+    path: String,
+    state: State<'_, WatcherState>,
+) -> Result<(), String> {
+    let p = Path::new(&path);
+    if !p.exists() {
+        return Err(format!("Does not exist: {}", path));
+    }
+    // Refuse to delete a path that looks like a workspace root (no parent or
+    // very shallow). The frontend should never request this, but we double-check.
+    let canonical = p.canonicalize().map_err(|e| format!("canonicalize: {}", e))?;
+    if canonical.parent().is_none() || canonical.components().count() <= 2 {
+        return Err(format!("Refusing to delete root-like path: {}", path));
+    }
+    state.note_own_write(p);
+    if p.is_dir() {
+        fs::remove_dir_all(p).map_err(|e| format!("delete dir: {}", e))?;
+    } else {
+        fs::remove_file(p).map_err(|e| format!("delete file: {}", e))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn rename_path(
+    from: String,
+    to: String,
+    state: State<'_, WatcherState>,
+) -> Result<(), String> {
+    if from == to {
+        return Err("Source and destination are identical".into());
+    }
+    let src = Path::new(&from);
+    let dst = Path::new(&to);
+    if !src.exists() {
+        return Err(format!("Source does not exist: {}", from));
+    }
+    if dst.exists() {
+        return Err(format!("Destination already exists: {}", to));
+    }
+    // The watcher will see remove(src) + create(dst); note both paths.
+    state.note_own_write(src);
+    state.note_own_write(dst);
+    fs::rename(src, dst).map_err(|e| format!("rename: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn write_binary_file(
+    path: String,
+    bytes: Vec<u8>,
+    state: State<'_, WatcherState>,
+) -> Result<(), String> {
+    let p = Path::new(&path);
+    if let Some(parent) = p.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent).map_err(|e| format!("create parent dir: {}", e))?;
+        }
+    }
+    state.note_own_write(p);
+    fs::write(p, bytes).map_err(|e| format!("write binary: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
 pub fn write_text_file(
     path: String,
     contents: String,

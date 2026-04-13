@@ -9,6 +9,7 @@
   import { indent } from "@milkdown/plugin-indent";
   import { prism } from "@milkdown/plugin-prism";
   import { configurePrism } from "./prism";
+  import { imagePastePlugin } from "./imagePaste";
   import { slash, configSlash } from "./slashCommand";
   import {
     wikiLinkPlugin,
@@ -18,6 +19,14 @@
     type WikiLinkClickHandler,
   } from "./wikiLink";
   import type { WikiLinkSuggestion } from "./wikiLink/suggest";
+  import {
+    transclusionPlugin,
+    transclusionConfigCtx,
+    configTransclusionSuggest,
+    convertTextToTransclusions,
+    type TransclusionClickHandler,
+    type TransclusionSuggestion,
+  } from "./transclusion";
 
   let {
     initial,
@@ -25,12 +34,16 @@
     onWikiLinkClick = null,
     getWikiLinkSuggestions = () => [],
     isWikiLinkResolved = () => true,
+    onTransclusionClick = null,
+    getTransclusionSuggestions = () => [],
   }: {
     initial: string;
     onChange: (md: string) => void;
     onWikiLinkClick?: WikiLinkClickHandler | null;
     getWikiLinkSuggestions?: (query: string) => WikiLinkSuggestion[];
     isWikiLinkResolved?: (target: string) => boolean;
+    onTransclusionClick?: TransclusionClickHandler | null;
+    getTransclusionSuggestions?: (query: string) => TransclusionSuggestion[];
   } = $props();
 
   let host: HTMLDivElement;
@@ -60,16 +73,22 @@
               isResolved: isWikiLinkResolved,
             });
             configWikiLinkSuggest(ctx, getWikiLinkSuggestions);
+            ctx.set(transclusionConfigCtx.key, {
+              onClick: onTransclusionClick,
+            });
+            configTransclusionSuggest(ctx, getTransclusionSuggestions);
           })
           .use(commonmark)
           .use(gfm)
           .use(listener)
           .use(history)
+          .use(imagePastePlugin)
           .use(clipboard)
           .use(indent)
           .use(prism)
           .use(slash)
           .use(wikiLinkPlugin)
+          .use(transclusionPlugin)
           .create();
 
         if (destroyed) {
@@ -78,13 +97,16 @@
         }
         editor = instance;
 
-        // Convert literal [[...]] text in the loaded doc into wikiLink nodes,
-        // suppressing the listener so we don't fire a spurious dirty change.
+        // Convert literal [[...]] and ![[...]] text in the loaded doc into
+        // their respective nodes, suppressing the listener so we don't fire a
+        // spurious dirty change. Transclusion runs FIRST so the wiki-link
+        // load-pass doesn't see `![[...]]` as text anymore.
         instance.action((ctx) => {
           const view = ctx.get(editorViewCtx);
           suppressNextChange = true;
-          const changed = convertTextToWikiLinks(view);
-          if (!changed) suppressNextChange = false;
+          const a = convertTextToTransclusions(view);
+          const b = convertTextToWikiLinks(view);
+          if (!a && !b) suppressNextChange = false;
         });
       } catch (e) {
         errorMsg = e instanceof Error ? e.message : String(e);
@@ -447,5 +469,77 @@
   :global([data-theme="dark"] .milkdown-host .ProseMirror .token.important),
   :global([data-theme="dark"] .milkdown-host .ProseMirror .token.variable) {
     color: #ffa657;
+  }
+
+  /* Transclusion embed */
+  :global(.milkdown-host .ProseMirror .transclusion-embed) {
+    border: 1px solid oklch(var(--b3));
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    background-color: oklch(var(--b1));
+    overflow: hidden;
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-embed.unresolved) {
+    border-style: dashed;
+    border-color: oklch(var(--bc) / 0.25);
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-header) {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    background-color: oklch(var(--b2));
+    border-bottom: 1px solid oklch(var(--b3));
+    cursor: pointer;
+    font-size: 0.8125rem;
+    color: oklch(var(--bc) / 0.75);
+    user-select: none;
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-header:hover) {
+    background-color: oklch(var(--b3));
+    color: oklch(var(--bc));
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-header .transclusion-target) {
+    font-weight: 500;
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-content) {
+    padding: 0.75rem 1rem;
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: oklch(var(--bc) / 0.85);
+    max-height: 480px;
+    overflow-y: auto;
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-content h1),
+  :global(.milkdown-host .ProseMirror .transclusion-content h2),
+  :global(.milkdown-host .ProseMirror .transclusion-content h3) {
+    font-size: 1em;
+    font-weight: 600;
+    margin: 0.5em 0 0.25em;
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-content p) {
+    margin: 0.4em 0;
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-content ul),
+  :global(.milkdown-host .ProseMirror .transclusion-content ol) {
+    padding-left: 1.5rem;
+    margin: 0.4em 0;
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-content code) {
+    background-color: oklch(var(--b2));
+    padding: 0.05rem 0.3rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-content pre) {
+    background-color: oklch(var(--b2));
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    overflow-x: auto;
+    font-size: 0.875em;
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-content .transclusion-meta) {
+    color: oklch(var(--bc) / 0.4);
+    font-style: italic;
   }
 </style>

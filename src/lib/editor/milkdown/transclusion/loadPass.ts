@@ -1,6 +1,6 @@
 import type { EditorView } from "@milkdown/prose/view";
 import type { Schema } from "@milkdown/prose/model";
-import { WIKI_LINK_RE } from "./regex";
+import { TRANSCLUSION_RE } from "./regex";
 
 interface Replacement {
   from: number;
@@ -8,20 +8,18 @@ interface Replacement {
   target: string;
 }
 
-export function convertTextToWikiLinks(view: EditorView): boolean {
+export function convertTextToTransclusions(view: EditorView): boolean {
   const schema: Schema = view.state.schema;
-  const wikiLinkType = schema.nodes.wikiLink;
-  if (!wikiLinkType) return false;
+  const transclusionType = schema.nodes.transclusion;
+  if (!transclusionType) return false;
 
   const replacements: Replacement[] = [];
   view.state.doc.descendants((node, pos) => {
     if (!node.isText) return;
     const text = node.text ?? "";
-    WIKI_LINK_RE.lastIndex = 0;
+    TRANSCLUSION_RE.lastIndex = 0;
     let m: RegExpExecArray | null;
-    while ((m = WIKI_LINK_RE.exec(text)) !== null) {
-      // Skip transclusion syntax `![[target]]` — handled by transclusion module.
-      if (m.index > 0 && text[m.index - 1] === "!") continue;
+    while ((m = TRANSCLUSION_RE.exec(text)) !== null) {
       const target = m[1].trim();
       if (!target) continue;
       const from = pos + m.index;
@@ -32,14 +30,19 @@ export function convertTextToWikiLinks(view: EditorView): boolean {
 
   if (replacements.length === 0) return false;
 
-  // Apply in reverse order so earlier positions don't shift.
   let tr = view.state.tr;
   for (let i = replacements.length - 1; i >= 0; i--) {
     const r = replacements[i];
-    tr = tr.replaceWith(r.from, r.to, wikiLinkType.create({ target: r.target }));
+    // transclusion is a block atom — we must replace with a block-level node,
+    // which means splitting the parent paragraph if needed. ProseMirror's
+    // replaceWith handles that as long as the replacement is inserted at a
+    // valid block position. For inline text positions, we delete and insert
+    // separately so the doc structure stays valid.
+    tr = tr.delete(r.from, r.to);
+    tr = tr.insert(r.from, transclusionType.create({ target: r.target }));
   }
   tr.setMeta("addToHistory", false);
-  tr.setMeta("marrow-wikilink-loadpass", true);
+  tr.setMeta("marrow-transclusion-loadpass", true);
   view.dispatch(tr);
   return true;
 }

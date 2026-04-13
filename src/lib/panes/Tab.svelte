@@ -16,6 +16,15 @@
     e.stopPropagation();
     workspace.closeTab(paneId, tab.id);
   }
+
+  function onDragStart(e: DragEvent) {
+    if (!e.dataTransfer) return;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData(
+      "application/x-marrow-tab",
+      JSON.stringify({ srcPaneId: paneId, tabId: tab.id }),
+    );
+  }
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -28,6 +37,10 @@
   role="tab"
   tabindex="0"
   aria-selected={active}
+  draggable="true"
+  ondragstart={onDragStart}
+  data-tab-id={tab.id}
+  data-pane-id={paneId}
 >
   <span class="truncate max-w-[180px]">{tab.title}</span>
   {#if tab.isDirty}
