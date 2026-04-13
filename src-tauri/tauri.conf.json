@@ -5,7 +5,7 @@
   "identifier": "com.tauri-svelte-template.app",
   "build": {
     "beforeDevCommand": "yarn dev",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:1620",
     "beforeBuildCommand": "yarn build",
     "frontendDist": "../build"
   },

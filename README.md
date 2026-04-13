@@ -52,7 +52,7 @@ yarn install
 yarn tauri dev
 ```
 
-Starts Vite on `http://localhost:1420` and launches the Tauri desktop shell.
+Starts Vite on `http://localhost:1620` and launches the Tauri desktop shell.
 
 ### Build for production
 ```bash

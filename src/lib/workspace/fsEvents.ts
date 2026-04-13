@@ -8,6 +8,15 @@ function parentDir(path: string): string {
   return idx > 0 ? path.slice(0, idx) : path;
 }
 
+let indexRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+function scheduleIndexRefresh(): void {
+  if (indexRefreshTimer) clearTimeout(indexRefreshTimer);
+  indexRefreshTimer = setTimeout(() => {
+    indexRefreshTimer = null;
+    void workspace.refreshFileIndex();
+  }, 500);
+}
+
 function handleFsEvent(payload: FsEventPayload): void {
   const parents = new Set<string>();
   for (const path of payload.paths) {
@@ -19,6 +28,9 @@ function handleFsEvent(payload: FsEventPayload): void {
     if (tree.getChildren(parent) !== undefined) {
       void tree.load(parent);
     }
+  }
+  if (payload.kind !== "modify") {
+    scheduleIndexRefresh();
   }
 }
 

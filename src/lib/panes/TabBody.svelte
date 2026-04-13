@@ -4,6 +4,8 @@
   import ImageTab from "$lib/viewers/ImageTab.svelte";
   import VideoTab from "$lib/viewers/VideoTab.svelte";
   import AudioTab from "$lib/viewers/AudioTab.svelte";
+  import PdfTab from "$lib/viewers/PdfTab.svelte";
+  import TextTab from "$lib/viewers/TextTab.svelte";
   import UnsupportedTab from "$lib/viewers/UnsupportedTab.svelte";
 
   let { pane }: { pane: PaneType } = $props();
@@ -19,6 +21,10 @@
       <VideoTab {tab} />
     {:else if tab.kind === "audio"}
       <AudioTab {tab} />
+    {:else if tab.kind === "pdf"}
+      <PdfTab {tab} />
+    {:else if tab.kind === "text"}
+      <TextTab {tab} />
     {:else}
       <UnsupportedTab {tab} />
     {/if}

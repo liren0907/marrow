@@ -36,6 +36,12 @@ export interface FsEventPayload {
   paths: string[];
 }
 
+export interface FileMeta {
+  path: string;
+  name: string;
+  kind: FileKind;
+}
+
 export interface Tab {
   id: string;
   path: string;

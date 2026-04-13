@@ -14,7 +14,8 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
-  class="flex-1 flex flex-col min-w-0 min-h-0 border-r border-base-200 last:border-r-0"
+  class="flex-1 flex flex-col min-w-0 min-h-0"
+  class:pane-active={workspace.panes.length > 1 && workspace.activePaneId === pane.id}
   onmousedown={focus}
 >
   <TabBar {pane} />
@@ -33,3 +34,9 @@
     {/if}
   </div>
 </div>
+
+<style>
+  .pane-active {
+    box-shadow: inset 0 2px 0 0 oklch(var(--p));
+  }
+</style>

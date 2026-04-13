@@ -5,6 +5,9 @@
   import Toast from "$lib/components/ui/Toast.svelte";
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { initFsEvents } from "$lib/workspace/fsEvents";
+  import { initShortcuts } from "$lib/workspace/shortcuts.svelte";
+  import QuickOpen from "$lib/quickopen/QuickOpen.svelte";
+  import ConflictModal from "$lib/conflict/ConflictModal.svelte";
   import { showError, showSuccess } from "$lib/stores/toastStore.svelte";
   import "../app.css";
 
@@ -46,6 +49,7 @@
 
     let unlisten: (() => void) | null = null;
     let unlistenFs: (() => void) | null = null;
+    const unlistenShortcuts = initShortcuts();
     (async () => {
       try {
         unlistenFs = await initFsEvents();
@@ -82,6 +86,7 @@
     return () => {
       if (unlisten) unlisten();
       if (unlistenFs) unlistenFs();
+      unlistenShortcuts();
     };
   });
 
@@ -151,6 +156,8 @@
 </div>
 
 <Toast />
+<QuickOpen />
+<ConflictModal />
 
 <style>
   .app.resizing {

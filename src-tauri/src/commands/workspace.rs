@@ -32,6 +32,43 @@ pub struct ReadResult {
     pub mtime: u64,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FileMeta {
+    pub path: String,
+    pub name: String,
+    pub kind: &'static str,
+}
+
+const DENY_DIRS: &[&str] = &[
+    ".git",
+    "node_modules",
+    ".obsidian",
+    "target",
+    "dist",
+    "build",
+    ".svelte-kit",
+    ".next",
+    ".cache",
+];
+
+fn classify_ext(ext: &str) -> Option<&'static str> {
+    let lower = ext.to_ascii_lowercase();
+    match lower.as_str() {
+        "md" | "markdown" | "mdx" => Some("markdown"),
+        "png" | "jpg" | "jpeg" | "gif" | "webp" | "bmp" | "svg" | "ico" | "tiff" | "avif" => {
+            Some("image")
+        }
+        "mp4" | "webm" | "mov" | "avi" | "mkv" | "m4v" => Some("video"),
+        "mp3" | "wav" | "ogg" | "flac" | "m4a" | "aac" => Some("audio"),
+        "pdf" => Some("pdf"),
+        "txt" | "json" | "yaml" | "yml" | "toml" | "xml" | "csv" | "log" | "ini" | "conf"
+        | "sh" | "bash" | "zsh" | "js" | "ts" | "jsx" | "tsx" | "mjs" | "cjs" | "py" | "rb"
+        | "go" | "rs" | "c" | "cpp" | "h" | "hpp" | "java" | "kt" | "swift" | "php" | "html"
+        | "htm" | "css" | "scss" | "less" | "vue" | "svelte" => Some("text"),
+        _ => None,
+    }
+}
+
 fn mtime_ms(md: &std::fs::Metadata) -> u64 {
     md.modified()
         .ok()
@@ -108,6 +145,52 @@ pub fn read_text_file(path: String) -> Result<ReadResult, String> {
 #[tauri::command]
 pub fn read_binary_file(path: String) -> Result<Vec<u8>, String> {
     fs::read(&path).map_err(|e| format!("Failed to read {}: {}", path, e))
+}
+
+#[tauri::command]
+pub fn list_workspace_files(root: String) -> Result<Vec<FileMeta>, String> {
+    let root_path = Path::new(&root);
+    if !root_path.is_dir() {
+        return Err(format!("Not a directory: {}", root));
+    }
+    let mut out: Vec<FileMeta> = Vec::new();
+    let walker = walkdir::WalkDir::new(root_path).into_iter().filter_entry(|e| {
+        let name = e.file_name().to_string_lossy();
+        if name.starts_with('.') && e.depth() > 0 {
+            return false;
+        }
+        if e.file_type().is_dir() && DENY_DIRS.iter().any(|d| *d == name) {
+            return false;
+        }
+        true
+    });
+    for entry in walker {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        let path = entry.path();
+        let ext = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
+        let Some(kind) = classify_ext(ext) else {
+            continue;
+        };
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default();
+        out.push(FileMeta {
+            path: path.to_string_lossy().to_string(),
+            name,
+            kind,
+        });
+    }
+    Ok(out)
 }
 
 #[tauri::command]

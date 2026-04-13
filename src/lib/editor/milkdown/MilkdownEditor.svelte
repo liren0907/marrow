@@ -1,21 +1,39 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { Editor, rootCtx, defaultValueCtx } from "@milkdown/core";
+  import { Editor, editorViewCtx, rootCtx, defaultValueCtx } from "@milkdown/core";
   import { commonmark } from "@milkdown/preset-commonmark";
   import { gfm } from "@milkdown/preset-gfm";
   import { listener, listenerCtx } from "@milkdown/plugin-listener";
   import { history } from "@milkdown/plugin-history";
   import { slash, configSlash } from "./slashCommand";
+  import {
+    wikiLinkPlugin,
+    wikiLinkConfigCtx,
+    configWikiLinkSuggest,
+    convertTextToWikiLinks,
+    type WikiLinkClickHandler,
+  } from "./wikiLink";
+  import type { WikiLinkSuggestion } from "./wikiLink/suggest";
 
   let {
     initial,
     onChange,
-  }: { initial: string; onChange: (md: string) => void } = $props();
+    onWikiLinkClick = null,
+    getWikiLinkSuggestions = () => [],
+    isWikiLinkResolved = () => true,
+  }: {
+    initial: string;
+    onChange: (md: string) => void;
+    onWikiLinkClick?: WikiLinkClickHandler | null;
+    getWikiLinkSuggestions?: (query: string) => WikiLinkSuggestion[];
+    isWikiLinkResolved?: (target: string) => boolean;
+  } = $props();
 
   let host: HTMLDivElement;
   let editor: Editor | null = null;
   let destroyed = false;
   let errorMsg = $state<string | null>(null);
+  let suppressNextChange = false;
 
   onMount(() => {
     (async () => {
@@ -25,15 +43,25 @@
             ctx.set(rootCtx, host);
             ctx.set(defaultValueCtx, initial);
             ctx.get(listenerCtx).markdownUpdated((_ctx, md, prev) => {
+              if (suppressNextChange) {
+                suppressNextChange = false;
+                return;
+              }
               if (md !== prev) onChange(md);
             });
             configSlash(ctx);
+            ctx.set(wikiLinkConfigCtx.key, {
+              onClick: onWikiLinkClick,
+              isResolved: isWikiLinkResolved,
+            });
+            configWikiLinkSuggest(ctx, getWikiLinkSuggestions);
           })
           .use(commonmark)
           .use(gfm)
           .use(listener)
           .use(history)
           .use(slash)
+          .use(wikiLinkPlugin)
           .create();
 
         if (destroyed) {
@@ -41,6 +69,15 @@
           return;
         }
         editor = instance;
+
+        // Convert literal [[...]] text in the loaded doc into wikiLink nodes,
+        // suppressing the listener so we don't fire a spurious dirty change.
+        instance.action((ctx) => {
+          const view = ctx.get(editorViewCtx);
+          suppressNextChange = true;
+          const changed = convertTextToWikiLinks(view);
+          if (!changed) suppressNextChange = false;
+        });
       } catch (e) {
         errorMsg = e instanceof Error ? e.message : String(e);
         console.error("[Milkdown] create failed", e);
@@ -226,6 +263,78 @@
   }
   :global(.marrow-slash-item .slash-hint) {
     font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.75rem;
+    color: oklch(var(--bc) / 0.5);
+  }
+
+  :global(.milkdown-host .ProseMirror .wiki-link) {
+    display: inline;
+    color: oklch(var(--p));
+    background-color: oklch(var(--p) / 0.08);
+    padding: 0.05rem 0.3rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  :global(.milkdown-host .ProseMirror .wiki-link:hover) {
+    background-color: oklch(var(--p) / 0.15);
+  }
+  :global(.milkdown-host .ProseMirror .wiki-link.unresolved) {
+    color: oklch(var(--bc) / 0.4);
+    background-color: transparent;
+    border-bottom: 1px dashed oklch(var(--bc) / 0.3);
+    border-radius: 0;
+    padding: 0;
+  }
+  :global(.milkdown-host .ProseMirror .wiki-link.unresolved:hover) {
+    background-color: oklch(var(--bc) / 0.05);
+  }
+
+  :global(.marrow-wikilink-menu) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    min-width: 16rem;
+    max-width: 24rem;
+    padding: 0.25rem;
+    background-color: oklch(var(--b1));
+    border: 1px solid oklch(var(--b3));
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 24px oklch(0 0 0 / 0.18);
+    display: none;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  :global(.marrow-wikilink-menu[data-show="true"]) {
+    display: flex;
+  }
+  :global(.marrow-wikilink-empty) {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.8125rem;
+    color: oklch(var(--bc) / 0.5);
+    font-style: italic;
+  }
+  :global(.marrow-wikilink-item) {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: oklch(var(--bc));
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+  }
+  :global(.marrow-wikilink-item.selected),
+  :global(.marrow-wikilink-item:hover) {
+    background-color: oklch(var(--b2));
+  }
+  :global(.marrow-wikilink-item .wl-folder) {
     font-size: 0.75rem;
     color: oklch(var(--bc) / 0.5);
   }

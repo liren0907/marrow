@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   DirEntry,
+  FileMeta,
   ReadResult,
   WorkspaceInfo,
   WriteResult,
@@ -22,6 +23,10 @@ export function openWorkspaceCmd(path: string): Promise<WorkspaceInfo> {
 
 export function listDirectory(path: string): Promise<DirEntry[]> {
   return invoke<DirEntry[]>("list_directory", { path });
+}
+
+export function listWorkspaceFiles(root: string): Promise<FileMeta[]> {
+  return invoke<FileMeta[]>("list_workspace_files", { root });
 }
 
 export function readTextFile(path: string): Promise<ReadResult> {
