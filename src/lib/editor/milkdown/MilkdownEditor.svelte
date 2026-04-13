@@ -184,7 +184,7 @@
     margin-bottom: 0.25rem;
   }
   :global(.milkdown-host .ProseMirror p) {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
   :global(.milkdown-host .ProseMirror ul),
   :global(.milkdown-host .ProseMirror ol) {

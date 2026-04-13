@@ -154,29 +154,39 @@ pub fn list_workspace_files(root: String) -> Result<Vec<FileMeta>, String> {
         return Err(format!("Not a directory: {}", root));
     }
     let mut out: Vec<FileMeta> = Vec::new();
-    let walker = walkdir::WalkDir::new(root_path).into_iter().filter_entry(|e| {
-        let name = e.file_name().to_string_lossy();
-        if name.starts_with('.') && e.depth() > 0 {
-            return false;
-        }
-        if e.file_type().is_dir() && DENY_DIRS.iter().any(|d| *d == name) {
-            return false;
-        }
-        true
-    });
+
+    let walker = ignore::WalkBuilder::new(root_path)
+        .hidden(true)
+        .git_ignore(true)
+        .git_global(true)
+        .git_exclude(true)
+        .ignore(true)
+        .parents(false)
+        .filter_entry(|e| {
+            if e.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                let name = e.file_name().to_string_lossy();
+                if DENY_DIRS.iter().any(|d| *d == name.as_ref()) {
+                    return false;
+                }
+            }
+            true
+        })
+        .build();
+
     for entry in walker {
         let entry = match entry {
             Ok(e) => e,
             Err(_) => continue,
         };
-        if !entry.file_type().is_file() {
+        let file_type = match entry.file_type() {
+            Some(ft) => ft,
+            None => continue,
+        };
+        if !file_type.is_file() {
             continue;
         }
         let path = entry.path();
-        let ext = path
-            .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("");
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
         let Some(kind) = classify_ext(ext) else {
             continue;
         };

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { EditorState, type Extension } from "@codemirror/state";
+  import { EditorState, Compartment, type Extension } from "@codemirror/state";
   import { EditorView } from "@codemirror/view";
   import { basicSetup } from "codemirror";
   import type { Tab } from "$lib/workspace/types";
@@ -17,16 +17,20 @@
   let cancelled = false;
   let loadError = $state<string | null>(null);
   let lastHandledToken = 0;
+  const themeCompartment = new Compartment();
+  let themeObserver: MutationObserver | null = null;
+
+  function currentTheme(): string {
+    return document.documentElement.getAttribute("data-theme") ?? "light";
+  }
 
   function buildExtensions(): Extension[] {
-    const theme =
-      document.documentElement.getAttribute("data-theme") ?? "light";
     return [
       basicSetup,
       EditorView.editable.of(false),
       EditorState.readOnly.of(true),
       languageFor(tab.path),
-      themeFor(theme),
+      themeCompartment.of(themeFor(currentTheme())),
     ];
   }
 
@@ -50,6 +54,16 @@
           }),
         });
         workspace.patchTab(tab.id, { lastKnownMtime: result.mtime });
+        themeObserver = new MutationObserver(() => {
+          if (!view) return;
+          view.dispatch({
+            effects: themeCompartment.reconfigure(themeFor(currentTheme())),
+          });
+        });
+        themeObserver.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ["data-theme"],
+        });
       } catch (e) {
         loadError = e instanceof Error ? e.message : String(e);
       }
@@ -58,6 +72,8 @@
 
   onDestroy(() => {
     cancelled = true;
+    themeObserver?.disconnect();
+    themeObserver = null;
     view?.destroy();
     view = null;
   });
