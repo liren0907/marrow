@@ -1,7 +1,7 @@
 {
-  "name": "tauri-svelte-template",
+  "name": "marrow",
   "version": "0.0.1",
-  "description": "A starter template for Tauri v2 + SvelteKit + Svelte 5 + Tailwind CSS + DaisyUI",
+  "description": "Local-first multi-modal note-taking desktop app (Tauri v2 + SvelteKit + Milkdown)",
   "type": "module",
   "scripts": {
     "dev": "vite dev",

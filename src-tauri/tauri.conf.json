@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-svelte-template",
+  "productName": "Marrow",
   "version": "0.0.1",
-  "identifier": "com.tauri-svelte-template.app",
+  "identifier": "com.marrow.app",
   "build": {
     "beforeDevCommand": "yarn dev",
     "devUrl": "http://localhost:1620",
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Tauri Svelte Template",
+        "title": "Marrow",
         "width": 1200,
         "height": 800,
         "dragDropEnabled": true

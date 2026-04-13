@@ -18,7 +18,7 @@
 </script>
 
 <svelte:head>
-  <title>md-editor</title>
+  <title>Marrow</title>
 </svelte:head>
 
 {#if workspace.info}

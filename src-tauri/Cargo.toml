@@ -1,13 +1,14 @@
 [package]
-name = "tauri-svelte-template"
+name = "marrow"
 version = "0.1.0"
-description = "A starter template for Tauri v2 + SvelteKit + Svelte 5 + Tailwind CSS + DaisyUI"
+description = "Local-first multi-modal note-taking desktop app"
 authors = ["liren0907"]
 edition = "2024"
-default-run = "tauri-svelte-template"
+default-run = "marrow"
 
 [lib]
-name = "tauri_svelte_template_lib"
+# Suffixed with _lib to avoid Windows linker conflict with the binary name.
+name = "marrow_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
