@@ -87,6 +87,13 @@ export function configWikiLinkSuggest(
           return;
         }
         currentQuery = m[1];
+        // Once the user types `|` they're authoring an alias; hide the popup
+        // so they can type freely until `]]` closes the link.
+        if (currentQuery.includes("|")) {
+          currentItems = [];
+          provider.hide();
+          return;
+        }
         queryStart = $from.pos - m[0].length; // position of the first `[`
         const stem = currentQuery.replace(/\.md$/i, "");
         currentItems = getSuggestions(stem).slice(0, 8);

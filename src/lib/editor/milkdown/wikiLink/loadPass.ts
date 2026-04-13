@@ -1,11 +1,12 @@
 import type { EditorView } from "@milkdown/prose/view";
 import type { Schema } from "@milkdown/prose/model";
-import { WIKI_LINK_RE } from "./regex";
+import { WIKI_LINK_RE, parseWikiInner } from "./regex";
 
 interface Replacement {
   from: number;
   to: number;
   target: string;
+  display: string;
 }
 
 export function convertTextToWikiLinks(view: EditorView): boolean {
@@ -22,11 +23,11 @@ export function convertTextToWikiLinks(view: EditorView): boolean {
     while ((m = WIKI_LINK_RE.exec(text)) !== null) {
       // Skip transclusion syntax `![[target]]` — handled by transclusion module.
       if (m.index > 0 && text[m.index - 1] === "!") continue;
-      const target = m[1].trim();
+      const { target, display } = parseWikiInner(m[1]);
       if (!target) continue;
       const from = pos + m.index;
       const to = from + m[0].length;
-      replacements.push({ from, to, target });
+      replacements.push({ from, to, target, display });
     }
   });
 
@@ -36,7 +37,11 @@ export function convertTextToWikiLinks(view: EditorView): boolean {
   let tr = view.state.tr;
   for (let i = replacements.length - 1; i >= 0; i--) {
     const r = replacements[i];
-    tr = tr.replaceWith(r.from, r.to, wikiLinkType.create({ target: r.target }));
+    tr = tr.replaceWith(
+      r.from,
+      r.to,
+      wikiLinkType.create({ target: r.target, display: r.display }),
+    );
   }
   tr.setMeta("addToHistory", false);
   tr.setMeta("marrow-wikilink-loadpass", true);

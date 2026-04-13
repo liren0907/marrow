@@ -24,15 +24,21 @@ export const wikiLinkNodeView = $prose((ctx) => {
     props: {
       nodeViews: {
         wikiLink: (node) => {
+          const target = node.attrs.target as string;
+          const display = node.attrs.display as string;
           const dom = document.createElement("span");
           dom.dataset.wikiLink = "";
-          dom.dataset.target = node.attrs.target as string;
+          dom.dataset.target = target;
+          dom.dataset.display = display;
           dom.className = "wiki-link";
-          dom.textContent = node.attrs.target as string;
+          dom.textContent = display || target;
+
+          let currentTarget = target;
+          let currentDisplay = display;
 
           const refresh = () => {
             const cfg = ctx.get(wikiLinkConfigCtx.key);
-            const resolved = cfg.isResolved(node.attrs.target as string);
+            const resolved = cfg.isResolved(currentTarget);
             dom.classList.toggle("unresolved", !resolved);
           };
           refresh();
@@ -43,7 +49,7 @@ export const wikiLinkNodeView = $prose((ctx) => {
             e.preventDefault();
             e.stopPropagation();
             const cfg = ctx.get(wikiLinkConfigCtx.key);
-            cfg.onClick?.(node.attrs.target as string, {
+            cfg.onClick?.(currentTarget, {
               meta: e.metaKey || e.ctrlKey,
               shift: e.shiftKey,
               middle: e.button === 1,
@@ -55,9 +61,14 @@ export const wikiLinkNodeView = $prose((ctx) => {
             dom,
             update: (newNode) => {
               if (newNode.type.name !== "wikiLink") return false;
-              if (newNode.attrs.target !== node.attrs.target) {
-                dom.textContent = newNode.attrs.target as string;
-                dom.dataset.target = newNode.attrs.target as string;
+              const newTarget = newNode.attrs.target as string;
+              const newDisplay = newNode.attrs.display as string;
+              if (newTarget !== currentTarget || newDisplay !== currentDisplay) {
+                currentTarget = newTarget;
+                currentDisplay = newDisplay;
+                dom.dataset.target = newTarget;
+                dom.dataset.display = newDisplay;
+                dom.textContent = newDisplay || newTarget;
               }
               refresh();
               return true;

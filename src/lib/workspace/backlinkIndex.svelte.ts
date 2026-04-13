@@ -1,11 +1,13 @@
 import { SvelteMap } from "svelte/reactivity";
-import { WIKI_LINK_RE } from "$lib/editor/milkdown/wikiLink/regex";
+import { WIKI_LINK_RE, parseWikiInner } from "$lib/editor/milkdown/wikiLink/regex";
 import { workspace } from "./workspace.svelte";
 import { readTextFile } from "./tauri";
 
 export interface BacklinkEntry {
   sourcePath: string;
   target: string; // raw target string from [[target]]
+  context: string; // trimmed source line containing the [[ref]]
+  matchIndex: number; // byte offset of the match in the source content (for keying)
 }
 
 // Public reactive state. Maps survive Svelte reactivity via SvelteMap.
@@ -25,22 +27,37 @@ function targetKey(rawTarget: string): string {
   return rawTarget.replace(/\.md$/i, "").trim().toLowerCase();
 }
 
+function lineContextAt(content: string, matchIndex: number): string {
+  const lineStart = content.lastIndexOf("\n", matchIndex - 1) + 1;
+  let lineEnd = content.indexOf("\n", matchIndex);
+  if (lineEnd < 0) lineEnd = content.length;
+  return content.slice(lineStart, lineEnd).trim();
+}
+
+interface ResolvedHit {
+  key: string;
+  raw: string;
+  context: string;
+  matchIndex: number;
+}
+
 function scanContent(
   content: string,
-): { resolved: { key: string; raw: string }[]; unresolved: string[] } {
-  const resolved: { key: string; raw: string }[] = [];
+): { resolved: ResolvedHit[]; unresolved: string[] } {
+  const resolved: ResolvedHit[] = [];
   const unresolved: string[] = [];
   WIKI_LINK_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = WIKI_LINK_RE.exec(content)) !== null) {
     // Skip transclusion syntax `![[...]]` — handled separately.
     if (m.index > 0 && content[m.index - 1] === "!") continue;
-    const raw = m[1].trim();
-    if (!raw) continue;
-    const key = targetKey(raw);
-    resolved.push({ key, raw });
-    if (workspace.resolveBasename(raw) === null) {
-      unresolved.push(raw);
+    const { target } = parseWikiInner(m[1]);
+    if (!target) continue;
+    const key = targetKey(target);
+    const context = lineContextAt(content, m.index);
+    resolved.push({ key, raw: target, context, matchIndex: m.index });
+    if (workspace.resolveBasename(target) === null) {
+      unresolved.push(target);
     }
   }
   return { resolved, unresolved };
@@ -68,9 +85,9 @@ export function dropEntriesForFile(sourcePath: string): void {
  */
 export function addEntriesForFile(sourcePath: string, content: string): void {
   const { resolved, unresolved } = scanContent(content);
-  for (const { key, raw } of resolved) {
+  for (const { key, raw, context, matchIndex } of resolved) {
     const list = backlinks.byTarget.get(key) ?? [];
-    list.push({ sourcePath, target: raw });
+    list.push({ sourcePath, target: raw, context, matchIndex });
     backlinks.byTarget.set(key, list);
   }
   if (unresolved.length > 0) {

@@ -1,5 +1,7 @@
 import { slashFactory, SlashProvider } from "@milkdown/plugin-slash";
 import type { Ctx } from "@milkdown/ctx";
+import { workspace } from "$lib/workspace/workspace.svelte";
+import { readTextFile } from "$lib/workspace/tauri";
 
 export const transclusionSuggest = slashFactory("marrow-transclusion-suggest");
 
@@ -14,6 +16,12 @@ export type TransclusionSuggestionSource = (
 ) => TransclusionSuggestion[];
 
 const SUGGEST_TRIGGER = /!\[\[([^\]\n]*)$/;
+const HEADING_LINE_RE = /^(#{1,6})\s+(.+?)\s*$/gm;
+
+interface HeadingItem {
+  text: string;
+  level: number;
+}
 
 export function configTransclusionSuggest(
   ctx: Ctx,
@@ -23,15 +31,48 @@ export function configTransclusionSuggest(
     view: (view) => {
       let currentView = view;
       let currentItems: TransclusionSuggestion[] = [];
+      let headingItems: HeadingItem[] = [];
+      let mode: "file" | "heading" = "file";
+      let headingFilename = "";
       let selectedIdx = 0;
       let visible = false;
       let queryStart = 0;
+      let headingFetchToken = 0;
 
       const menuEl = document.createElement("div");
       menuEl.className = "marrow-wikilink-menu";
 
       function render(): void {
         menuEl.innerHTML = "";
+        if (mode === "heading") {
+          if (headingItems.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "marrow-wikilink-empty";
+            empty.textContent = "No headings";
+            menuEl.appendChild(empty);
+            return;
+          }
+          headingItems.forEach((item, i) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "marrow-wikilink-item";
+            if (i === selectedIdx) btn.classList.add("selected");
+            const label = document.createElement("span");
+            label.className = "wl-name";
+            label.textContent = "# ".repeat(item.level) + item.text;
+            btn.append(label);
+            btn.addEventListener("mousedown", (e) => {
+              e.preventDefault();
+              apply(i);
+            });
+            btn.addEventListener("mouseenter", () => {
+              selectedIdx = i;
+              render();
+            });
+            menuEl.appendChild(btn);
+          });
+          return;
+        }
         if (currentItems.length === 0) {
           const empty = document.createElement("div");
           empty.className = "marrow-wikilink-empty";
@@ -63,6 +104,23 @@ export function configTransclusionSuggest(
         });
       }
 
+      async function loadHeadings(filename: string): Promise<HeadingItem[]> {
+        const path = workspace.resolveBasename(filename);
+        if (!path) return [];
+        try {
+          const result = await readTextFile(path);
+          const out: HeadingItem[] = [];
+          HEADING_LINE_RE.lastIndex = 0;
+          let m: RegExpExecArray | null;
+          while ((m = HEADING_LINE_RE.exec(result.content)) !== null) {
+            out.push({ level: m[1].length, text: m[2].trim() });
+          }
+          return out;
+        } catch {
+          return [];
+        }
+      }
+
       function refreshFromState(): void {
         const { state } = currentView;
         const { $from } = state.selection;
@@ -75,22 +133,67 @@ export function configTransclusionSuggest(
         const m = SUGGEST_TRIGGER.exec(before);
         if (!m) {
           currentItems = [];
+          headingItems = [];
           return;
         }
         const query = m[1];
         queryStart = $from.pos - m[0].length; // position of the `!`
+
+        const hashIdx = query.indexOf("#");
+        if (hashIdx >= 0) {
+          // Heading mode: query = "filename#headingPrefix"
+          mode = "heading";
+          const filename = query.slice(0, hashIdx).trim().replace(/\.md$/i, "");
+          const headingPrefix = query.slice(hashIdx + 1).trim().toLowerCase();
+          headingFilename = filename;
+
+          const myToken = ++headingFetchToken;
+          void loadHeadings(filename).then((items) => {
+            if (myToken !== headingFetchToken) return;
+            headingItems = headingPrefix
+              ? items.filter((h) => h.text.toLowerCase().includes(headingPrefix))
+              : items;
+            headingItems = headingItems.slice(0, 8);
+            if (selectedIdx >= headingItems.length) selectedIdx = 0;
+            if (visible) render();
+          });
+          return;
+        }
+
+        mode = "file";
         const stem = query.replace(/\.md$/i, "");
         currentItems = getSuggestions(stem).slice(0, 8);
         if (selectedIdx >= currentItems.length) selectedIdx = 0;
       }
 
       function apply(i: number): void {
-        const item = currentItems[i];
-        if (!item) return;
-        const target = item.name.replace(/\.md$/i, "");
         const transclusionType =
           currentView.state.schema.nodes.transclusion;
         if (!transclusionType) return;
+
+        if (mode === "heading") {
+          const item = headingItems[i];
+          if (!item) return;
+          let tr = currentView.state.tr.delete(
+            queryStart,
+            currentView.state.selection.from,
+          );
+          tr = tr.insert(
+            queryStart,
+            transclusionType.create({
+              target: headingFilename,
+              section: item.text,
+            }),
+          );
+          currentView.dispatch(tr);
+          provider.hide();
+          currentView.focus();
+          return;
+        }
+
+        const item = currentItems[i];
+        if (!item) return;
+        const target = item.name.replace(/\.md$/i, "");
         // Delete the `![[query` text first, then insert the transclusion node.
         let tr = currentView.state.tr.delete(
           queryStart,
@@ -136,18 +239,19 @@ export function configTransclusionSuggest(
 
       const onKey = (e: KeyboardEvent) => {
         if (!visible) return;
+        const len =
+          mode === "heading" ? headingItems.length : currentItems.length;
         if (e.key === "ArrowDown") {
           e.preventDefault();
-          selectedIdx = (selectedIdx + 1) % Math.max(1, currentItems.length);
+          selectedIdx = (selectedIdx + 1) % Math.max(1, len);
           render();
         } else if (e.key === "ArrowUp") {
           e.preventDefault();
           selectedIdx =
-            (selectedIdx - 1 + Math.max(1, currentItems.length)) %
-            Math.max(1, currentItems.length);
+            (selectedIdx - 1 + Math.max(1, len)) % Math.max(1, len);
           render();
         } else if (e.key === "Enter") {
-          if (currentItems.length === 0) return;
+          if (len === 0) return;
           e.preventDefault();
           apply(selectedIdx);
         } else if (e.key === "Escape") {

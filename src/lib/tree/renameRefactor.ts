@@ -135,10 +135,14 @@ export async function executeRename(
 
   // Step 4: rewrite refs in affected files.
   // The pattern matches `[[oldBasename]]` or `[[oldBasename.md]]` with an
-  // optional leading `!` (preserved on output). It does NOT match
-  // `[[oldBasenameButLonger]]` because the closing `]]` is anchored.
+  // optional leading `!` (preserved on output), an optional `#section`, and
+  // an optional `|alias` — all preserved on output. It does NOT match
+  // `[[oldBasenameButLonger]]` because what follows `oldBasename` must be
+  // one of `.md`, `#`, `|`, or `]]`.
   const pat = new RegExp(
-    "(!?)\\[\\[" + escapeRegex(preview.oldBasename) + "(\\.md)?\\]\\]",
+    "(!?)\\[\\[" +
+      escapeRegex(preview.oldBasename) +
+      "(\\.md)?(#[^\\[\\]\\n|]*)?(\\|[^\\[\\]\\n]*)?\\]\\]",
     "gi",
   );
 
@@ -152,8 +156,14 @@ export async function executeRename(
       const result = await cmd.readTextFile(file);
       const replaced = result.content.replace(
         pat,
-        (_match, bang: string, ext: string | undefined) =>
-          `${bang}[[${preview.newBasename}${ext ?? ""}]]`,
+        (
+          _match,
+          bang: string,
+          ext: string | undefined,
+          section: string | undefined,
+          alias: string | undefined,
+        ) =>
+          `${bang}[[${preview.newBasename}${ext ?? ""}${section ?? ""}${alias ?? ""}]]`,
       );
       if (replaced !== result.content) {
         // Skip mtime check — the user already confirmed the rename.

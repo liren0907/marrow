@@ -2,7 +2,7 @@ import { $ctx, $prose } from "@milkdown/utils";
 import { Plugin, PluginKey } from "@milkdown/prose/state";
 import { workspace } from "$lib/workspace/workspace.svelte";
 import { readTextFile } from "$lib/workspace/tauri";
-import { renderEmbedded } from "./renderer";
+import { renderEmbedded, renderEmbeddedSection } from "./renderer";
 
 const MAX_DEPTH = 5;
 
@@ -68,10 +68,12 @@ export const transclusionNodeView = $prose((ctx) => {
       nodeViews: {
         transclusion: (node, _view, _getPos) => {
           const target = node.attrs.target as string;
+          const section = node.attrs.section as string;
 
           const dom = document.createElement("div");
           dom.dataset.transclusion = "";
           dom.dataset.target = target;
+          dom.dataset.section = section;
           dom.className = "transclusion-embed";
 
           const header = document.createElement("div");
@@ -81,7 +83,7 @@ export const transclusionNodeView = $prose((ctx) => {
           arrow.textContent = "subdirectory_arrow_right";
           const label = document.createElement("span");
           label.className = "transclusion-target";
-          label.textContent = target;
+          label.textContent = section ? `${target} › ${section}` : target;
           header.append(arrow, label);
           header.addEventListener("mousedown", (e) => {
             e.preventDefault();
@@ -117,7 +119,9 @@ export const transclusionNodeView = $prose((ctx) => {
             dom.classList.remove("unresolved");
             try {
               const result = await readTextFile(path);
-              content.innerHTML = renderEmbedded(result.content);
+              content.innerHTML = section
+                ? renderEmbeddedSection(result.content, section)
+                : renderEmbedded(result.content);
               // Subscribe (or re-subscribe) once we know the resolved path.
               if (unsub) unsub();
               unsub = subscribe(path, () => void render());
@@ -134,6 +138,7 @@ export const transclusionNodeView = $prose((ctx) => {
             update: (newNode) => {
               if (newNode.type.name !== "transclusion") return false;
               if (newNode.attrs.target !== target) return false;
+              if (newNode.attrs.section !== section) return false;
               return true;
             },
             destroy: () => {

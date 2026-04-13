@@ -8,13 +8,17 @@ export const transclusionSchema = $nodeSchema("transclusion", () => ({
   draggable: false,
   attrs: {
     target: { default: "" },
+    section: { default: "" },
   },
   parseDOM: [
     {
       tag: "div[data-transclusion]",
       getAttrs: (dom) => {
         if (!(dom instanceof HTMLElement)) return false;
-        return { target: dom.getAttribute("data-target") ?? "" };
+        return {
+          target: dom.getAttribute("data-target") ?? "",
+          section: dom.getAttribute("data-section") ?? "",
+        };
       },
     },
   ],
@@ -23,6 +27,7 @@ export const transclusionSchema = $nodeSchema("transclusion", () => ({
     {
       "data-transclusion": "",
       "data-target": node.attrs.target as string,
+      "data-section": node.attrs.section as string,
       class: "transclusion-embed",
     },
     node.attrs.target as string,
@@ -35,7 +40,10 @@ export const transclusionSchema = $nodeSchema("transclusion", () => ({
   toMarkdown: {
     match: (node) => node.type.name === "transclusion",
     runner: (state, node) => {
-      state.addNode("text", undefined, `![[${node.attrs.target}]]`);
+      const target = node.attrs.target as string;
+      const section = node.attrs.section as string;
+      const inner = section ? `${target}#${section}` : target;
+      state.addNode("text", undefined, `![[${inner}]]`);
     },
   },
 }));

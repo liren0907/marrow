@@ -1,11 +1,12 @@
 import type { EditorView } from "@milkdown/prose/view";
 import type { Schema } from "@milkdown/prose/model";
-import { TRANSCLUSION_RE } from "./regex";
+import { TRANSCLUSION_RE, parseTransclusionInner } from "./regex";
 
 interface Replacement {
   from: number;
   to: number;
   target: string;
+  section: string;
 }
 
 export function convertTextToTransclusions(view: EditorView): boolean {
@@ -20,11 +21,11 @@ export function convertTextToTransclusions(view: EditorView): boolean {
     TRANSCLUSION_RE.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = TRANSCLUSION_RE.exec(text)) !== null) {
-      const target = m[1].trim();
+      const { target, section } = parseTransclusionInner(m[1]);
       if (!target) continue;
       const from = pos + m.index;
       const to = from + m[0].length;
-      replacements.push({ from, to, target });
+      replacements.push({ from, to, target, section });
     }
   });
 
@@ -39,7 +40,10 @@ export function convertTextToTransclusions(view: EditorView): boolean {
     // valid block position. For inline text positions, we delete and insert
     // separately so the doc structure stays valid.
     tr = tr.delete(r.from, r.to);
-    tr = tr.insert(r.from, transclusionType.create({ target: r.target }));
+    tr = tr.insert(
+      r.from,
+      transclusionType.create({ target: r.target, section: r.section }),
+    );
   }
   tr.setMeta("addToHistory", false);
   tr.setMeta("marrow-transclusion-loadpass", true);

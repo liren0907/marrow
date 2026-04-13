@@ -41,18 +41,26 @@
     </p>
   {:else}
     <ul class="flex flex-col gap-0.5">
-      {#each entries as entry (entry.sourcePath + entry.target)}
+      {#each entries as entry (entry.sourcePath + ":" + entry.matchIndex)}
         <li>
           <button
             type="button"
-            class="w-full flex items-center gap-2 px-2 py-1 text-left text-sm hover:bg-base-200 rounded"
+            class="w-full flex flex-col items-stretch gap-0.5 px-2 py-1 text-left hover:bg-base-200 rounded"
             onclick={() => open(entry.sourcePath)}
           >
-            <span
-              class="material-symbols-rounded text-[16px] text-base-content/40 shrink-0"
-              >description</span
-            >
-            <span class="truncate">{relPath(entry.sourcePath)}</span>
+            <span class="flex items-center gap-2 text-sm">
+              <span
+                class="material-symbols-rounded text-[16px] text-base-content/40 shrink-0"
+                >description</span
+              >
+              <span class="truncate">{relPath(entry.sourcePath)}</span>
+            </span>
+            {#if entry.context}
+              <span
+                class="block pl-6 text-xs text-base-content/50 truncate font-mono"
+                >{entry.context}</span
+              >
+            {/if}
           </button>
         </li>
       {/each}
