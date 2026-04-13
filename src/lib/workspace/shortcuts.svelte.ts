@@ -1,6 +1,7 @@
 import { workspace } from "./workspace.svelte";
 import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
 import { toggleBottomPanel } from "$lib/panels/bottomPanelState.svelte";
+import { toggleSearch } from "$lib/search/searchState.svelte";
 
 // Per-tab save dispatcher. Tab viewers (e.g. MarkdownTab) register their
 // save fn on mount and unregister on destroy. The global Cmd+S handler
@@ -60,10 +61,22 @@ export function initShortcuts(): () => void {
       workspace.splitPane();
       return;
     }
-    // Cmd+J — toggle bottom panel (backlinks / unresolved)
+    // Cmd+J — toggle bottom panel (backlinks / unresolved / tags)
     if (k === "j" && !e.shiftKey) {
       e.preventDefault();
       toggleBottomPanel();
+      return;
+    }
+    // Cmd+Shift+F — toggle full-text search modal
+    if (k === "f" && e.shiftKey) {
+      e.preventDefault();
+      toggleSearch();
+      return;
+    }
+    // Cmd+Shift+G — open backlink graph view
+    if (k === "g" && e.shiftKey) {
+      e.preventDefault();
+      workspace.openGraph();
       return;
     }
     // Cmd+1 / Cmd+2 — focus pane by index

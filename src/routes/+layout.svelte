@@ -7,6 +7,7 @@
   import { initFsEvents } from "$lib/workspace/fsEvents";
   import { initShortcuts } from "$lib/workspace/shortcuts.svelte";
   import QuickOpen from "$lib/quickopen/QuickOpen.svelte";
+  import SearchModal from "$lib/search/SearchModal.svelte";
   import ConflictModal from "$lib/conflict/ConflictModal.svelte";
   import BottomPanel from "$lib/panels/BottomPanel.svelte";
   import { bottomPanel } from "$lib/panels/bottomPanelState.svelte";
@@ -168,6 +169,7 @@
 
 <Toast />
 <QuickOpen />
+<SearchModal />
 <ConflictModal />
 <ContextMenu />
 <NamePromptModal />

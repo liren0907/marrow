@@ -2,6 +2,7 @@ import { listen } from "@tauri-apps/api/event";
 import type { FsEventPayload } from "./types";
 import { workspace } from "./workspace.svelte";
 import { updateBacklinksForFile } from "./backlinkIndex.svelte";
+import { updateTagsForFile } from "./tagIndex.svelte";
 import { notifyTransclusionTargets } from "$lib/editor/milkdown/transclusion/nodeView";
 import { tree } from "$lib/tree/treeState.svelte";
 
@@ -26,6 +27,7 @@ function handleFsEvent(payload: FsEventPayload): void {
     workspace.notifyExternalChange(path, payload.kind);
     if (path.toLowerCase().endsWith(".md")) {
       void updateBacklinksForFile(path, payload.kind === "remove");
+      void updateTagsForFile(path, payload.kind === "remove");
       notifyTransclusionTargets(path);
     }
   }

@@ -1,4 +1,4 @@
-type ActiveTab = "backlinks" | "unresolved";
+type ActiveTab = "backlinks" | "unresolved" | "tags";
 
 const STORAGE_KEY = "marrow.bottomPanel";
 
@@ -16,10 +16,13 @@ function loadPersisted(): Persisted {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { isOpen: false, height: 220, activeTab: "backlinks" };
     const parsed = JSON.parse(raw) as Partial<Persisted>;
+    let activeTab: ActiveTab = "backlinks";
+    if (parsed.activeTab === "unresolved") activeTab = "unresolved";
+    else if (parsed.activeTab === "tags") activeTab = "tags";
     return {
       isOpen: !!parsed.isOpen,
       height: typeof parsed.height === "number" ? parsed.height : 220,
-      activeTab: parsed.activeTab === "unresolved" ? "unresolved" : "backlinks",
+      activeTab,
     };
   } catch {
     return { isOpen: false, height: 220, activeTab: "backlinks" };

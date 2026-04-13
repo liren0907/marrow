@@ -29,6 +29,26 @@ export function listWorkspaceFiles(root: string): Promise<FileMeta[]> {
   return invoke<FileMeta[]>("list_workspace_files", { root });
 }
 
+export interface SearchHit {
+  path: string;
+  line: number;
+  content: string;
+  match_start: number;
+  match_end: number;
+}
+
+export function searchWorkspace(
+  root: string,
+  query: string,
+  maxResults?: number,
+): Promise<SearchHit[]> {
+  return invoke<SearchHit[]>("search_workspace", {
+    root,
+    query,
+    maxResults: maxResults ?? null,
+  });
+}
+
 export function readTextFile(path: string): Promise<ReadResult> {
   return invoke<ReadResult>("read_text_file", { path });
 }

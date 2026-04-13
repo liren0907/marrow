@@ -15,6 +15,9 @@ const TEXT = new Set([
 ]);
 
 export function classifyFile(path: string): FileKind {
+  // Guard: synthetic marrow:// paths (e.g. graph tab) should never be
+  // misclassified by extension matching.
+  if (path.startsWith("marrow://")) return "unsupported";
   const ext = (path.split(".").pop() ?? "").toLowerCase();
   if (MARKDOWN.has(ext)) return "markdown";
   if (IMAGE.has(ext)) return "image";

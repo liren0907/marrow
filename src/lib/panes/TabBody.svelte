@@ -6,6 +6,7 @@
   import AudioTab from "$lib/viewers/AudioTab.svelte";
   import PdfTab from "$lib/viewers/PdfTab.svelte";
   import TextTab from "$lib/viewers/TextTab.svelte";
+  import GraphTab from "$lib/graph/GraphTab.svelte";
   import UnsupportedTab from "$lib/viewers/UnsupportedTab.svelte";
 
   let { pane }: { pane: PaneType } = $props();
@@ -25,6 +26,8 @@
       <PdfTab {tab} />
     {:else if tab.kind === "text"}
       <TextTab {tab} />
+    {:else if tab.kind === "graph"}
+      <GraphTab {tab} />
     {:else}
       <UnsupportedTab {tab} />
     {/if}

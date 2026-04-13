@@ -62,9 +62,11 @@ export const workspace = {
     state.activePaneId = state.panes[0].id;
     state.fileIndex = [];
     await this.refreshFileIndex();
-    // Backlink build runs after file index so resolveBasename works.
+    // Backlink + tag builds run after file index so resolveBasename works.
     const { rebuildBacklinks } = await import("./backlinkIndex.svelte");
+    const { rebuildTags } = await import("./tagIndex.svelte");
     void rebuildBacklinks();
+    void rebuildTags();
   },
 
   close(): void {
@@ -277,6 +279,24 @@ export const workspace = {
     tab.lastKnownMtime = undefined;
     tab.reloadToken = undefined;
     tab.missing = false;
+    pane.activeTabId = tab.id;
+  },
+
+  openGraph(): void {
+    const pane = findPane(state.activePaneId) ?? state.panes[0];
+    const existing = pane.tabs.find((t) => t.kind === "graph");
+    if (existing) {
+      pane.activeTabId = existing.id;
+      return;
+    }
+    const tab: Tab = {
+      id: crypto.randomUUID(),
+      path: "marrow://graph",
+      kind: "graph",
+      title: "Graph",
+      isDirty: false,
+    };
+    pane.tabs.push(tab);
     pane.activeTabId = tab.id;
   },
 

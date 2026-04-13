@@ -39,6 +39,15 @@ pub struct FileMeta {
     pub kind: &'static str,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SearchHit {
+    pub path: String,
+    pub line: u64,
+    pub content: String,
+    pub match_start: usize,
+    pub match_end: usize,
+}
+
 const DENY_DIRS: &[&str] = &[
     ".git",
     "node_modules",
@@ -201,6 +210,110 @@ pub fn list_workspace_files(root: String) -> Result<Vec<FileMeta>, String> {
         });
     }
     Ok(out)
+}
+
+#[tauri::command]
+pub fn search_workspace(
+    root: String,
+    query: String,
+    max_results: Option<usize>,
+) -> Result<Vec<SearchHit>, String> {
+    use grep::matcher::Matcher;
+    use grep::regex::RegexMatcherBuilder;
+    use grep::searcher::{sinks, Searcher};
+
+    let trimmed = query.trim();
+    if trimmed.len() < 2 {
+        return Ok(vec![]);
+    }
+    let limit = max_results.unwrap_or(200);
+
+    let root_path = Path::new(&root);
+    if !root_path.is_dir() {
+        return Err(format!("Not a directory: {}", root));
+    }
+
+    let matcher = RegexMatcherBuilder::new()
+        .case_insensitive(true)
+        .fixed_strings(true)
+        .build(trimmed)
+        .map_err(|e| format!("regex: {}", e))?;
+
+    let walker = ignore::WalkBuilder::new(root_path)
+        .hidden(true)
+        .git_ignore(true)
+        .git_global(true)
+        .git_exclude(true)
+        .ignore(true)
+        .parents(false)
+        .filter_entry(|e| {
+            if e.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                let name = e.file_name().to_string_lossy();
+                if DENY_DIRS.iter().any(|d| *d == name.as_ref()) {
+                    return false;
+                }
+            }
+            true
+        })
+        .build();
+
+    let mut hits: Vec<SearchHit> = Vec::new();
+    let mut searcher = Searcher::new();
+
+    'outer: for entry in walker {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+        let file_type = match entry.file_type() {
+            Some(ft) => ft,
+            None => continue,
+        };
+        if !file_type.is_file() {
+            continue;
+        }
+        let path = entry.path();
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        let kind = classify_ext(ext);
+        if !matches!(kind, Some("markdown") | Some("text")) {
+            continue;
+        }
+
+        if hits.len() >= limit {
+            break 'outer;
+        }
+
+        let path_str = path.to_string_lossy().to_string();
+        let remaining = limit.saturating_sub(hits.len());
+        let mut file_hits: Vec<SearchHit> = Vec::new();
+
+        let _ = searcher.search_path(
+            &matcher,
+            path,
+            sinks::UTF8(|line_num, line_text| {
+                if file_hits.len() >= remaining {
+                    return Ok(false);
+                }
+                let trimmed_line = line_text.trim_end_matches(['\r', '\n']);
+                let (start, end) = match matcher.find(trimmed_line.as_bytes()) {
+                    Ok(Some(m)) => (m.start(), m.end()),
+                    _ => (0, 0),
+                };
+                file_hits.push(SearchHit {
+                    path: path_str.clone(),
+                    line: line_num,
+                    content: trimmed_line.to_string(),
+                    match_start: start,
+                    match_end: end,
+                });
+                Ok(true)
+            }),
+        );
+
+        hits.extend(file_hits);
+    }
+
+    Ok(hits)
 }
 
 #[tauri::command]
