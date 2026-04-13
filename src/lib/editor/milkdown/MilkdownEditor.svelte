@@ -5,6 +5,10 @@
   import { gfm } from "@milkdown/preset-gfm";
   import { listener, listenerCtx } from "@milkdown/plugin-listener";
   import { history } from "@milkdown/plugin-history";
+  import { clipboard } from "@milkdown/plugin-clipboard";
+  import { indent } from "@milkdown/plugin-indent";
+  import { prism } from "@milkdown/plugin-prism";
+  import { configurePrism } from "./prism";
   import { slash, configSlash } from "./slashCommand";
   import {
     wikiLinkPlugin,
@@ -50,6 +54,7 @@
               if (md !== prev) onChange(md);
             });
             configSlash(ctx);
+            configurePrism(ctx);
             ctx.set(wikiLinkConfigCtx.key, {
               onClick: onWikiLinkClick,
               isResolved: isWikiLinkResolved,
@@ -60,6 +65,9 @@
           .use(gfm)
           .use(listener)
           .use(history)
+          .use(clipboard)
+          .use(indent)
+          .use(prism)
           .use(slash)
           .use(wikiLinkPlugin)
           .create();
@@ -337,5 +345,107 @@
   :global(.marrow-wikilink-item .wl-folder) {
     font-size: 0.75rem;
     color: oklch(var(--bc) / 0.5);
+  }
+
+  /* Prism token colors — light variant (default). Tuned against github-light. */
+  :global(.milkdown-host .ProseMirror .token.comment),
+  :global(.milkdown-host .ProseMirror .token.prolog),
+  :global(.milkdown-host .ProseMirror .token.doctype),
+  :global(.milkdown-host .ProseMirror .token.cdata) {
+    color: #6a737d;
+    font-style: italic;
+  }
+  :global(.milkdown-host .ProseMirror .token.punctuation) {
+    color: #24292e;
+  }
+  :global(.milkdown-host .ProseMirror .token.property),
+  :global(.milkdown-host .ProseMirror .token.tag),
+  :global(.milkdown-host .ProseMirror .token.boolean),
+  :global(.milkdown-host .ProseMirror .token.number),
+  :global(.milkdown-host .ProseMirror .token.constant),
+  :global(.milkdown-host .ProseMirror .token.symbol),
+  :global(.milkdown-host .ProseMirror .token.deleted) {
+    color: #005cc5;
+  }
+  :global(.milkdown-host .ProseMirror .token.selector),
+  :global(.milkdown-host .ProseMirror .token.attr-name),
+  :global(.milkdown-host .ProseMirror .token.string),
+  :global(.milkdown-host .ProseMirror .token.char),
+  :global(.milkdown-host .ProseMirror .token.builtin),
+  :global(.milkdown-host .ProseMirror .token.inserted) {
+    color: #032f62;
+  }
+  :global(.milkdown-host .ProseMirror .token.operator),
+  :global(.milkdown-host .ProseMirror .token.entity),
+  :global(.milkdown-host .ProseMirror .token.url),
+  :global(.milkdown-host .ProseMirror .language-css .token.string),
+  :global(.milkdown-host .ProseMirror .style .token.string) {
+    color: #d73a49;
+  }
+  :global(.milkdown-host .ProseMirror .token.atrule),
+  :global(.milkdown-host .ProseMirror .token.attr-value),
+  :global(.milkdown-host .ProseMirror .token.keyword) {
+    color: #d73a49;
+  }
+  :global(.milkdown-host .ProseMirror .token.function),
+  :global(.milkdown-host .ProseMirror .token.class-name) {
+    color: #6f42c1;
+  }
+  :global(.milkdown-host .ProseMirror .token.regex),
+  :global(.milkdown-host .ProseMirror .token.important),
+  :global(.milkdown-host .ProseMirror .token.variable) {
+    color: #e36209;
+  }
+  :global(.milkdown-host .ProseMirror .token.important),
+  :global(.milkdown-host .ProseMirror .token.bold) {
+    font-weight: bold;
+  }
+  :global(.milkdown-host .ProseMirror .token.italic) {
+    font-style: italic;
+  }
+
+  /* Dark variant — tuned against github-dark. */
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.comment),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.prolog),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.doctype),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.cdata) {
+    color: #8b949e;
+  }
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.punctuation) {
+    color: #c9d1d9;
+  }
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.property),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.tag),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.boolean),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.number),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.constant),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.symbol),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.deleted) {
+    color: #79c0ff;
+  }
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.selector),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.attr-name),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.string),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.char),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.builtin),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.inserted) {
+    color: #a5d6ff;
+  }
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.operator),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.entity),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.url),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.atrule),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.attr-value),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.keyword) {
+    color: #ff7b72;
+  }
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.function),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.class-name) {
+    color: #d2a8ff;
+  }
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.regex),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.important),
+  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.variable) {
+    color: #ffa657;
   }
 </style>
