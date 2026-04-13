@@ -5,13 +5,15 @@
   import { readTextFile, writeTextFile } from "$lib/workspace/tauri";
   import MilkdownEditor from "$lib/editor/milkdown/MilkdownEditor.svelte";
   import { debounce } from "$lib/utils/debounce";
-  import { showError } from "$lib/stores/toastStore.svelte";
+  import { showError, showWarning } from "$lib/stores/toastStore.svelte";
 
   let { tab }: { tab: Tab } = $props();
 
   let loaded = $state(false);
   let initialContent = $state("");
   let loadError = $state<string | null>(null);
+  let reloadKey = $state(0);
+  let lastHandledToken = 0;
 
   let currentContent = "";
   let savedContent = "";
@@ -64,13 +66,41 @@
   onMount(() => {
     (async () => {
       try {
-        const content = await readTextFile(tab.path);
-        initialContent = content;
-        currentContent = content;
-        savedContent = content;
+        const result = await readTextFile(tab.path);
+        initialContent = result.content;
+        currentContent = result.content;
+        savedContent = result.content;
+        workspace.patchTab(tab.id, { lastKnownMtime: result.mtime });
         loaded = true;
       } catch (e) {
         loadError = e instanceof Error ? e.message : String(e);
+      }
+    })();
+  });
+
+  $effect(() => {
+    const token = tab.reloadToken ?? 0;
+    if (!loaded || token === lastHandledToken) return;
+    lastHandledToken = token;
+    if (tab.isDirty) {
+      showWarning(`${tab.title} changed on disk — still editing, not reloaded`);
+      return;
+    }
+    (async () => {
+      try {
+        const result = await readTextFile(tab.path);
+        initialContent = result.content;
+        currentContent = result.content;
+        savedContent = result.content;
+        workspace.patchTab(tab.id, {
+          isDirty: false,
+          lastKnownMtime: result.mtime,
+        });
+        reloadKey++;
+      } catch (e) {
+        showError(
+          `Failed to reload ${tab.title}: ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
     })();
   });
@@ -82,7 +112,9 @@
   {#if loadError}
     <div class="p-6 text-error text-sm">Failed to load: {loadError}</div>
   {:else if loaded}
-    <MilkdownEditor initial={initialContent} onChange={handleChange} />
+    {#key reloadKey}
+      <MilkdownEditor initial={initialContent} onChange={handleChange} />
+    {/key}
   {:else}
     <div class="p-6 text-base-content/40 text-sm">Loading…</div>
   {/if}

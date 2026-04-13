@@ -2,6 +2,9 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 use std::time::UNIX_EPOCH;
+use tauri::{AppHandle, State};
+
+use crate::core::fs_watch::WatcherState;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DirEntry {
@@ -23,6 +26,12 @@ pub struct WriteResult {
     pub mtime: u64,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ReadResult {
+    pub content: String,
+    pub mtime: u64,
+}
+
 fn mtime_ms(md: &std::fs::Metadata) -> u64 {
     md.modified()
         .ok()
@@ -32,7 +41,11 @@ fn mtime_ms(md: &std::fs::Metadata) -> u64 {
 }
 
 #[tauri::command]
-pub fn open_workspace(path: String) -> Result<WorkspaceInfo, String> {
+pub fn open_workspace(
+    path: String,
+    app: AppHandle,
+    state: State<'_, WatcherState>,
+) -> Result<WorkspaceInfo, String> {
     let p = Path::new(&path);
     if !p.exists() {
         return Err(format!("Path does not exist: {}", path));
@@ -40,6 +53,7 @@ pub fn open_workspace(path: String) -> Result<WorkspaceInfo, String> {
     if !p.is_dir() {
         return Err(format!("Path is not a directory: {}", path));
     }
+    state.start(&app, p)?;
     let name = p
         .file_name()
         .map(|n| n.to_string_lossy().to_string())
@@ -81,8 +95,14 @@ pub fn list_directory(path: String) -> Result<Vec<DirEntry>, String> {
 }
 
 #[tauri::command]
-pub fn read_text_file(path: String) -> Result<String, String> {
-    fs::read_to_string(&path).map_err(|e| format!("Failed to read {}: {}", path, e))
+pub fn read_text_file(path: String) -> Result<ReadResult, String> {
+    let content =
+        fs::read_to_string(&path).map_err(|e| format!("Failed to read {}: {}", path, e))?;
+    let md = fs::metadata(&path).map_err(|e| e.to_string())?;
+    Ok(ReadResult {
+        content,
+        mtime: mtime_ms(&md),
+    })
 }
 
 #[tauri::command]
@@ -95,10 +115,12 @@ pub fn write_text_file(
     path: String,
     contents: String,
     expected_mtime: Option<u64>,
+    state: State<'_, WatcherState>,
 ) -> Result<WriteResult, String> {
     if let Some(expected) = expected_mtime {
         if let Ok(md) = fs::metadata(&path) {
             let actual = mtime_ms(&md);
+            // 1ms slack absorbs filesystem mtime rounding.
             if actual > expected + 1 {
                 return Err(format!(
                     "File changed on disk (expected mtime {}, actual {})",
@@ -107,6 +129,8 @@ pub fn write_text_file(
             }
         }
     }
+    let p = Path::new(&path);
+    state.note_own_write(p);
     fs::write(&path, contents).map_err(|e| format!("Failed to write {}: {}", path, e))?;
     let md = fs::metadata(&path).map_err(|e| e.to_string())?;
     Ok(WriteResult {

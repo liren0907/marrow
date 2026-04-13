@@ -1,5 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { DirEntry, WorkspaceInfo, WriteResult } from "./types";
+import type {
+  DirEntry,
+  ReadResult,
+  WorkspaceInfo,
+  WriteResult,
+} from "./types";
 
 export async function openDirectoryDialog(): Promise<string | null> {
   try {
@@ -19,8 +24,8 @@ export function listDirectory(path: string): Promise<DirEntry[]> {
   return invoke<DirEntry[]>("list_directory", { path });
 }
 
-export function readTextFile(path: string): Promise<string> {
-  return invoke<string>("read_text_file", { path });
+export function readTextFile(path: string): Promise<ReadResult> {
+  return invoke<ReadResult>("read_text_file", { path });
 }
 
 export function readBinaryFile(path: string): Promise<Uint8Array> {

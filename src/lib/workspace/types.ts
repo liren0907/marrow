@@ -24,15 +24,27 @@ export interface WriteResult {
   mtime: number;
 }
 
+export interface ReadResult {
+  content: string;
+  mtime: number;
+}
+
+export type FsEventKind = "create" | "modify" | "remove" | "rename";
+
+export interface FsEventPayload {
+  kind: FsEventKind;
+  paths: string[];
+}
+
 export interface Tab {
   id: string;
   path: string;
   kind: FileKind;
   title: string;
   isDirty: boolean;
-  draftMarkdown?: string;
-  lastSavedHash?: string;
   lastKnownMtime?: number;
+  reloadToken?: number;
+  missing?: boolean;
 }
 
 export interface Pane {

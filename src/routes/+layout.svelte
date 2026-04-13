@@ -4,6 +4,7 @@
   import Sidebar from "./Sidebar.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
   import { workspace } from "$lib/workspace/workspace.svelte";
+  import { initFsEvents } from "$lib/workspace/fsEvents";
   import { showError, showSuccess } from "$lib/stores/toastStore.svelte";
   import "../app.css";
 
@@ -44,6 +45,14 @@
     document.documentElement.setAttribute("data-theme", savedTheme);
 
     let unlisten: (() => void) | null = null;
+    let unlistenFs: (() => void) | null = null;
+    (async () => {
+      try {
+        unlistenFs = await initFsEvents();
+      } catch (e) {
+        console.warn("[layout] fs-event listener failed", e);
+      }
+    })();
     (async () => {
       try {
         unlisten = await getCurrentWebview().onDragDropEvent(async (event) => {
@@ -72,6 +81,7 @@
 
     return () => {
       if (unlisten) unlisten();
+      if (unlistenFs) unlistenFs();
     };
   });
 

@@ -33,6 +33,10 @@ export function showError(message: string, duration: number = 5000): string {
     return addToast(message, 'error', duration);
 }
 
+export function showWarning(message: string, duration: number = 5000): string {
+    return addToast(message, 'warning', duration);
+}
+
 export function dismissToast(id: string) {
     const idx = toasts.findIndex(t => t.id === id);
     if (idx !== -1) toasts.splice(idx, 1);

@@ -5,6 +5,7 @@
   import { gfm } from "@milkdown/preset-gfm";
   import { listener, listenerCtx } from "@milkdown/plugin-listener";
   import { history } from "@milkdown/plugin-history";
+  import { slash, configSlash } from "./slashCommand";
 
   let {
     initial,
@@ -26,11 +27,13 @@
             ctx.get(listenerCtx).markdownUpdated((_ctx, md, prev) => {
               if (md !== prev) onChange(md);
             });
+            configSlash(ctx);
           })
           .use(commonmark)
           .use(gfm)
           .use(listener)
           .use(history)
+          .use(slash)
           .create();
 
         if (destroyed) {
@@ -182,5 +185,48 @@
     border: none;
     border-top: 1px solid oklch(var(--b3));
     margin: 1.5rem 0;
+  }
+
+  :global(.marrow-slash-menu) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    min-width: 14rem;
+    max-width: 20rem;
+    padding: 0.25rem;
+    background-color: oklch(var(--b1));
+    border: 1px solid oklch(var(--b3));
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 24px oklch(0 0 0 / 0.18);
+    display: none;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  :global(.marrow-slash-menu[data-show="true"]) {
+    display: flex;
+  }
+  :global(.marrow-slash-item) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: oklch(var(--bc));
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+  }
+  :global(.marrow-slash-item.selected),
+  :global(.marrow-slash-item:hover) {
+    background-color: oklch(var(--b2));
+  }
+  :global(.marrow-slash-item .slash-hint) {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.75rem;
+    color: oklch(var(--bc) / 0.5);
   }
 </style>

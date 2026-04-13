@@ -1,4 +1,4 @@
-import type { Pane, Tab, WorkspaceInfo } from "./types";
+import type { FsEventKind, Pane, Tab, WorkspaceInfo } from "./types";
 import { classifyFile, basename } from "./fileKind";
 import * as cmd from "./tauri";
 
@@ -100,6 +100,20 @@ export const workspace = {
       if (tab) {
         Object.assign(tab, updates);
         return;
+      }
+    }
+  },
+
+  notifyExternalChange(path: string, kind: FsEventKind): void {
+    for (const pane of state.panes) {
+      for (const tab of pane.tabs) {
+        if (tab.path !== path) continue;
+        if (kind === "remove") {
+          tab.missing = true;
+        } else {
+          tab.missing = false;
+          tab.reloadToken = (tab.reloadToken ?? 0) + 1;
+        }
       }
     }
   },
