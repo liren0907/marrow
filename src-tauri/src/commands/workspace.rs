@@ -52,6 +52,7 @@ const DENY_DIRS: &[&str] = &[
     ".git",
     "node_modules",
     ".obsidian",
+    ".marrow",
     "target",
     "dist",
     "build",

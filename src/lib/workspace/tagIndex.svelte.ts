@@ -120,3 +120,10 @@ export function tagList(): { tag: string; count: number }[] {
 export function filesForTag(tag: string): string[] {
   return tags.byTag.get(tag) ?? [];
 }
+
+// Returns all tags found in a file in document order (first-occurrence first).
+// Used by graph view's "color by tag" mode to pick a primary tag.
+export function tagsForFile(sourcePath: string): string[] {
+  const set = bySource.get(sourcePath);
+  return set ? Array.from(set) : [];
+}
