@@ -16,7 +16,6 @@
     labelMode = $bindable<LabelMode>(),
     showEdgeArrows = $bindable<boolean>(),
     edgeWidth = $bindable<number>(),
-    showMinimap = $bindable<boolean>(),
     folderOptions,
     tagOptions,
     onReset,
@@ -33,7 +32,6 @@
     labelMode: LabelMode;
     showEdgeArrows: boolean;
     edgeWidth: number;
-    showMinimap: boolean;
     folderOptions: string[];
     tagOptions: string[];
     onReset: () => void;
@@ -283,17 +281,6 @@
           {/each}
         </div>
       </div>
-
-      <label
-        class="flex items-center gap-2 text-[11px] cursor-pointer select-none"
-      >
-        <input
-          type="checkbox"
-          class="checkbox checkbox-xs"
-          bind:checked={showMinimap}
-        />
-        <span>Show minimap</span>
-      </label>
     </div>
   </div>
 

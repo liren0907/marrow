@@ -3,8 +3,6 @@
   import cytoscape from "cytoscape";
   import fcose from "cytoscape-fcose";
   import cola from "cytoscape-cola";
-  import navigator from "cytoscape-navigator";
-  import "cytoscape-navigator/cytoscape.js-navigator.css";
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { backlinks } from "$lib/workspace/backlinkIndex.svelte";
   import { tags, tagList, tagsForFile } from "$lib/workspace/tagIndex.svelte";
@@ -27,7 +25,6 @@
     labelMode: LabelMode;
     showEdgeArrows: boolean;
     edgeWidth: number;
-    showMinimap: boolean;
   }
 
   const DEFAULT_PREFS: DisplayPrefs = {
@@ -36,7 +33,6 @@
     labelMode: "always",
     showEdgeArrows: true,
     edgeWidth: 1,
-    showMinimap: true,
   };
 
   const NODE_SIZE_MAP: Record<NodeSizePreset, [number, number]> = {
@@ -86,16 +82,10 @@
     if (registered) return;
     cytoscape.use(fcose);
     cytoscape.use(cola);
-    cytoscape.use(navigator);
     registered = true;
   }
 
   let host: HTMLDivElement;
-  // navHost is conditionally mounted via {#if showMinimap}, so it must be
-  // reactive state — a plain let would silently miss the mount/unmount edges.
-  // Safe to put in $state because it's just an HTMLDivElement reference,
-  // not an editor / ProseMirror / CodeMirror handle (Rule #1).
-  let navHost = $state<HTMLDivElement | null>(null);
   // IMPORTANT: cytoscape Core handle MUST live in a plain `let` (not $state).
   // Svelte 5's proxy will deep-observe internal handles and corrupt them.
   // Same rule as Milkdown Editor / ProseMirror EditorView / CodeMirror EditorView.
@@ -103,7 +93,6 @@
   // The currently-running cola layout (infinite mode). Held so we can stop
   // it when the tab leaves view — also a plain `let`, not $state.
   let currentLayout: cytoscape.Layouts | null = null;
-  let cyNavigator: { destroy: () => void } | null = null;
   let themeObserver: MutationObserver | null = null;
   let visibilityObserver: IntersectionObserver | null = null;
   let lastFileIndexLength = 0;
@@ -129,8 +118,6 @@
   let labelMode = $state<LabelMode>(initialDisplay.labelMode);
   let showEdgeArrows = $state(initialDisplay.showEdgeArrows);
   let edgeWidth = $state(initialDisplay.edgeWidth);
-  let showMinimap = $state(initialDisplay.showMinimap);
-  let navigatorInitialized = false;
 
   // Phase 6 filters
   let folderFilter: string[] = $state([]);
@@ -585,23 +572,6 @@
     }
   }
 
-  function initNavigator(): void {
-    if (!cy || !navHost || cyNavigator) return;
-    cyNavigator = (
-      cy as unknown as {
-        navigator: (opts: object) => { destroy: () => void };
-      }
-    ).navigator({
-      container: navHost,
-      viewLiveFramerate: 0,
-      thumbnailEventFramerate: 30,
-      thumbnailLiveFramerate: false,
-      dblClickDelay: 200,
-      removeCustomContainer: false,
-      rerenderDelay: 100,
-    });
-  }
-
   onMount(() => {
     ensureExtensions();
     void initGraph();
@@ -715,11 +685,6 @@
       scheduleSaveLayout();
     });
 
-    // Initialize mini-map (cytoscape-navigator) if enabled.
-    // Later toggles of showMinimap are handled by a dedicated $effect.
-    if (showMinimap) initNavigator();
-    navigatorInitialized = true;
-
     lastFileIndexLength = workspace.fileIndex.length;
     lastBacklinksBuilt = backlinks.lastBuilt;
 
@@ -766,8 +731,6 @@
     visibilityObserver = null;
     themeObserver?.disconnect();
     themeObserver = null;
-    cyNavigator?.destroy();
-    cyNavigator = null;
     stopLayout();
     cy?.destroy();
     cy = null;
@@ -814,7 +777,6 @@
       labelMode,
       showEdgeArrows,
       edgeWidth,
-      showMinimap,
     });
   });
 
@@ -827,17 +789,6 @@
     void edgeWidth;
     if (!cy) return;
     cy.style(styleFromTheme());
-  });
-
-  // Minimap lifecycle. initGraph() handles first creation; this handles toggles.
-  $effect(() => {
-    if (!navigatorInitialized) return;
-    if (showMinimap && !cyNavigator) {
-      queueMicrotask(() => initNavigator());
-    } else if (!showMinimap && cyNavigator) {
-      cyNavigator.destroy();
-      cyNavigator = null;
-    }
   });
 </script>
 
@@ -855,20 +806,12 @@
     bind:labelMode
     bind:showEdgeArrows
     bind:edgeWidth
-    bind:showMinimap
     {folderOptions}
     {tagOptions}
     onReset={resetFilters}
     onFit={fitGraph}
     onResetLayout={resetLayoutToDefault}
   />
-
-  {#if showMinimap}
-    <div
-      bind:this={navHost}
-      class="cytoscape-navigator-host absolute bottom-2 right-2 z-10 w-[140px] h-[90px] bg-base-100/90 border border-base-300 rounded shadow-sm overflow-hidden"
-    ></div>
-  {/if}
 </div>
 
 {#if hoverPath}
