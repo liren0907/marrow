@@ -95,21 +95,44 @@
         label: f.name.replace(/\.md$/i, ""),
       },
     }));
-    const edges: cytoscape.ElementDefinition[] = [];
-    let edgeId = 0;
+    // Dedup edges by (source, target). Multi-link → single edge.
+    // Bidirectional pairs collapse into one edge with `bi` class.
+    const edgeMap = new Map<
+      string,
+      { source: string; target: string; bidirectional: boolean }
+    >();
     for (const [, entries] of backlinks.byTarget) {
       for (const entry of entries) {
         const targetPath = workspace.resolveBasename(entry.target);
         if (!targetPath || targetPath === entry.sourcePath) continue;
-        edges.push({
-          data: {
-            id: `e${edgeId++}`,
+
+        const key = `${entry.sourcePath}→${targetPath}`;
+        const reverseKey = `${targetPath}→${entry.sourcePath}`;
+
+        const reverse = edgeMap.get(reverseKey);
+        if (reverse) {
+          reverse.bidirectional = true;
+          continue;
+        }
+        if (!edgeMap.has(key)) {
+          edgeMap.set(key, {
             source: entry.sourcePath,
             target: targetPath,
-          },
-        });
+            bidirectional: false,
+          });
+        }
       }
     }
+    const edges: cytoscape.ElementDefinition[] = Array.from(
+      edgeMap.values(),
+    ).map((e, i) => ({
+      data: {
+        id: `e${i}`,
+        source: e.source,
+        target: e.target,
+      },
+      classes: e.bidirectional ? "bi" : "uni",
+    }));
     return { nodes, edges };
   }
 
@@ -126,14 +149,13 @@
           "background-color": "data(color)" as unknown as string,
           label: "data(label)",
           color: `oklch(${bc})`,
-          "font-size": "10px",
+          "font-size": "9px",
           "text-valign": "bottom",
           "text-halign": "center",
-          "text-margin-y": 4,
-          // Hub-and-spoke visual: more connections → bigger node.
-          // Range 8px (isolated) → 36px (very connected hub).
-          width: "mapData(degree, 0, 30, 8, 36)" as unknown as number,
-          height: "mapData(degree, 0, 30, 8, 36)" as unknown as number,
+          "text-margin-y": 6,
+          // Compact ball sizing. Hub still a little bigger for visual cue.
+          width: "mapData(degree, 0, 30, 4, 12)" as unknown as number,
+          height: "mapData(degree, 0, 30, 4, 12)" as unknown as number,
           "border-width": 0,
         },
       },
@@ -149,11 +171,26 @@
         style: {
           width: 1,
           "line-color": `oklch(${b3} / 0.4)`,
-          "target-arrow-color": `oklch(${b3} / 0.6)`,
-          "target-arrow-shape": "triangle",
           "curve-style": "bezier",
-          "arrow-scale": 0.6,
+          "arrow-scale": 0.5,
           opacity: 0.7,
+        },
+      },
+      {
+        selector: "edge.uni",
+        style: {
+          "target-arrow-shape": "triangle",
+          "target-arrow-color": `oklch(${b3} / 0.6)`,
+          "source-arrow-shape": "none",
+        },
+      },
+      {
+        selector: "edge.bi",
+        style: {
+          "target-arrow-shape": "triangle",
+          "target-arrow-color": `oklch(${b3} / 0.6)`,
+          "source-arrow-shape": "triangle",
+          "source-arrow-color": `oklch(${b3} / 0.6)`,
         },
       },
       // Hover ego-network: dim everything, then bring focused subgraph back.

@@ -113,6 +113,14 @@
         <span class="material-symbols-rounded text-[16px]">close</span>
         <span class="text-xs">Close workspace</span>
       </button>
+      <button
+        onclick={() => workspace.openGraph()}
+        class="btn btn-ghost btn-xs btn-square text-base-content/60"
+        title="Open graph view (⌘⇧G)"
+        aria-label="Open graph view"
+      >
+        <span class="material-symbols-rounded text-[16px]">hub</span>
+      </button>
     {:else}
       <div class="flex-1"></div>
     {/if}
