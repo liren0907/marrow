@@ -11,8 +11,13 @@
     outlines,
     registerTabScroll,
     unregisterTabScroll,
+    registerTabPeek,
+    unregisterTabPeek,
     type Heading,
   } from "$lib/workspace/tabRegistry.svelte";
+  import { peek } from "$lib/peek/peekState.svelte";
+  import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
+  import type { PeekRequest } from "$lib/editor/milkdown/MilkdownEditor.svelte";
   import { openConflict } from "$lib/conflict/conflictState.svelte";
   import MilkdownEditor from "$lib/editor/milkdown/MilkdownEditor.svelte";
   import type { WikiLinkSuggestion } from "$lib/editor/milkdown/wikiLink/suggest";
@@ -165,13 +170,34 @@
     outlines.byTab.set(tab.id, headings);
   }
 
-  function handleEditorReady(api: { scrollToPos: (pos: number) => void }) {
+  function handleEditorReady(api: {
+    scrollToPos: (pos: number) => void;
+    peekAtCursor: () => void;
+  }) {
     registerTabScroll(tab.id, api.scrollToPos);
+    registerTabPeek(tab.id, api.peekAtCursor);
+  }
+
+  function handlePeekRequest(req: PeekRequest): void {
+    if (req.kind === "wikilink") {
+      const path = workspace.resolveBasename(req.target);
+      if (!path) {
+        showWarning(`Cannot find "${req.target}"`);
+        return;
+      }
+      void peek.push(path, req.section);
+      return;
+    }
+    // Word fallback: open quick-open pre-filled with the word.
+    quickOpen.query = req.word;
+    quickOpen.selectedIdx = 0;
+    quickOpen.isOpen = true;
   }
 
   onDestroy(() => {
     unregisterTabSave(tab.id);
     unregisterTabScroll(tab.id);
+    unregisterTabPeek(tab.id);
     outlines.byTab.delete(tab.id);
   });
 
@@ -218,6 +244,7 @@
         {getTransclusionSuggestions}
         onReady={handleEditorReady}
         onOutlineUpdate={handleOutlineUpdate}
+        onPeekRequest={handlePeekRequest}
       />
     {/key}
   {:else}

@@ -1,4 +1,5 @@
 import { workspace } from "./workspace.svelte";
+import { tabPeekRegistry } from "./tabRegistry.svelte";
 import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
 import { toggleBottomPanel } from "$lib/panels/bottomPanelState.svelte";
 import { toggleSearch } from "$lib/search/searchState.svelte";
@@ -84,6 +85,13 @@ export function initShortcuts(): () => void {
     if (k === "g" && e.shiftKey) {
       e.preventDefault();
       workspace.openGraph();
+      return;
+    }
+    // Cmd+Shift+Space — peek at cursor in active markdown tab
+    if ((k === " " || e.code === "Space") && e.shiftKey) {
+      e.preventDefault();
+      const pane = workspace.activePane;
+      if (pane.activeTabId) tabPeekRegistry.get(pane.activeTabId)?.();
       return;
     }
     // Cmd+1 / Cmd+2 — focus pane by index

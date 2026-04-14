@@ -1,4 +1,9 @@
-export type ActiveTab = "backlinks" | "unresolved" | "tags" | "outline";
+export type ActiveTab =
+  | "backlinks"
+  | "unresolved"
+  | "tags"
+  | "outline"
+  | "peek";
 
 const STORAGE_KEY = "marrow.bottomPanel";
 
@@ -20,6 +25,8 @@ function loadPersisted(): Persisted {
     if (parsed.activeTab === "unresolved") activeTab = "unresolved";
     else if (parsed.activeTab === "tags") activeTab = "tags";
     else if (parsed.activeTab === "outline") activeTab = "outline";
+    // Peek is session-only — don't restore it (peek.layers is empty on load).
+    // Fallback to backlinks instead.
     return {
       isOpen: !!parsed.isOpen,
       height: typeof parsed.height === "number" ? parsed.height : 220,

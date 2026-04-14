@@ -22,3 +22,13 @@ export function registerTabScroll(
 export function unregisterTabScroll(tabId: string): void {
   tabScrollRegistry.delete(tabId);
 }
+
+export const tabPeekRegistry = new Map<string, () => void>();
+
+export function registerTabPeek(tabId: string, fn: () => void): void {
+  tabPeekRegistry.set(tabId, fn);
+}
+
+export function unregisterTabPeek(tabId: string): void {
+  tabPeekRegistry.delete(tabId);
+}

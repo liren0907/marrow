@@ -10,6 +10,8 @@
   import UnresolvedTab from "./UnresolvedTab.svelte";
   import TagsTab from "./TagsTab.svelte";
   import OutlineTab from "./OutlineTab.svelte";
+  import PeekPanel from "$lib/peek/PeekPanel.svelte";
+  import { peek } from "$lib/peek/peekState.svelte";
   import type { ActiveTab } from "./bottomPanelState.svelte";
 
   const MIN_HEIGHT = 120;
@@ -133,6 +135,18 @@
       >
         Outline
       </button>
+      <button
+        type="button"
+        class="px-2 py-0.5 text-xs rounded"
+        class:bg-base-200={bottomPanel.activeTab === "peek"}
+        class:font-semibold={bottomPanel.activeTab === "peek"}
+        onclick={() => selectTab("peek")}
+      >
+        Peek
+        {#if peek.depth > 0}
+          <span class="ml-1 text-base-content/50">({peek.depth})</span>
+        {/if}
+      </button>
       {#if backlinks.isBuilding || tags.isBuilding}
         <span class="ml-2 text-[10px] text-base-content/40 italic">
           building index…
@@ -156,6 +170,8 @@
     <TagsTab />
   {:else if bottomPanel.activeTab === "outline"}
     <OutlineTab />
+  {:else if bottomPanel.activeTab === "peek"}
+    <PeekPanel />
   {/if}
 </div>
 

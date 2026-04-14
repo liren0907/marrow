@@ -32,6 +32,10 @@
     type TransclusionSuggestion,
   } from "./transclusion";
 
+  export type PeekRequest =
+    | { kind: "wikilink"; target: string; section: string | null }
+    | { kind: "word"; word: string };
+
   let {
     initial,
     onChange,
@@ -42,6 +46,7 @@
     getTransclusionSuggestions = () => [],
     onReady = null,
     onOutlineUpdate = null,
+    onPeekRequest = null,
   }: {
     initial: string;
     onChange: (md: string) => void;
@@ -50,8 +55,14 @@
     isWikiLinkResolved?: (target: string) => boolean;
     onTransclusionClick?: TransclusionClickHandler | null;
     getTransclusionSuggestions?: (query: string) => TransclusionSuggestion[];
-    onReady?: ((api: { scrollToPos: (pos: number) => void }) => void) | null;
+    onReady?:
+      | ((api: {
+          scrollToPos: (pos: number) => void;
+          peekAtCursor: () => void;
+        }) => void)
+      | null;
     onOutlineUpdate?: ((headings: Heading[]) => void) | null;
+    onPeekRequest?: ((request: PeekRequest) => void) | null;
   } = $props();
 
   let host: HTMLDivElement;
@@ -95,6 +106,39 @@
       const tr = view.state.tr.setSelection(TextSelection.near(resolved));
       view.dispatch(tr.scrollIntoView());
       view.focus();
+    });
+  }
+
+  function peekAtCursor(): void {
+    if (!editor || !onPeekRequest) return;
+    editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const from = view.state.selection.$from;
+
+      // Check if cursor is adjacent to a wikiLink inline node.
+      const candidates = [from.nodeBefore, from.nodeAfter];
+      for (const node of candidates) {
+        if (!node || node.type.name !== "wikiLink") continue;
+        const targetRaw = String(node.attrs.target ?? "");
+        const hashIdx = targetRaw.indexOf("#");
+        const target = hashIdx >= 0 ? targetRaw.slice(0, hashIdx) : targetRaw;
+        const section = hashIdx >= 0 ? targetRaw.slice(hashIdx + 1) : null;
+        onPeekRequest!({ kind: "wikilink", target, section });
+        return;
+      }
+
+      // Fallback: extract word at cursor within the parent text block.
+      const parent = from.parent;
+      const offset = from.parentOffset;
+      const blockText = parent.textContent;
+      if (!blockText) return;
+      const isWordChar = (ch: string): boolean => /[\p{L}\p{N}_-]/u.test(ch);
+      let start = offset;
+      let end = offset;
+      while (start > 0 && isWordChar(blockText.charAt(start - 1))) start--;
+      while (end < blockText.length && isWordChar(blockText.charAt(end))) end++;
+      const word = blockText.slice(start, end).trim();
+      if (word.length > 0) onPeekRequest!({ kind: "word", word });
     });
   }
 
@@ -160,9 +204,9 @@
           if (!a && !b) suppressNextChange = false;
         });
 
-        // Push initial outline + hand the scroll API to the parent.
+        // Push initial outline + hand the scroll / peek API to the parent.
         pushOutline();
-        onReady?.({ scrollToPos });
+        onReady?.({ scrollToPos, peekAtCursor });
       } catch (e) {
         errorMsg = e instanceof Error ? e.message : String(e);
         console.error("[Milkdown] create failed", e);

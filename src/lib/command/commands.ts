@@ -1,10 +1,12 @@
 import { workspace } from "$lib/workspace/workspace.svelte";
+import { tabPeekRegistry } from "$lib/workspace/tabRegistry.svelte";
 import {
   bottomPanel,
   toggleBottomPanel,
 } from "$lib/panels/bottomPanelState.svelte";
 import { toggleSearch } from "$lib/search/searchState.svelte";
 import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
+import { peek } from "$lib/peek/peekState.svelte";
 
 export interface Command {
   id: string;
@@ -41,6 +43,22 @@ export function getCommands(): Command[] {
       category: "Navigation",
       shortcut: "⇧⌘G",
       action: () => workspace.openGraph(),
+    },
+    {
+      id: "peek-at-cursor",
+      title: "Peek at cursor",
+      category: "Navigation",
+      shortcut: "⇧⌘Space",
+      action: () => {
+        const pane = workspace.activePane;
+        if (pane.activeTabId) tabPeekRegistry.get(pane.activeTabId)?.();
+      },
+    },
+    {
+      id: "clear-peek",
+      title: "Clear peek stack",
+      category: "Navigation",
+      action: () => peek.clear(),
     },
 
     // View
@@ -85,6 +103,15 @@ export function getCommands(): Command[] {
       action: () => {
         bottomPanel.isOpen = true;
         bottomPanel.activeTab = "outline";
+      },
+    },
+    {
+      id: "show-peek",
+      title: "Show peek panel",
+      category: "View",
+      action: () => {
+        bottomPanel.isOpen = true;
+        bottomPanel.activeTab = "peek";
       },
     },
 
