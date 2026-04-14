@@ -17,6 +17,65 @@
   import type { Tab } from "$lib/workspace/types";
   import GraphToolbar from "./GraphToolbar.svelte";
 
+  type NodeSizePreset = "xs" | "sm" | "md" | "lg" | "xl";
+  type LabelSizePreset = "hidden" | "xs" | "sm" | "md" | "lg";
+  type LabelMode = "always" | "hover";
+
+  interface DisplayPrefs {
+    nodeSize: NodeSizePreset;
+    labelSize: LabelSizePreset;
+    labelMode: LabelMode;
+    showEdgeArrows: boolean;
+    edgeWidth: number;
+    showMinimap: boolean;
+  }
+
+  const DEFAULT_PREFS: DisplayPrefs = {
+    nodeSize: "sm",
+    labelSize: "sm",
+    labelMode: "always",
+    showEdgeArrows: true,
+    edgeWidth: 1,
+    showMinimap: true,
+  };
+
+  const NODE_SIZE_MAP: Record<NodeSizePreset, [number, number]> = {
+    xs: [2, 6],
+    sm: [4, 12],
+    md: [6, 18],
+    lg: [8, 24],
+    xl: [10, 30],
+  };
+
+  const LABEL_SIZE_MAP: Record<LabelSizePreset, number> = {
+    hidden: 0,
+    xs: 8,
+    sm: 9,
+    md: 10,
+    lg: 12,
+  };
+
+  const DISPLAY_STORAGE_KEY = "marrow.graph.display";
+
+  function loadDisplayPrefs(): DisplayPrefs {
+    if (typeof localStorage === "undefined") return { ...DEFAULT_PREFS };
+    try {
+      const raw = localStorage.getItem(DISPLAY_STORAGE_KEY);
+      if (!raw) return { ...DEFAULT_PREFS };
+      return { ...DEFAULT_PREFS, ...JSON.parse(raw) };
+    } catch {
+      return { ...DEFAULT_PREFS };
+    }
+  }
+
+  function saveDisplayPrefs(p: DisplayPrefs): void {
+    try {
+      localStorage.setItem(DISPLAY_STORAGE_KEY, JSON.stringify(p));
+    } catch {
+      // storage full / disabled — silently skip
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let { tab }: { tab: Tab } = $props();
 
@@ -32,7 +91,11 @@
   }
 
   let host: HTMLDivElement;
-  let navHost: HTMLDivElement;
+  // navHost is conditionally mounted via {#if showMinimap}, so it must be
+  // reactive state — a plain let would silently miss the mount/unmount edges.
+  // Safe to put in $state because it's just an HTMLDivElement reference,
+  // not an editor / ProseMirror / CodeMirror handle (Rule #1).
+  let navHost = $state<HTMLDivElement | null>(null);
   // IMPORTANT: cytoscape Core handle MUST live in a plain `let` (not $state).
   // Svelte 5's proxy will deep-observe internal handles and corrupt them.
   // Same rule as Milkdown Editor / ProseMirror EditorView / CodeMirror EditorView.
@@ -58,6 +121,16 @@
 
   type ColorMode = "default" | "folder" | "tag";
   let colorMode: ColorMode = $state("default");
+
+  // Display preferences (persisted to localStorage, exposed via GraphToolbar)
+  const initialDisplay = loadDisplayPrefs();
+  let nodeSize = $state<NodeSizePreset>(initialDisplay.nodeSize);
+  let labelSize = $state<LabelSizePreset>(initialDisplay.labelSize);
+  let labelMode = $state<LabelMode>(initialDisplay.labelMode);
+  let showEdgeArrows = $state(initialDisplay.showEdgeArrows);
+  let edgeWidth = $state(initialDisplay.edgeWidth);
+  let showMinimap = $state(initialDisplay.showMinimap);
+  let navigatorInitialized = false;
 
   // Phase 6 filters
   let folderFilter: string[] = $state([]);
@@ -141,21 +214,29 @@
     const bc = root.getPropertyValue("--bc").trim() || "0 0 0";
     const p = root.getPropertyValue("--p").trim() || "0.6 0.2 250";
     const b3 = root.getPropertyValue("--b3").trim() || "0.85 0 0";
+
+    const [nMin, nMax] = NODE_SIZE_MAP[nodeSize];
+    const fontPx = LABEL_SIZE_MAP[labelSize];
+    const labelHidden = fontPx === 0;
+    const baseTextOpacity = labelHidden || labelMode === "hover" ? 0 : 1;
+    const arrowShape = showEdgeArrows ? "triangle" : "none";
+    void p; // keep referenced for legacy symmetry; default color still uses --p via colorForNode
+
     return [
       {
         selector: "node",
         style: {
           // Per-node color computed by annotateColors() from colorMode.
           "background-color": "data(color)" as unknown as string,
-          label: "data(label)",
+          label: labelHidden ? "" : "data(label)",
           color: `oklch(${bc})`,
-          "font-size": "9px",
+          "font-size": `${fontPx || 9}px`,
+          "text-opacity": baseTextOpacity,
           "text-valign": "bottom",
           "text-halign": "center",
           "text-margin-y": 6,
-          // Compact ball sizing. Hub still a little bigger for visual cue.
-          width: "mapData(degree, 0, 30, 4, 12)" as unknown as number,
-          height: "mapData(degree, 0, 30, 4, 12)" as unknown as number,
+          width: `mapData(degree, 0, 30, ${nMin}, ${nMax})` as unknown as number,
+          height: `mapData(degree, 0, 30, ${nMin}, ${nMax})` as unknown as number,
           "border-width": 0,
         },
       },
@@ -169,7 +250,7 @@
       {
         selector: "edge",
         style: {
-          width: 1,
+          width: edgeWidth,
           "line-color": `oklch(${b3} / 0.4)`,
           "curve-style": "bezier",
           "arrow-scale": 0.5,
@@ -179,7 +260,7 @@
       {
         selector: "edge.uni",
         style: {
-          "target-arrow-shape": "triangle",
+          "target-arrow-shape": arrowShape,
           "target-arrow-color": `oklch(${b3} / 0.6)`,
           "source-arrow-shape": "none",
         },
@@ -187,9 +268,9 @@
       {
         selector: "edge.bi",
         style: {
-          "target-arrow-shape": "triangle",
+          "target-arrow-shape": arrowShape,
           "target-arrow-color": `oklch(${b3} / 0.6)`,
-          "source-arrow-shape": "triangle",
+          "source-arrow-shape": arrowShape,
           "source-arrow-color": `oklch(${b3} / 0.6)`,
         },
       },
@@ -504,6 +585,23 @@
     }
   }
 
+  function initNavigator(): void {
+    if (!cy || !navHost || cyNavigator) return;
+    cyNavigator = (
+      cy as unknown as {
+        navigator: (opts: object) => { destroy: () => void };
+      }
+    ).navigator({
+      container: navHost,
+      viewLiveFramerate: 0,
+      thumbnailEventFramerate: 30,
+      thumbnailLiveFramerate: false,
+      dblClickDelay: 200,
+      removeCustomContainer: false,
+      rerenderDelay: 100,
+    });
+  }
+
   onMount(() => {
     ensureExtensions();
     void initGraph();
@@ -617,18 +715,10 @@
       scheduleSaveLayout();
     });
 
-    // Initialize mini-map (cytoscape-navigator).
-    cyNavigator = (cy as unknown as {
-      navigator: (opts: object) => { destroy: () => void };
-    }).navigator({
-      container: navHost,
-      viewLiveFramerate: 0,
-      thumbnailEventFramerate: 30,
-      thumbnailLiveFramerate: false,
-      dblClickDelay: 200,
-      removeCustomContainer: false,
-      rerenderDelay: 100,
-    });
+    // Initialize mini-map (cytoscape-navigator) if enabled.
+    // Later toggles of showMinimap are handled by a dedicated $effect.
+    if (showMinimap) initNavigator();
+    navigatorInitialized = true;
 
     lastFileIndexLength = workspace.fileIndex.length;
     lastBacklinksBuilt = backlinks.lastBuilt;
@@ -715,6 +805,40 @@
     annotateColors();
     cy.style().update();
   });
+
+  // Persist display preferences whenever any of them changes.
+  $effect(() => {
+    saveDisplayPrefs({
+      nodeSize,
+      labelSize,
+      labelMode,
+      showEdgeArrows,
+      edgeWidth,
+      showMinimap,
+    });
+  });
+
+  // Hot-apply stylesheet when any visual display pref changes.
+  $effect(() => {
+    void nodeSize;
+    void labelSize;
+    void labelMode;
+    void showEdgeArrows;
+    void edgeWidth;
+    if (!cy) return;
+    cy.style(styleFromTheme());
+  });
+
+  // Minimap lifecycle. initGraph() handles first creation; this handles toggles.
+  $effect(() => {
+    if (!navigatorInitialized) return;
+    if (showMinimap && !cyNavigator) {
+      queueMicrotask(() => initNavigator());
+    } else if (!showMinimap && cyNavigator) {
+      cyNavigator.destroy();
+      cyNavigator = null;
+    }
+  });
 </script>
 
 <div class="relative w-full h-full">
@@ -726,6 +850,12 @@
     bind:folderFilter
     bind:tagFilter
     bind:searchFilter
+    bind:nodeSize
+    bind:labelSize
+    bind:labelMode
+    bind:showEdgeArrows
+    bind:edgeWidth
+    bind:showMinimap
     {folderOptions}
     {tagOptions}
     onReset={resetFilters}
@@ -733,10 +863,12 @@
     onResetLayout={resetLayoutToDefault}
   />
 
-  <div
-    bind:this={navHost}
-    class="cytoscape-navigator-host absolute bottom-2 right-2 z-10 w-[140px] h-[90px] bg-base-100/90 border border-base-300 rounded shadow-sm overflow-hidden"
-  ></div>
+  {#if showMinimap}
+    <div
+      bind:this={navHost}
+      class="cytoscape-navigator-host absolute bottom-2 right-2 z-10 w-[140px] h-[90px] bg-base-100/90 border border-base-300 rounded shadow-sm overflow-hidden"
+    ></div>
+  {/if}
 </div>
 
 {#if hoverPath}
