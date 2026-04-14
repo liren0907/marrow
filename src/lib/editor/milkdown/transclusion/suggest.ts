@@ -9,6 +9,7 @@ export interface TransclusionSuggestion {
   name: string;
   path: string;
   folder: string;
+  kind: "markdown" | "image" | "video" | "audio";
 }
 
 export type TransclusionSuggestionSource = (
@@ -87,7 +88,19 @@ export function configTransclusionSuggest(
           if (i === selectedIdx) btn.classList.add("selected");
           const label = document.createElement("span");
           label.className = "wl-name";
-          label.textContent = "↪ " + item.name.replace(/\.md$/i, "");
+          const prefix =
+            item.kind === "image"
+              ? "🖼 "
+              : item.kind === "video"
+                ? "🎬 "
+                : item.kind === "audio"
+                  ? "🎵 "
+                  : "↪ ";
+          label.textContent =
+            prefix +
+            (item.kind === "markdown"
+              ? item.name.replace(/\.md$/i, "")
+              : item.name);
           const folder = document.createElement("span");
           folder.className = "wl-folder";
           folder.textContent = item.folder;
@@ -193,7 +206,13 @@ export function configTransclusionSuggest(
 
         const item = currentItems[i];
         if (!item) return;
-        const target = item.name.replace(/\.md$/i, "");
+        // Markdown: strip .md so the link reads as `![[notes]]`.
+        // Other kinds: keep the full filename (`![[photo.png]]`) so
+        // resolveBasename's exact-match branch finds it.
+        const target =
+          item.kind === "markdown"
+            ? item.name.replace(/\.md$/i, "")
+            : item.name;
         // Delete the `![[query` text first, then insert the transclusion node.
         let tr = currentView.state.tr.delete(
           queryStart,

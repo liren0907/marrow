@@ -2,6 +2,7 @@ import { workspace } from "./workspace.svelte";
 import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
 import { toggleBottomPanel } from "$lib/panels/bottomPanelState.svelte";
 import { toggleSearch } from "$lib/search/searchState.svelte";
+import { toggleCommandPalette } from "$lib/command/commandPaletteState.svelte";
 
 // Per-tab save dispatcher. Tab viewers (e.g. MarkdownTab) register their
 // save fn on mount and unregister on destroy. The global Cmd+S handler
@@ -53,6 +54,12 @@ export function initShortcuts(): () => void {
         quickOpen.query = "";
         quickOpen.selectedIdx = 0;
       }
+      return;
+    }
+    // Cmd+Shift+P — toggle command palette
+    if (k === "p" && e.shiftKey) {
+      e.preventDefault();
+      toggleCommandPalette();
       return;
     }
     // Cmd+\ — split pane

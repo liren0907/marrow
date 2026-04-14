@@ -7,6 +7,12 @@
     registerTabSave,
     unregisterTabSave,
   } from "$lib/workspace/shortcuts.svelte";
+  import {
+    outlines,
+    registerTabScroll,
+    unregisterTabScroll,
+    type Heading,
+  } from "$lib/workspace/tabRegistry.svelte";
   import { openConflict } from "$lib/conflict/conflictState.svelte";
   import MilkdownEditor from "$lib/editor/milkdown/MilkdownEditor.svelte";
   import type { WikiLinkSuggestion } from "$lib/editor/milkdown/wikiLink/suggest";
@@ -56,7 +62,32 @@
   }
 
   function getTransclusionSuggestions(query: string): TransclusionSuggestion[] {
-    return getWikiLinkSuggestions(query);
+    const q = query.toLowerCase();
+    const ALLOWED = new Set(["markdown", "image", "video", "audio"]);
+    const items = workspace.fileIndex
+      .filter((f) => ALLOWED.has(f.kind))
+      .map((f) => {
+        const stem = (f.kind === "markdown" ? f.name.replace(/\.md$/i, "") : f.name).toLowerCase();
+        let score = -1;
+        if (q === "") score = 1;
+        else if (stem.startsWith(q)) score = 3;
+        else if (stem.includes(q)) score = 2;
+        else if (f.path.toLowerCase().includes(q)) score = 1;
+        const idx = Math.max(f.path.lastIndexOf("/"), f.path.lastIndexOf("\\"));
+        const dir = idx > 0 ? f.path.slice(0, idx) : "";
+        const lastSep = Math.max(dir.lastIndexOf("/"), dir.lastIndexOf("\\"));
+        const folder = lastSep > 0 ? dir.slice(lastSep + 1) : dir;
+        return {
+          score,
+          name: f.name,
+          path: f.path,
+          folder,
+          kind: f.kind as "markdown" | "image" | "video" | "audio",
+        };
+      })
+      .filter((f) => f.score >= 0)
+      .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+    return items.slice(0, 12);
   }
 
   function handleTransclusionClick(target: string): void {
@@ -130,8 +161,18 @@
     })();
   });
 
+  function handleOutlineUpdate(headings: Heading[]) {
+    outlines.byTab.set(tab.id, headings);
+  }
+
+  function handleEditorReady(api: { scrollToPos: (pos: number) => void }) {
+    registerTabScroll(tab.id, api.scrollToPos);
+  }
+
   onDestroy(() => {
     unregisterTabSave(tab.id);
+    unregisterTabScroll(tab.id);
+    outlines.byTab.delete(tab.id);
   });
 
   $effect(() => {
@@ -175,6 +216,8 @@
         {isWikiLinkResolved}
         onTransclusionClick={handleTransclusionClick}
         {getTransclusionSuggestions}
+        onReady={handleEditorReady}
+        onOutlineUpdate={handleOutlineUpdate}
       />
     {/key}
   {:else}

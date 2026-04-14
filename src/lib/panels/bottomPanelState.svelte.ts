@@ -1,4 +1,4 @@
-type ActiveTab = "backlinks" | "unresolved" | "tags";
+export type ActiveTab = "backlinks" | "unresolved" | "tags" | "outline";
 
 const STORAGE_KEY = "marrow.bottomPanel";
 
@@ -19,6 +19,7 @@ function loadPersisted(): Persisted {
     let activeTab: ActiveTab = "backlinks";
     if (parsed.activeTab === "unresolved") activeTab = "unresolved";
     else if (parsed.activeTab === "tags") activeTab = "tags";
+    else if (parsed.activeTab === "outline") activeTab = "outline";
     return {
       isOpen: !!parsed.isOpen,
       height: typeof parsed.height === "number" ? parsed.height : 220,

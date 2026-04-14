@@ -2,6 +2,8 @@ import { $ctx, $prose } from "@milkdown/utils";
 import { Plugin, PluginKey } from "@milkdown/prose/state";
 import { workspace } from "$lib/workspace/workspace.svelte";
 import { readTextFile } from "$lib/workspace/tauri";
+import { classifyFile } from "$lib/workspace/fileKind";
+import { safeConvertFileSrc } from "$lib/utils/tauriUtils";
 import { renderEmbedded, renderEmbeddedSection } from "./renderer";
 
 const MAX_DEPTH = 5;
@@ -117,6 +119,53 @@ export const transclusionNodeView = $prose((ctx) => {
               return;
             }
             dom.classList.remove("unresolved");
+
+            const kind = classifyFile(path);
+            if (kind === "image") {
+              const img = document.createElement("img");
+              img.src = safeConvertFileSrc(path);
+              img.alt = target;
+              img.className = "transclusion-image";
+              content.replaceChildren(img);
+              if (unsub) {
+                unsub();
+                unsub = null;
+              }
+              return;
+            }
+            if (kind === "video") {
+              const video = document.createElement("video");
+              video.controls = true;
+              video.src = safeConvertFileSrc(path);
+              video.className = "transclusion-video";
+              content.replaceChildren(video);
+              if (unsub) {
+                unsub();
+                unsub = null;
+              }
+              return;
+            }
+            if (kind === "audio") {
+              const audio = document.createElement("audio");
+              audio.controls = true;
+              audio.src = safeConvertFileSrc(path);
+              audio.className = "transclusion-audio";
+              content.replaceChildren(audio);
+              if (unsub) {
+                unsub();
+                unsub = null;
+              }
+              return;
+            }
+            if (kind !== "markdown") {
+              content.innerHTML = `<em class="transclusion-meta">cannot embed ${kind} file — click header to open</em>`;
+              if (unsub) {
+                unsub();
+                unsub = null;
+              }
+              return;
+            }
+
             try {
               const result = await readTextFile(path);
               content.innerHTML = section

@@ -8,6 +8,7 @@
   import { initShortcuts } from "$lib/workspace/shortcuts.svelte";
   import QuickOpen from "$lib/quickopen/QuickOpen.svelte";
   import SearchModal from "$lib/search/SearchModal.svelte";
+  import CommandPalette from "$lib/command/CommandPalette.svelte";
   import ConflictModal from "$lib/conflict/ConflictModal.svelte";
   import BottomPanel from "$lib/panels/BottomPanel.svelte";
   import { bottomPanel } from "$lib/panels/bottomPanelState.svelte";
@@ -16,6 +17,7 @@
   import RenameModal from "$lib/tree/RenameModal.svelte";
   import { showError, showSuccess } from "$lib/stores/toastStore.svelte";
   import "../app.css";
+  import "katex/dist/katex.min.css";
 
   let { children } = $props();
 
@@ -170,6 +172,7 @@
 <Toast />
 <QuickOpen />
 <SearchModal />
+<CommandPalette />
 <ConflictModal />
 <ContextMenu />
 <NamePromptModal />

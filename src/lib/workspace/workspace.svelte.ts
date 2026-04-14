@@ -87,6 +87,15 @@ export const workspace = {
 
   resolveBasename(name: string): string | null {
     const target = name.toLowerCase();
+    // Target with an explicit non-.md extension (e.g. photo.png, clip.mp4)
+    // is resolved by exact basename match across all kinds.
+    const hasNonMdExt = /\.[a-z0-9]+$/i.test(target) && !target.endsWith(".md");
+    if (hasNonMdExt) {
+      for (const f of state.fileIndex) {
+        if (f.name.toLowerCase() === target) return f.path;
+      }
+      return null;
+    }
     const targetMd = target.endsWith(".md") ? target : `${target}.md`;
     for (const f of state.fileIndex) {
       if (f.kind !== "markdown") continue;

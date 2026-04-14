@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { Editor, editorViewCtx, rootCtx, defaultValueCtx } from "@milkdown/core";
+  import { TextSelection } from "@milkdown/prose/state";
+  import type { Heading } from "$lib/workspace/tabRegistry.svelte";
   import { commonmark } from "@milkdown/preset-commonmark";
   import { gfm } from "@milkdown/preset-gfm";
   import { listener, listenerCtx } from "@milkdown/plugin-listener";
@@ -8,6 +10,8 @@
   import { clipboard } from "@milkdown/plugin-clipboard";
   import { indent } from "@milkdown/plugin-indent";
   import { prism } from "@milkdown/plugin-prism";
+  import { math } from "@milkdown/plugin-math";
+  import { diagram } from "@milkdown/plugin-diagram";
   import { configurePrism } from "./prism";
   import { imagePastePlugin } from "./imagePaste";
   import { slash, configSlash } from "./slashCommand";
@@ -36,6 +40,8 @@
     isWikiLinkResolved = () => true,
     onTransclusionClick = null,
     getTransclusionSuggestions = () => [],
+    onReady = null,
+    onOutlineUpdate = null,
   }: {
     initial: string;
     onChange: (md: string) => void;
@@ -44,6 +50,8 @@
     isWikiLinkResolved?: (target: string) => boolean;
     onTransclusionClick?: TransclusionClickHandler | null;
     getTransclusionSuggestions?: (query: string) => TransclusionSuggestion[];
+    onReady?: ((api: { scrollToPos: (pos: number) => void }) => void) | null;
+    onOutlineUpdate?: ((headings: Heading[]) => void) | null;
   } = $props();
 
   let host: HTMLDivElement;
@@ -51,6 +59,44 @@
   let destroyed = false;
   let errorMsg = $state<string | null>(null);
   let suppressNextChange = false;
+  let outlineTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function pushOutline(): void {
+    if (!editor || !onOutlineUpdate) return;
+    editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const out: Heading[] = [];
+      view.state.doc.descendants((node, pos) => {
+        if (node.type.name === "heading") {
+          const rawLevel = node.attrs.level;
+          const level = (typeof rawLevel === "number" ? rawLevel : parseInt(String(rawLevel), 10)) as 1 | 2 | 3 | 4 | 5 | 6;
+          out.push({ level, text: node.textContent, pos });
+        }
+      });
+      onOutlineUpdate!(out);
+    });
+  }
+
+  function scheduleOutlinePush(): void {
+    if (outlineTimer) clearTimeout(outlineTimer);
+    outlineTimer = setTimeout(() => {
+      outlineTimer = null;
+      pushOutline();
+    }, 200);
+  }
+
+  function scrollToPos(pos: number): void {
+    if (!editor) return;
+    editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const resolved = view.state.doc.resolve(
+        Math.min(Math.max(pos, 0), view.state.doc.content.size),
+      );
+      const tr = view.state.tr.setSelection(TextSelection.near(resolved));
+      view.dispatch(tr.scrollIntoView());
+      view.focus();
+    });
+  }
 
   onMount(() => {
     (async () => {
@@ -64,7 +110,10 @@
                 suppressNextChange = false;
                 return;
               }
-              if (md !== prev) onChange(md);
+              if (md !== prev) {
+                onChange(md);
+                scheduleOutlinePush();
+              }
             });
             configSlash(ctx);
             configurePrism(ctx);
@@ -80,6 +129,8 @@
           })
           .use(commonmark)
           .use(gfm)
+          .use(math)
+          .use(diagram)
           .use(listener)
           .use(history)
           .use(imagePastePlugin)
@@ -108,6 +159,10 @@
           const b = convertTextToWikiLinks(view);
           if (!a && !b) suppressNextChange = false;
         });
+
+        // Push initial outline + hand the scroll API to the parent.
+        pushOutline();
+        onReady?.({ scrollToPos });
       } catch (e) {
         errorMsg = e instanceof Error ? e.message : String(e);
         console.error("[Milkdown] create failed", e);
@@ -117,6 +172,10 @@
 
   onDestroy(() => {
     destroyed = true;
+    if (outlineTimer) {
+      clearTimeout(outlineTimer);
+      outlineTimer = null;
+    }
     if (editor) {
       try {
         editor.destroy();
@@ -541,5 +600,22 @@
   :global(.milkdown-host .ProseMirror .transclusion-content .transclusion-meta) {
     color: oklch(var(--bc) / 0.4);
     font-style: italic;
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-image) {
+    display: block;
+    max-width: 100%;
+    max-height: 480px;
+    margin: 0 auto;
+    object-fit: contain;
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-video) {
+    display: block;
+    max-width: 100%;
+    max-height: 480px;
+    margin: 0 auto;
+  }
+  :global(.milkdown-host .ProseMirror .transclusion-audio) {
+    display: block;
+    width: 100%;
   }
 </style>

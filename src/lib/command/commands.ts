@@ -1,0 +1,140 @@
+import { workspace } from "$lib/workspace/workspace.svelte";
+import {
+  bottomPanel,
+  toggleBottomPanel,
+} from "$lib/panels/bottomPanelState.svelte";
+import { toggleSearch } from "$lib/search/searchState.svelte";
+import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
+
+export interface Command {
+  id: string;
+  title: string;
+  category: string;
+  shortcut?: string;
+  action: () => void;
+}
+
+export function getCommands(): Command[] {
+  return [
+    // Navigation
+    {
+      id: "quick-open",
+      title: "Quick open file",
+      category: "Navigation",
+      shortcut: "⌘P",
+      action: () => {
+        quickOpen.isOpen = true;
+        quickOpen.query = "";
+        quickOpen.selectedIdx = 0;
+      },
+    },
+    {
+      id: "search-workspace",
+      title: "Search in workspace",
+      category: "Navigation",
+      shortcut: "⇧⌘F",
+      action: toggleSearch,
+    },
+    {
+      id: "open-graph",
+      title: "Open graph view",
+      category: "Navigation",
+      shortcut: "⇧⌘G",
+      action: () => workspace.openGraph(),
+    },
+
+    // View
+    {
+      id: "toggle-bottom-panel",
+      title: "Toggle bottom panel",
+      category: "View",
+      shortcut: "⌘J",
+      action: toggleBottomPanel,
+    },
+    {
+      id: "show-backlinks",
+      title: "Show backlinks",
+      category: "View",
+      action: () => {
+        bottomPanel.isOpen = true;
+        bottomPanel.activeTab = "backlinks";
+      },
+    },
+    {
+      id: "show-unresolved",
+      title: "Show unresolved links",
+      category: "View",
+      action: () => {
+        bottomPanel.isOpen = true;
+        bottomPanel.activeTab = "unresolved";
+      },
+    },
+    {
+      id: "show-tags",
+      title: "Show tags",
+      category: "View",
+      action: () => {
+        bottomPanel.isOpen = true;
+        bottomPanel.activeTab = "tags";
+      },
+    },
+    {
+      id: "show-outline",
+      title: "Show document outline",
+      category: "View",
+      action: () => {
+        bottomPanel.isOpen = true;
+        bottomPanel.activeTab = "outline";
+      },
+    },
+
+    // Workspace
+    {
+      id: "split-pane",
+      title: "Split pane",
+      category: "Workspace",
+      shortcut: "⌘\\",
+      action: () => workspace.splitPane(),
+    },
+    {
+      id: "focus-pane-1",
+      title: "Focus pane 1",
+      category: "Workspace",
+      shortcut: "⌘1",
+      action: () => workspace.focusPaneByIndex(0),
+    },
+    {
+      id: "focus-pane-2",
+      title: "Focus pane 2",
+      category: "Workspace",
+      shortcut: "⌘2",
+      action: () => workspace.focusPaneByIndex(1),
+    },
+
+    // Editor
+    {
+      id: "close-tab",
+      title: "Close current tab",
+      category: "Editor",
+      shortcut: "⌘W",
+      action: () => {
+        const pane = workspace.activePane;
+        if (pane.activeTabId) workspace.closeTab(pane.id, pane.activeTabId);
+      },
+    },
+    {
+      id: "next-tab",
+      title: "Next tab",
+      category: "Editor",
+      shortcut: "⇧⌘]",
+      action: () => workspace.nextTab(),
+    },
+    {
+      id: "prev-tab",
+      title: "Previous tab",
+      category: "Editor",
+      shortcut: "⇧⌘[",
+      action: () => workspace.prevTab(),
+    },
+  ];
+}

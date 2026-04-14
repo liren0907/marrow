@@ -9,6 +9,8 @@
   import BacklinksTab from "./BacklinksTab.svelte";
   import UnresolvedTab from "./UnresolvedTab.svelte";
   import TagsTab from "./TagsTab.svelte";
+  import OutlineTab from "./OutlineTab.svelte";
+  import type { ActiveTab } from "./bottomPanelState.svelte";
 
   const MIN_HEIGHT = 120;
   const MAX_HEIGHT_FRACTION = 0.6;
@@ -59,7 +61,7 @@
     }
   }
 
-  function selectTab(tab: "backlinks" | "unresolved" | "tags") {
+  function selectTab(tab: ActiveTab) {
     bottomPanel.activeTab = tab;
     persistBottomPanel();
   }
@@ -122,6 +124,15 @@
           <span class="ml-1 text-base-content/50">({tags.byTag.size})</span>
         {/if}
       </button>
+      <button
+        type="button"
+        class="px-2 py-0.5 text-xs rounded"
+        class:bg-base-200={bottomPanel.activeTab === "outline"}
+        class:font-semibold={bottomPanel.activeTab === "outline"}
+        onclick={() => selectTab("outline")}
+      >
+        Outline
+      </button>
       {#if backlinks.isBuilding || tags.isBuilding}
         <span class="ml-2 text-[10px] text-base-content/40 italic">
           building index…
@@ -141,8 +152,10 @@
     <BacklinksTab />
   {:else if bottomPanel.activeTab === "unresolved"}
     <UnresolvedTab />
-  {:else}
+  {:else if bottomPanel.activeTab === "tags"}
     <TagsTab />
+  {:else if bottomPanel.activeTab === "outline"}
+    <OutlineTab />
   {/if}
 </div>
 
