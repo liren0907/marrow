@@ -2,7 +2,9 @@
   import type { Pane as PaneType } from "$lib/workspace/types";
   import TabBar from "./TabBar.svelte";
   import TabBody from "./TabBody.svelte";
+  import Breadcrumb from "./Breadcrumb.svelte";
   import { workspace } from "$lib/workspace/workspace.svelte";
+  import { uiSettings } from "$lib/settings/uiSettings.svelte";
 
   let { pane }: { pane: PaneType } = $props();
 
@@ -19,6 +21,9 @@
   onmousedown={focus}
 >
   <TabBar {pane} />
+  {#if uiSettings.showBreadcrumb && pane.activeTabId}
+    <Breadcrumb {pane} />
+  {/if}
   <div class="flex-1 min-h-0 relative overflow-hidden">
     {#if pane.tabs.length === 0}
       <div

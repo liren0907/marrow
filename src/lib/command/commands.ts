@@ -7,6 +7,7 @@ import {
 import { toggleSearch } from "$lib/search/searchState.svelte";
 import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
 import { peek } from "$lib/peek/peekState.svelte";
+import { toggleBreadcrumb } from "$lib/settings/uiSettings.svelte";
 
 export interface Command {
   id: string;
@@ -113,6 +114,12 @@ export function getCommands(): Command[] {
         bottomPanel.isOpen = true;
         bottomPanel.activeTab = "peek";
       },
+    },
+    {
+      id: "toggle-breadcrumb",
+      title: "Toggle editor breadcrumb",
+      category: "View",
+      action: toggleBreadcrumb,
     },
 
     // Workspace

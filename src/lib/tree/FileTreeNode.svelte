@@ -143,6 +143,7 @@
     {isActive ? 'bg-primary/10 text-primary' : 'hover:bg-base-200'}"
   style:padding-left="{6 + depth * 14}px"
   style:padding-right="6px"
+  data-marrow-tree-path={entry.path}
   onclick={handleClick}
   oncontextmenu={handleContextMenu}
 >
@@ -174,3 +175,17 @@
     </div>
   {/if}
 {/if}
+
+<style>
+  :global(button[data-marrow-tree-path].reveal-flash) {
+    animation: reveal-flash 800ms ease-out;
+  }
+  @keyframes reveal-flash {
+    0% {
+      background-color: oklch(var(--p) / 0.35);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+</style>
