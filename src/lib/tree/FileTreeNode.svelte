@@ -182,7 +182,7 @@
   }
   @keyframes reveal-flash {
     0% {
-      background-color: oklch(var(--p) / 0.35);
+      background-color: color-mix(in oklch, var(--color-primary) 35%, transparent);
     }
     100% {
       background-color: transparent;

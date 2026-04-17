@@ -188,7 +188,7 @@
   .resize-handle:hover,
   .resize-handle.dragging,
   .resize-handle:focus-visible {
-    background-color: oklch(var(--p) / 0.3);
+    background-color: color-mix(in oklch, var(--color-primary) 30%, transparent);
     outline: none;
   }
   .bottom-panel {

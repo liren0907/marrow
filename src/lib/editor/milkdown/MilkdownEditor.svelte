@@ -257,7 +257,7 @@
     padding: 2.5rem 3rem 6rem 3rem;
     font-size: 15px;
     line-height: 1.7;
-    color: oklch(var(--bc));
+    color: var(--color-base-content);
   }
   :global(.milkdown-host .ProseMirror h1) {
     font-size: 1.875rem;
@@ -308,14 +308,14 @@
   }
   :global(.milkdown-host .ProseMirror code) {
     font-family: var(--font-mono);
-    background-color: oklch(var(--b2));
+    background-color: var(--color-base-200);
     padding: 0.125rem 0.35rem;
     border-radius: 0.25rem;
     font-size: 0.875em;
   }
   :global(.milkdown-host .ProseMirror pre) {
     font-family: var(--font-mono);
-    background-color: oklch(var(--b2));
+    background-color: var(--color-base-200);
     padding: 1rem;
     border-radius: 0.5rem;
     overflow-x: auto;
@@ -327,13 +327,13 @@
     padding: 0;
   }
   :global(.milkdown-host .ProseMirror blockquote) {
-    border-left: 3px solid oklch(var(--p) / 0.4);
+    border-left: 3px solid color-mix(in oklch, var(--color-primary) 40%, transparent);
     padding-left: 1rem;
-    color: oklch(var(--bc) / 0.7);
+    color: color-mix(in oklch, var(--color-base-content) 70%, transparent);
     margin: 0.75rem 0;
   }
   :global(.milkdown-host .ProseMirror a) {
-    color: oklch(var(--p));
+    color: var(--color-primary);
     text-decoration: underline;
   }
   :global(.milkdown-host .ProseMirror table) {
@@ -343,17 +343,17 @@
   }
   :global(.milkdown-host .ProseMirror th),
   :global(.milkdown-host .ProseMirror td) {
-    border: 1px solid oklch(var(--b3));
+    border: 1px solid var(--color-base-300);
     padding: 0.5rem 0.75rem;
     text-align: left;
   }
   :global(.milkdown-host .ProseMirror th) {
-    background-color: oklch(var(--b2));
+    background-color: var(--color-base-200);
     font-weight: 600;
   }
   :global(.milkdown-host .ProseMirror hr) {
     border: none;
-    border-top: 1px solid oklch(var(--b3));
+    border-top: 1px solid var(--color-base-300);
     margin: 1.5rem 0;
   }
 
@@ -365,8 +365,8 @@
     min-width: 14rem;
     max-width: 20rem;
     padding: 0.25rem;
-    background-color: oklch(var(--b1));
-    border: 1px solid oklch(var(--b3));
+    background-color: var(--color-base-100);
+    border: 1px solid var(--color-base-300);
     border-radius: 0.5rem;
     box-shadow: 0 8px 24px oklch(0 0 0 / 0.18);
     display: none;
@@ -384,7 +384,7 @@
     padding: 0.4rem 0.6rem;
     border-radius: 0.375rem;
     font-size: 0.875rem;
-    color: oklch(var(--bc));
+    color: var(--color-base-content);
     background: transparent;
     border: none;
     cursor: pointer;
@@ -392,18 +392,18 @@
   }
   :global(.marrow-slash-item.selected),
   :global(.marrow-slash-item:hover) {
-    background-color: oklch(var(--b2));
+    background-color: var(--color-base-200);
   }
   :global(.marrow-slash-item .slash-hint) {
     font-family: var(--font-mono, ui-monospace, monospace);
     font-size: 0.75rem;
-    color: oklch(var(--bc) / 0.5);
+    color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
   }
 
   :global(.milkdown-host .ProseMirror .wiki-link) {
     display: inline;
-    color: oklch(var(--p));
-    background-color: oklch(var(--p) / 0.08);
+    color: var(--color-primary);
+    background-color: color-mix(in oklch, var(--color-primary) 8%, transparent);
     padding: 0.05rem 0.3rem;
     border-radius: 0.25rem;
     cursor: pointer;
@@ -411,17 +411,17 @@
     font-weight: 500;
   }
   :global(.milkdown-host .ProseMirror .wiki-link:hover) {
-    background-color: oklch(var(--p) / 0.15);
+    background-color: color-mix(in oklch, var(--color-primary) 15%, transparent);
   }
   :global(.milkdown-host .ProseMirror .wiki-link.unresolved) {
-    color: oklch(var(--bc) / 0.4);
+    color: color-mix(in oklch, var(--color-base-content) 40%, transparent);
     background-color: transparent;
-    border-bottom: 1px dashed oklch(var(--bc) / 0.3);
+    border-bottom: 1px dashed color-mix(in oklch, var(--color-base-content) 30%, transparent);
     border-radius: 0;
     padding: 0;
   }
   :global(.milkdown-host .ProseMirror .wiki-link.unresolved:hover) {
-    background-color: oklch(var(--bc) / 0.05);
+    background-color: color-mix(in oklch, var(--color-base-content) 5%, transparent);
   }
 
   :global(.marrow-wikilink-menu) {
@@ -432,8 +432,8 @@
     min-width: 16rem;
     max-width: 24rem;
     padding: 0.25rem;
-    background-color: oklch(var(--b1));
-    border: 1px solid oklch(var(--b3));
+    background-color: var(--color-base-100);
+    border: 1px solid var(--color-base-300);
     border-radius: 0.5rem;
     box-shadow: 0 8px 24px oklch(0 0 0 / 0.18);
     display: none;
@@ -446,7 +446,7 @@
   :global(.marrow-wikilink-empty) {
     padding: 0.5rem 0.6rem;
     font-size: 0.8125rem;
-    color: oklch(var(--bc) / 0.5);
+    color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
     font-style: italic;
   }
   :global(.marrow-wikilink-item) {
@@ -457,7 +457,7 @@
     padding: 0.4rem 0.6rem;
     border-radius: 0.375rem;
     font-size: 0.875rem;
-    color: oklch(var(--bc));
+    color: var(--color-base-content);
     background: transparent;
     border: none;
     cursor: pointer;
@@ -465,11 +465,11 @@
   }
   :global(.marrow-wikilink-item.selected),
   :global(.marrow-wikilink-item:hover) {
-    background-color: oklch(var(--b2));
+    background-color: var(--color-base-200);
   }
   :global(.marrow-wikilink-item .wl-folder) {
     font-size: 0.75rem;
-    color: oklch(var(--bc) / 0.5);
+    color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
   }
 
   /* Prism token colors — light variant (default). Tuned against github-light. */
@@ -576,31 +576,31 @@
 
   /* Transclusion embed */
   :global(.milkdown-host .ProseMirror .transclusion-embed) {
-    border: 1px solid oklch(var(--b3));
+    border: 1px solid var(--color-base-300);
     border-radius: 0.5rem;
     margin: 1rem 0;
-    background-color: oklch(var(--b1));
+    background-color: var(--color-base-100);
     overflow: hidden;
   }
   :global(.milkdown-host .ProseMirror .transclusion-embed.unresolved) {
     border-style: dashed;
-    border-color: oklch(var(--bc) / 0.25);
+    border-color: color-mix(in oklch, var(--color-base-content) 25%, transparent);
   }
   :global(.milkdown-host .ProseMirror .transclusion-header) {
     display: flex;
     align-items: center;
     gap: 0.4rem;
     padding: 0.4rem 0.75rem;
-    background-color: oklch(var(--b2));
-    border-bottom: 1px solid oklch(var(--b3));
+    background-color: var(--color-base-200);
+    border-bottom: 1px solid var(--color-base-300);
     cursor: pointer;
     font-size: 0.8125rem;
-    color: oklch(var(--bc) / 0.75);
+    color: color-mix(in oklch, var(--color-base-content) 75%, transparent);
     user-select: none;
   }
   :global(.milkdown-host .ProseMirror .transclusion-header:hover) {
-    background-color: oklch(var(--b3));
-    color: oklch(var(--bc));
+    background-color: var(--color-base-300);
+    color: var(--color-base-content);
   }
   :global(.milkdown-host .ProseMirror .transclusion-header .transclusion-target) {
     font-weight: 500;
@@ -609,7 +609,7 @@
     padding: 0.75rem 1rem;
     font-size: 0.9em;
     line-height: 1.6;
-    color: oklch(var(--bc) / 0.85);
+    color: color-mix(in oklch, var(--color-base-content) 85%, transparent);
     max-height: 480px;
     overflow-y: auto;
   }
@@ -629,20 +629,20 @@
     margin: 0.4em 0;
   }
   :global(.milkdown-host .ProseMirror .transclusion-content code) {
-    background-color: oklch(var(--b2));
+    background-color: var(--color-base-200);
     padding: 0.05rem 0.3rem;
     border-radius: 0.25rem;
     font-size: 0.875em;
   }
   :global(.milkdown-host .ProseMirror .transclusion-content pre) {
-    background-color: oklch(var(--b2));
+    background-color: var(--color-base-200);
     padding: 0.75rem;
     border-radius: 0.375rem;
     overflow-x: auto;
     font-size: 0.875em;
   }
   :global(.milkdown-host .ProseMirror .transclusion-content .transclusion-meta) {
-    color: oklch(var(--bc) / 0.4);
+    color: color-mix(in oklch, var(--color-base-content) 40%, transparent);
     font-style: italic;
   }
   :global(.milkdown-host .ProseMirror .transclusion-image) {

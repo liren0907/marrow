@@ -60,14 +60,14 @@
   .pane-resizer {
     width: 4px;
     cursor: col-resize;
-    background-color: oklch(var(--b2));
+    background-color: var(--color-base-200);
     transition: background-color 0.15s;
     flex-shrink: 0;
   }
   .pane-resizer:hover,
   .pane-resizer.dragging,
   .pane-resizer:focus-visible {
-    background-color: oklch(var(--p) / 0.4);
+    background-color: color-mix(in oklch, var(--color-primary) 40%, transparent);
     outline: none;
   }
 </style>

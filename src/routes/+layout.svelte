@@ -203,6 +203,6 @@
 
   .resize-handle:hover,
   .resize-handle.active {
-    background-color: oklch(var(--p) / 0.3);
+    background-color: color-mix(in oklch, var(--color-primary) 30%, transparent);
   }
 </style>

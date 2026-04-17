@@ -198,16 +198,18 @@
 
   function styleFromTheme(): cytoscape.StylesheetStyle[] {
     const root = getComputedStyle(document.documentElement);
-    const bc = root.getPropertyValue("--bc").trim() || "0 0 0";
-    const p = root.getPropertyValue("--p").trim() || "0.6 0.2 250";
-    const b3 = root.getPropertyValue("--b3").trim() || "0.85 0 0";
+    // DaisyUI v5 returns full oklch(...) strings (not unitless coords), so the
+    // values flow through as-is into cytoscape stylesheet color fields.
+    const bc = root.getPropertyValue("--color-base-content").trim() || "oklch(0 0 0)";
+    const p = root.getPropertyValue("--color-primary").trim() || "oklch(0.6 0.2 250)";
+    const b3 = root.getPropertyValue("--color-base-300").trim() || "oklch(0.85 0 0)";
 
     const [nMin, nMax] = NODE_SIZE_MAP[nodeSize];
     const fontPx = LABEL_SIZE_MAP[labelSize];
     const labelHidden = fontPx === 0;
     const baseTextOpacity = labelHidden || labelMode === "hover" ? 0 : 1;
     const arrowShape = showEdgeArrows ? "triangle" : "none";
-    void p; // keep referenced for legacy symmetry; default color still uses --p via colorForNode
+    void p; // keep referenced for legacy symmetry; default color still uses --color-primary via colorForNode
 
     return [
       {
@@ -216,7 +218,7 @@
           // Per-node color computed by annotateColors() from colorMode.
           "background-color": "data(color)" as unknown as string,
           label: labelHidden ? "" : "data(label)",
-          color: `oklch(${bc})`,
+          color: bc,
           "font-size": `${fontPx || 9}px`,
           "text-opacity": baseTextOpacity,
           "text-valign": "bottom",
@@ -231,14 +233,14 @@
         selector: "node.highlighted",
         style: {
           "border-width": 2,
-          "border-color": `oklch(${bc})`,
+          "border-color": bc,
         },
       },
       {
         selector: "edge",
         style: {
           width: edgeWidth,
-          "line-color": `oklch(${b3} / 0.4)`,
+          "line-color": `color-mix(in oklch, ${b3} 40%, transparent)`,
           "curve-style": "bezier",
           "arrow-scale": 0.5,
           opacity: 0.7,
@@ -248,7 +250,7 @@
         selector: "edge.uni",
         style: {
           "target-arrow-shape": arrowShape,
-          "target-arrow-color": `oklch(${b3} / 0.6)`,
+          "target-arrow-color": `color-mix(in oklch, ${b3} 60%, transparent)`,
           "source-arrow-shape": "none",
         },
       },
@@ -256,9 +258,9 @@
         selector: "edge.bi",
         style: {
           "target-arrow-shape": arrowShape,
-          "target-arrow-color": `oklch(${b3} / 0.6)`,
+          "target-arrow-color": `color-mix(in oklch, ${b3} 60%, transparent)`,
           "source-arrow-shape": arrowShape,
-          "source-arrow-color": `oklch(${b3} / 0.6)`,
+          "source-arrow-color": `color-mix(in oklch, ${b3} 60%, transparent)`,
         },
       },
       // Hover ego-network: dim everything, then bring focused subgraph back.
@@ -312,11 +314,11 @@
 
   function colorForNode(path: string): string {
     if (colorMode === "default") {
-      const p =
+      return (
         getComputedStyle(document.documentElement)
-          .getPropertyValue("--p")
-          .trim() || "0.6 0.2 250";
-      return `oklch(${p})`;
+          .getPropertyValue("--color-primary")
+          .trim() || "oklch(0.6 0.2 250)"
+      );
     }
     if (colorMode === "folder") {
       const root = workspace.info?.root ?? "";

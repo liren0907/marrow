@@ -200,14 +200,14 @@
 
 <style>
   :global(.peek-content .peek-wikilink) {
-    color: oklch(var(--p));
+    color: var(--color-primary);
     cursor: pointer;
     text-decoration: underline;
     text-decoration-style: dotted;
     text-underline-offset: 2px;
   }
   :global(.peek-content .peek-wikilink:hover) {
-    background-color: oklch(var(--p) / 0.1);
+    background-color: color-mix(in oklch, var(--color-primary) 10%, transparent);
     border-radius: 3px;
   }
   :global(.peek-content h1),
@@ -232,14 +232,14 @@
   }
   :global(.peek-content pre) {
     font-size: 0.75rem;
-    background: oklch(var(--b2));
+    background: var(--color-base-200);
     padding: 0.5rem;
     border-radius: 4px;
     overflow-x: auto;
   }
   :global(.peek-content code) {
     font-size: 0.85em;
-    background: oklch(var(--b2));
+    background: var(--color-base-200);
     padding: 0.1em 0.3em;
     border-radius: 3px;
   }
@@ -253,9 +253,9 @@
     margin: 0.5rem 0;
   }
   :global(.peek-content blockquote) {
-    border-left: 3px solid oklch(var(--bc) / 0.2);
+    border-left: 3px solid color-mix(in oklch, var(--color-base-content) 20%, transparent);
     padding-left: 0.75rem;
-    color: oklch(var(--bc) / 0.7);
+    color: color-mix(in oklch, var(--color-base-content) 70%, transparent);
     margin: 0.5rem 0;
   }
 </style>

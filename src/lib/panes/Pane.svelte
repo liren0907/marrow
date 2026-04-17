@@ -42,6 +42,6 @@
 
 <style>
   .pane-active {
-    box-shadow: inset 0 2px 0 0 oklch(var(--p));
+    box-shadow: inset 0 2px 0 0 var(--color-primary);
   }
 </style>

@@ -88,7 +88,7 @@
   }
   .drop-indicator {
     width: 2px;
-    background-color: oklch(var(--p));
+    background-color: var(--color-primary);
     flex-shrink: 0;
   }
 </style>

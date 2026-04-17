@@ -166,8 +166,8 @@
     z-index: 100;
     min-width: 180px;
     padding: 0.25rem;
-    background-color: oklch(var(--b1));
-    border: 1px solid oklch(var(--b3));
+    background-color: var(--color-base-100);
+    border: 1px solid var(--color-base-300);
     border-radius: 0.5rem;
     box-shadow: 0 8px 24px oklch(0 0 0 / 0.18);
     display: flex;
@@ -181,7 +181,7 @@
     padding: 0.4rem 0.6rem;
     border-radius: 0.375rem;
     font-size: 0.875rem;
-    color: oklch(var(--bc));
+    color: var(--color-base-content);
     background: transparent;
     border: none;
     cursor: pointer;
@@ -189,21 +189,21 @@
   }
   .item:hover:not(.disabled),
   .item.selected:not(.disabled) {
-    background-color: oklch(var(--b2));
+    background-color: var(--color-base-200);
   }
   .context-menu:focus {
     outline: none;
   }
   .item.danger {
-    color: oklch(var(--er));
+    color: var(--color-error);
   }
   .item.disabled {
-    color: oklch(var(--bc) / 0.4);
+    color: color-mix(in oklch, var(--color-base-content) 40%, transparent);
     cursor: not-allowed;
   }
   .divider {
     height: 1px;
-    background-color: oklch(var(--b3));
+    background-color: var(--color-base-300);
     margin: 0.25rem 0;
   }
 </style>
