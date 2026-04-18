@@ -10,7 +10,10 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             app.manage(core::fs_watch::WatcherState::new());
-            app.manage(core::db::DbHandle::new());
+            let handle = app.handle().clone();
+            let db = tauri::async_runtime::block_on(core::db::DbState::open_global(&handle))
+                .expect("open global db");
+            app.manage(db);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -30,6 +33,8 @@ pub fn run() {
             commands::history::list_file_history,
             commands::history::read_snapshot,
             commands::history::restore_snapshot,
+            commands::graph::load_graph_layout,
+            commands::graph::save_graph_layout,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

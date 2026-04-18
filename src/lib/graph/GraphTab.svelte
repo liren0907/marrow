@@ -8,9 +8,8 @@
   import { tags, tagList, tagsForFile } from "$lib/workspace/tagIndex.svelte";
   import {
     readTextFile,
-    writeTextFile,
-    createDirectory,
-    deletePath,
+    loadGraphLayout,
+    saveGraphLayout,
   } from "$lib/workspace/tauri";
   import type { Tab } from "$lib/workspace/types";
   import GraphToolbar from "./GraphToolbar.svelte";
@@ -512,13 +511,13 @@
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   async function loadLayout(): Promise<Map<string, { x: number; y: number }>> {
-    const root = workspace.info?.root;
-    if (!root) return new Map();
+    if (!workspace.info?.root) return new Map();
     try {
-      const result = await readTextFile(`${root}/.marrow/graph-layout.json`);
-      const data = JSON.parse(result.content) as PersistedLayout;
+      const data = (await loadGraphLayout()) as PersistedLayout | null;
+      if (!data) return new Map();
       return new Map(Object.entries(data.nodes ?? {}));
-    } catch {
+    } catch (e) {
+      console.warn("[graph] load layout failed", e);
       return new Map();
     }
   }
@@ -532,8 +531,7 @@
   }
 
   async function saveLayout(): Promise<void> {
-    const root = workspace.info?.root;
-    if (!root || !cy) return;
+    if (!workspace.info?.root || !cy) return;
     const nodes: Record<string, { x: number; y: number }> = {};
     cy.nodes().forEach((n) => {
       const p = n.position();
@@ -545,28 +543,22 @@
       nodes,
     };
     try {
-      try {
-        await createDirectory(`${root}/.marrow`);
-      } catch {
-        // already exists — fine
-      }
-      await writeTextFile(
-        `${root}/.marrow/graph-layout.json`,
-        JSON.stringify(data),
-      );
+      await saveGraphLayout(data as unknown as Record<string, unknown>);
     } catch (e) {
       console.warn("[graph] save layout failed", e);
     }
   }
 
   async function resetLayoutToDefault(): Promise<void> {
-    const root = workspace.info?.root;
-    if (root) {
-      try {
-        await deletePath(`${root}/.marrow/graph-layout.json`);
-      } catch {
-        // file might not exist — fine
-      }
+    try {
+      // Clear saved positions by writing an empty-nodes layout.
+      await saveGraphLayout({
+        version: 1,
+        savedAt: Date.now(),
+        nodes: {},
+      } as unknown as Record<string, unknown>);
+    } catch (e) {
+      console.warn("[graph] reset layout failed", e);
     }
     if (cy) {
       cy.nodes().unlock();

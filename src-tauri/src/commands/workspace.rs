@@ -1,11 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use std::sync::Arc;
 use std::time::UNIX_EPOCH;
 use tauri::{AppHandle, State};
 
-use crate::core::db::{DbHandle, DbState};
+use crate::core::db::DbState;
 use crate::core::fs_watch::WatcherState;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -94,7 +93,7 @@ pub async fn open_workspace(
     path: String,
     app: AppHandle,
     state: State<'_, WatcherState>,
-    db: State<'_, DbHandle>,
+    db: State<'_, DbState>,
 ) -> Result<WorkspaceInfo, String> {
     let p = Path::new(&path);
     if !p.exists() {
@@ -104,12 +103,14 @@ pub async fn open_workspace(
         return Err(format!("Path is not a directory: {}", path));
     }
     state.start(&app, p)?;
-    // Open SurrealDB for this workspace. If DB init fails, log and continue —
-    // the user can still edit files, they just lose the history feature until
-    // it's fixed.
-    match DbState::open(p).await {
-        Ok(state) => db.replace(Arc::new(state)).await,
-        Err(e) => eprintln!("[marrow] failed to open history DB for {}: {}", path, e),
+    if p.join(".marrow").join("history").exists() {
+        eprintln!(
+            "[marrow] pre-migration {}/.marrow/history/ found; safe to delete",
+            path
+        );
+    }
+    if let Err(e) = db.activate_workspace(p).await {
+        eprintln!("[marrow] failed to activate workspace DB for {}: {}", path, e);
     }
     let name = p
         .file_name()
@@ -389,7 +390,7 @@ pub async fn rename_path(
     from: String,
     to: String,
     state: State<'_, WatcherState>,
-    db: State<'_, DbHandle>,
+    db: State<'_, DbState>,
 ) -> Result<(), String> {
     if from == to {
         return Err("Source and destination are identical".into());
@@ -408,11 +409,12 @@ pub async fn rename_path(
     fs::rename(src, dst).map_err(|e| format!("rename: {}", e))?;
     // Record the rename in history DB (only for markdown files).
     if is_markdown(src) {
-        if let Some(dbs) = db.current().await {
-            if let (Some(from_rel), Some(to_rel)) =
-                (dbs.to_rel_path(src), dbs.to_rel_path(dst))
-            {
-                if let Err(e) = dbs.snapshot_rename(&from_rel, &to_rel).await {
+        if let Some(ctx) = db.current_ctx().await {
+            if let (Some(from_rel), Some(to_rel)) = (
+                DbState::to_rel_path(&ctx, src),
+                DbState::to_rel_path(&ctx, dst),
+            ) {
+                if let Err(e) = db.snapshot_rename(&ctx, &from_rel, &to_rel).await {
                     eprintln!("[marrow] snapshot_rename failed: {}", e);
                 }
             }
@@ -451,7 +453,7 @@ pub async fn write_text_file(
     contents: String,
     expected_mtime: Option<u64>,
     state: State<'_, WatcherState>,
-    db: State<'_, DbHandle>,
+    db: State<'_, DbState>,
 ) -> Result<WriteResult, String> {
     if let Some(expected) = expected_mtime {
         if let Ok(md) = fs::metadata(&path) {
@@ -472,13 +474,12 @@ pub async fn write_text_file(
     // Snapshot markdown saves into the history DB. Bounded by timeout so a
     // stuck DB can never block saves. Errors logged but never surface to UI.
     if is_markdown(p) {
-        if let Some(dbs) = db.current().await {
-            if let Some(rel) = dbs.to_rel_path(p) {
+        if let Some(ctx) = db.current_ctx().await {
+            if let Some(rel) = DbState::to_rel_path(&ctx, p) {
                 let bytes = contents.as_bytes().to_vec();
-                let dbs_clone = dbs.clone();
                 let _ = tokio::time::timeout(
                     std::time::Duration::from_millis(1500),
-                    async move { dbs_clone.snapshot_save(&rel, &bytes).await },
+                    async { db.snapshot_save(&ctx, &rel, &bytes).await },
                 )
                 .await;
             }

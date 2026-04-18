@@ -110,3 +110,11 @@ export function readSnapshot(hash: string): Promise<string> {
 export function restoreSnapshot(path: string, hash: string): Promise<void> {
   return invoke<void>("restore_snapshot", { path, hash });
 }
+
+export function loadGraphLayout(): Promise<Record<string, unknown> | null> {
+  return invoke<Record<string, unknown> | null>("load_graph_layout");
+}
+
+export function saveGraphLayout(data: Record<string, unknown>): Promise<void> {
+  return invoke<void>("save_graph_layout", { data });
+}
