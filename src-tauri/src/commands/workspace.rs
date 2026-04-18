@@ -1,9 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use std::sync::Arc;
 use std::time::UNIX_EPOCH;
 use tauri::{AppHandle, State};
 
+use crate::core::db::{DbHandle, DbState};
 use crate::core::fs_watch::WatcherState;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -88,10 +90,11 @@ fn mtime_ms(md: &std::fs::Metadata) -> u64 {
 }
 
 #[tauri::command]
-pub fn open_workspace(
+pub async fn open_workspace(
     path: String,
     app: AppHandle,
     state: State<'_, WatcherState>,
+    db: State<'_, DbHandle>,
 ) -> Result<WorkspaceInfo, String> {
     let p = Path::new(&path);
     if !p.exists() {
@@ -101,6 +104,13 @@ pub fn open_workspace(
         return Err(format!("Path is not a directory: {}", path));
     }
     state.start(&app, p)?;
+    // Open SurrealDB for this workspace. If DB init fails, log and continue —
+    // the user can still edit files, they just lose the history feature until
+    // it's fixed.
+    match DbState::open(p).await {
+        Ok(state) => db.replace(Arc::new(state)).await,
+        Err(e) => eprintln!("[marrow] failed to open history DB for {}: {}", path, e),
+    }
     let name = p
         .file_name()
         .map(|n| n.to_string_lossy().to_string())
@@ -375,10 +385,11 @@ pub fn delete_path(
 }
 
 #[tauri::command]
-pub fn rename_path(
+pub async fn rename_path(
     from: String,
     to: String,
     state: State<'_, WatcherState>,
+    db: State<'_, DbHandle>,
 ) -> Result<(), String> {
     if from == to {
         return Err("Source and destination are identical".into());
@@ -395,7 +406,26 @@ pub fn rename_path(
     state.note_own_write(src);
     state.note_own_write(dst);
     fs::rename(src, dst).map_err(|e| format!("rename: {}", e))?;
+    // Record the rename in history DB (only for markdown files).
+    if is_markdown(src) {
+        if let Some(dbs) = db.current().await {
+            if let (Some(from_rel), Some(to_rel)) =
+                (dbs.to_rel_path(src), dbs.to_rel_path(dst))
+            {
+                if let Err(e) = dbs.snapshot_rename(&from_rel, &to_rel).await {
+                    eprintln!("[marrow] snapshot_rename failed: {}", e);
+                }
+            }
+        }
+    }
     Ok(())
+}
+
+fn is_markdown(p: &Path) -> bool {
+    p.extension()
+        .and_then(|e| e.to_str())
+        .map(|e| matches!(e.to_ascii_lowercase().as_str(), "md" | "markdown" | "mdx"))
+        .unwrap_or(false)
 }
 
 #[tauri::command]
@@ -416,11 +446,12 @@ pub fn write_binary_file(
 }
 
 #[tauri::command]
-pub fn write_text_file(
+pub async fn write_text_file(
     path: String,
     contents: String,
     expected_mtime: Option<u64>,
     state: State<'_, WatcherState>,
+    db: State<'_, DbHandle>,
 ) -> Result<WriteResult, String> {
     if let Some(expected) = expected_mtime {
         if let Ok(md) = fs::metadata(&path) {
@@ -436,8 +467,23 @@ pub fn write_text_file(
     }
     let p = Path::new(&path);
     state.note_own_write(p);
-    fs::write(&path, contents).map_err(|e| format!("Failed to write {}: {}", path, e))?;
+    fs::write(&path, &contents).map_err(|e| format!("Failed to write {}: {}", path, e))?;
     let md = fs::metadata(&path).map_err(|e| e.to_string())?;
+    // Snapshot markdown saves into the history DB. Bounded by timeout so a
+    // stuck DB can never block saves. Errors logged but never surface to UI.
+    if is_markdown(p) {
+        if let Some(dbs) = db.current().await {
+            if let Some(rel) = dbs.to_rel_path(p) {
+                let bytes = contents.as_bytes().to_vec();
+                let dbs_clone = dbs.clone();
+                let _ = tokio::time::timeout(
+                    std::time::Duration::from_millis(1500),
+                    async move { dbs_clone.snapshot_save(&rel, &bytes).await },
+                )
+                .await;
+            }
+        }
+    }
     Ok(WriteResult {
         mtime: mtime_ms(&md),
     })

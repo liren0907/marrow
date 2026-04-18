@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { Tab as TabType } from "$lib/workspace/types";
   import { workspace } from "$lib/workspace/workspace.svelte";
+  import {
+    openContextMenu,
+    type ContextMenuItem,
+  } from "$lib/components/ui/contextMenuState.svelte";
+  import { openFileHistory } from "$lib/history/fileHistoryState.svelte";
 
   let {
     tab,
@@ -25,6 +30,26 @@
       JSON.stringify({ srcPaneId: paneId, tabId: tab.id }),
     );
   }
+
+  function onContextMenu(e: MouseEvent) {
+    const isVirtual = tab.path.startsWith("marrow://");
+    const isMarkdown = /\.(md|markdown|mdx)$/i.test(tab.path);
+    const items: ContextMenuItem[] = [];
+    if (!isVirtual && isMarkdown) {
+      items.push({
+        label: "View history",
+        icon: "history",
+        onclick: () => openFileHistory(tab.path),
+      });
+      items.push({ label: "", divider: true });
+    }
+    items.push({
+      label: "Close tab",
+      icon: "close",
+      onclick: () => workspace.closeTab(paneId, tab.id),
+    });
+    openContextMenu(e, items);
+  }
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -34,6 +59,7 @@
     ? 'bg-base-200 text-base-content'
     : 'text-base-content/60 hover:bg-base-200/50'}"
   onclick={activate}
+  oncontextmenu={onContextMenu}
   role="tab"
   tabindex="0"
   aria-selected={active}

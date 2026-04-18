@@ -21,6 +21,7 @@ pub struct WatcherState {
     watcher: Mutex<Option<RecommendedWatcher>>,
     event_tx: Mutex<Option<Sender<RawEvent>>>,
     recent_writes: Mutex<HashMap<PathBuf, Instant>>,
+    root: Mutex<Option<PathBuf>>,
 }
 
 #[derive(Debug)]
@@ -49,7 +50,15 @@ impl WatcherState {
             watcher: Mutex::new(None),
             event_tx: Mutex::new(None),
             recent_writes: Mutex::new(HashMap::new()),
+            root: Mutex::new(None),
         }
+    }
+
+    fn is_under_marrow_dir(&self, path: &Path) -> bool {
+        if let Some(root) = self.root.lock().unwrap().as_ref() {
+            return path.starts_with(root.join(".marrow"));
+        }
+        false
     }
 
     pub fn note_own_write(&self, path: &Path) {
@@ -95,6 +104,7 @@ impl WatcherState {
 
         *self.watcher.lock().unwrap() = Some(watcher);
         *self.event_tx.lock().unwrap() = Some(tx);
+        *self.root.lock().unwrap() = Some(root.to_path_buf());
 
         // Debouncer thread: collect bursts, filter own-writes, emit.
         let app_handle = app.clone();
@@ -146,6 +156,11 @@ fn flush(app: &AppHandle, pending: &mut HashMap<(&'static str, PathBuf), ()>) {
     for ((kind, path), _) in pending.drain() {
         if let Some(ref s) = state {
             if s.is_own_write(&path) {
+                continue;
+            }
+            // .marrow/ is our private sidecar (SurrealDB files, history blobs,
+            // graph-layout.json). The frontend never cares about those.
+            if s.is_under_marrow_dir(&path) {
                 continue;
             }
         }

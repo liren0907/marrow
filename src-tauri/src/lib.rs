@@ -10,6 +10,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             app.manage(core::fs_watch::WatcherState::new());
+            app.manage(core::db::DbHandle::new());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -26,6 +27,9 @@ pub fn run() {
             commands::workspace::delete_path,
             commands::workspace::rename_path,
             commands::dialog::open_directory_dialog,
+            commands::history::list_file_history,
+            commands::history::read_snapshot,
+            commands::history::restore_snapshot,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

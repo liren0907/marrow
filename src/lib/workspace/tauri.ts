@@ -90,3 +90,23 @@ export function deletePath(path: string): Promise<void> {
 export function renamePath(from: string, to: string): Promise<void> {
   return invoke<void>("rename_path", { from, to });
 }
+
+export interface SnapshotMeta {
+  ts: number;
+  hash: string;
+  op: "save" | "rename" | "restore";
+  size: number;
+  prev_path: string | null;
+}
+
+export function listFileHistory(path: string): Promise<SnapshotMeta[]> {
+  return invoke<SnapshotMeta[]>("list_file_history", { path });
+}
+
+export function readSnapshot(hash: string): Promise<string> {
+  return invoke<string>("read_snapshot", { hash });
+}
+
+export function restoreSnapshot(path: string, hash: string): Promise<void> {
+  return invoke<void>("restore_snapshot", { path, hash });
+}

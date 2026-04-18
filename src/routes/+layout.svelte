@@ -15,6 +15,7 @@
   import ContextMenu from "$lib/components/ui/ContextMenu.svelte";
   import NamePromptModal from "$lib/tree/NamePromptModal.svelte";
   import RenameModal from "$lib/tree/RenameModal.svelte";
+  import FileHistoryModal from "$lib/history/FileHistoryModal.svelte";
   import { showError, showSuccess } from "$lib/stores/toastStore.svelte";
   import "../app.css";
   import "katex/dist/katex.min.css";
@@ -177,6 +178,7 @@
 <ContextMenu />
 <NamePromptModal />
 <RenameModal />
+<FileHistoryModal />
 
 <style>
   .app.resizing {

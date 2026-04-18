@@ -16,6 +16,7 @@
     renameFolder,
   } from "./treeOps";
   import { startFileRename } from "./renameModalState.svelte";
+  import { openFileHistory } from "$lib/history/fileHistoryState.svelte";
 
   let { entry, depth }: { entry: DirEntry; depth: number } = $props();
 
@@ -114,6 +115,11 @@
             label: "Rename",
             icon: "drive_file_rename_outline",
             onclick: () => startFileRename(entry.path),
+          },
+          {
+            label: "View history",
+            icon: "history",
+            onclick: () => openFileHistory(entry.path),
           },
         );
       }
