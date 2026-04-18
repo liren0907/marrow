@@ -168,8 +168,8 @@
     padding: 0.25rem;
     background-color: var(--color-base-100);
     border: 1px solid var(--color-base-300);
-    border-radius: 0.5rem;
-    box-shadow: 0 8px 24px oklch(0 0 0 / 0.18);
+    border-radius: var(--mw-radius-sm);
+    box-shadow: 0 4px 12px oklch(0 0 0 / 0.1);
     display: flex;
     flex-direction: column;
     gap: 0.0625rem;
@@ -178,9 +178,9 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.4rem 0.6rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
+    padding: 0.35rem 0.55rem;
+    border-radius: var(--mw-radius-xs);
+    font-size: 0.8125rem;
     color: var(--color-base-content);
     background: transparent;
     border: none;

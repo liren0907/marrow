@@ -4,11 +4,91 @@
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";
 @plugin "daisyui" {
-	themes: light --default, dark --prefersdark, cupcake, corporate;
+	themes: marrow-pro-light --default, marrow-pro-dark --prefersdark, light, dark, cupcake, corporate;
 	logs: false;
 }
 
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@plugin "daisyui/theme" {
+	name: "marrow-pro-light";
+	default: true;
+	prefersdark: false;
+	color-scheme: light;
+
+	--color-base-100: oklch(99% 0 0);
+	--color-base-200: oklch(96.5% 0 0);
+	--color-base-300: oklch(92% 0 0);
+	--color-base-content: oklch(22% 0 0);
+
+	--color-primary: oklch(55% 0 0);
+	--color-primary-content: oklch(99% 0 0);
+	--color-secondary: oklch(65% 0 0);
+	--color-secondary-content: oklch(99% 0 0);
+	--color-accent: oklch(50% 0.04 250);
+	--color-accent-content: oklch(99% 0 0);
+	--color-neutral: oklch(88% 0 0);
+	--color-neutral-content: oklch(22% 0 0);
+	--color-info: oklch(60% 0.12 240);
+	--color-info-content: oklch(99% 0 0);
+	--color-success: oklch(55% 0.15 150);
+	--color-success-content: oklch(99% 0 0);
+	--color-warning: oklch(70% 0.15 80);
+	--color-warning-content: oklch(22% 0 0);
+	--color-error: oklch(60% 0.2 25);
+	--color-error-content: oklch(99% 0 0);
+
+	--radius-selector: 4px;
+	--radius-field: 4px;
+	--radius-box: 6px;
+
+	--size-selector: 0.25rem;
+	--size-field: 0.25rem;
+
+	--border: 1px;
+	--depth: 0;
+	--noise: 0;
+}
+
+@plugin "daisyui/theme" {
+	name: "marrow-pro-dark";
+	default: false;
+	prefersdark: true;
+	color-scheme: dark;
+
+	--color-base-100: oklch(20% 0 0);
+	--color-base-200: oklch(23% 0 0);
+	--color-base-300: oklch(28% 0 0);
+	--color-base-content: oklch(88% 0 0);
+
+	--color-primary: oklch(75% 0 0);
+	--color-primary-content: oklch(15% 0 0);
+	--color-secondary: oklch(65% 0 0);
+	--color-secondary-content: oklch(15% 0 0);
+	--color-accent: oklch(70% 0.08 250);
+	--color-accent-content: oklch(15% 0 0);
+	--color-neutral: oklch(30% 0 0);
+	--color-neutral-content: oklch(88% 0 0);
+	--color-info: oklch(70% 0.12 240);
+	--color-info-content: oklch(15% 0 0);
+	--color-success: oklch(70% 0.15 150);
+	--color-success-content: oklch(15% 0 0);
+	--color-warning: oklch(80% 0.15 80);
+	--color-warning-content: oklch(15% 0 0);
+	--color-error: oklch(70% 0.2 25);
+	--color-error-content: oklch(15% 0 0);
+
+	--radius-selector: 4px;
+	--radius-field: 4px;
+	--radius-box: 6px;
+
+	--size-selector: 0.25rem;
+	--size-field: 0.25rem;
+
+	--border: 1px;
+	--depth: 0;
+	--noise: 0;
+}
+
+@custom-variant dark (&:where([data-theme="marrow-pro-dark"], [data-theme="marrow-pro-dark"] *, [data-theme="dark"], [data-theme="dark"] *));
 
 /* Google Material Symbols base styles */
 .material-symbols-outlined,
@@ -69,6 +149,15 @@
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
 	font-family: var(--font-body);
+
+	/* Marrow chrome tokens (pro theme) */
+	--mw-radius-xs: 2px;
+	--mw-radius-sm: 4px;
+	--mw-radius-md: 6px;
+	--mw-font-chrome: 12px;
+	--mw-font-chrome-sm: 11px;
+	--mw-row-h: 22px;
+	--mw-tab-h: 30px;
 }
 
 body {

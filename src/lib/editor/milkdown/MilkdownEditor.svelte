@@ -530,47 +530,47 @@
   }
 
   /* Dark variant — tuned against github-dark. */
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.comment),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.prolog),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.doctype),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.cdata) {
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.comment),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.prolog),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.doctype),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.cdata) {
     color: #8b949e;
   }
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.punctuation) {
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.punctuation) {
     color: #c9d1d9;
   }
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.property),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.tag),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.boolean),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.number),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.constant),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.symbol),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.deleted) {
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.property),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.tag),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.boolean),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.number),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.constant),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.symbol),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.deleted) {
     color: #79c0ff;
   }
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.selector),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.attr-name),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.string),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.char),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.builtin),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.inserted) {
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.selector),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.attr-name),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.string),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.char),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.builtin),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.inserted) {
     color: #a5d6ff;
   }
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.operator),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.entity),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.url),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.atrule),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.attr-value),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.keyword) {
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.operator),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.entity),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.url),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.atrule),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.attr-value),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.keyword) {
     color: #ff7b72;
   }
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.function),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.class-name) {
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.function),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.class-name) {
     color: #d2a8ff;
   }
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.regex),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.important),
-  :global([data-theme="dark"] .milkdown-host .ProseMirror .token.variable) {
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.regex),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.important),
+  :global([data-theme="dark"] .milkdown-host, [data-theme="marrow-pro-dark"] .milkdown-host .ProseMirror .token.variable) {
     color: #ffa657;
   }
 

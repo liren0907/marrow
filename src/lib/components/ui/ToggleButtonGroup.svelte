@@ -28,7 +28,7 @@
     let sizeClass = $derived(size === "sm" ? "btn-sm" : "btn-md");
 </script>
 
-<div class="join border border-base-300 bg-base-100 rounded-lg p-1 space-x-1">
+<div class="join border border-base-300 bg-base-100 rounded-[var(--mw-radius-sm)] p-1 space-x-1">
     {#each options as option}
         <div class="tooltip" data-tip={option.tooltip}>
             <button
@@ -60,7 +60,7 @@
 <style>
     /* Override join defaults to allow gap */
     .join .join-item {
-        border-radius: 0.5rem; /* Rounded inner buttons */
+        border-radius: var(--mw-radius-xs);
     }
     .join {
         display: flex; /* Flexbox for better control than daisyui join sometimes */

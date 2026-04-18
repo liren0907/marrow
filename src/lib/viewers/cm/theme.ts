@@ -2,6 +2,9 @@ import type { Extension } from "@codemirror/state";
 import { oneDark } from "@codemirror/theme-one-dark";
 
 export function themeFor(daisyTheme: string): Extension | [] {
-  const isDark = daisyTheme === "dark" || daisyTheme === "synthwave";
+  const isDark =
+    daisyTheme === "dark" ||
+    daisyTheme === "synthwave" ||
+    daisyTheme === "marrow-pro-dark";
   return isDark ? oneDark : [];
 }

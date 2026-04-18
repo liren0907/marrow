@@ -17,12 +17,13 @@
   let isDark = $state(false);
 
   $effect(() => {
-    isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const t = document.documentElement.getAttribute("data-theme") ?? "";
+    isDark = t === "marrow-pro-dark" || t === "dark";
   });
 
   function toggleTheme() {
     isDark = !isDark;
-    const theme = isDark ? "dark" : "light";
+    const theme = isDark ? "marrow-pro-dark" : "marrow-pro-light";
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("theme", theme);
   }

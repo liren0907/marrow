@@ -55,21 +55,21 @@
         >
             <!-- Header -->
             <div
-                class="px-6 py-4 flex items-center justify-between border-b border-base-200 bg-base-100 sticky top-0 z-10"
+                class="px-4 py-3 flex items-center justify-between border-b border-base-200 bg-base-100 sticky top-0 z-10"
             >
-                <h3 id="modal-title" class="font-bold text-lg">{title}</h3>
+                <h3 id="modal-title" class="font-semibold text-sm">{title}</h3>
                 <IconButton icon="close" size="sm" onclick={close} />
             </div>
 
             <!-- Content (Scrollable) -->
-            <div class="p-6 overflow-y-auto flex-1">
+            <div class="p-4 overflow-y-auto flex-1">
                 {@render children?.()}
             </div>
 
             <!-- Actions (Footer) -->
             {#if actions}
                 <div
-                    class="px-6 py-4 bg-base-200/50 border-t border-base-200 flex justify-end items-center gap-3"
+                    class="px-4 py-3 border-t border-base-200 flex justify-end items-center gap-2"
                 >
                     {@render actions()}
                 </div>

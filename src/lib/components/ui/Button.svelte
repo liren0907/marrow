@@ -17,7 +17,7 @@
         children,
     }: {
         variant?: "default" | "ghost";
-        size?: "sm" | "md";
+        size?: "xs" | "sm" | "md";
         disabled?: boolean;
         type?: "button" | "submit" | "reset";
         minWidth?: string | null;
@@ -34,11 +34,13 @@
 
     let baseClass = $derived("btn border-none font-normal transition-all");
 
-    let sizeClass = $derived(size === "sm" ? "btn-sm" : "");
+    let sizeClass = $derived(
+        size === "xs" ? "btn-xs" : size === "sm" ? "btn-sm" : "",
+    );
 
     let variantClass = $derived(
         variant === "ghost"
-            ? "btn-ghost bg-base-200 hover:bg-base-300 text-base-content/70"
+            ? "btn-ghost bg-base-200/60 hover:bg-base-300/70 text-base-content/70"
             : "bg-base-200 hover:bg-base-300 text-base-content",
     );
 

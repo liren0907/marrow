@@ -29,9 +29,9 @@
 <div class="card bg-{variant} {shadowClass} {borderClass} {compactClass} {className}">
     {#if title}
         <div class="card-body">
-            <h2 class="card-title text-lg flex items-center gap-2">
+            <h2 class="card-title text-sm font-medium flex items-center gap-2">
                 {#if icon}
-                    <span class="material-symbols-rounded text-[20px]">{icon}</span>
+                    <span class="material-symbols-rounded text-[16px]">{icon}</span>
                 {/if}
                 {title}
             </h2>

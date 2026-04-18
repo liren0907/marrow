@@ -53,8 +53,14 @@
   }
 
   onMount(() => {
-    const savedTheme = localStorage.getItem("theme") || "light";
+    const legacyMap: Record<string, string> = {
+      light: "marrow-pro-light",
+      dark: "marrow-pro-dark",
+    };
+    const stored = localStorage.getItem("theme");
+    const savedTheme = stored ? (legacyMap[stored] ?? stored) : "marrow-pro-light";
     document.documentElement.setAttribute("data-theme", savedTheme);
+    if (stored && legacyMap[stored]) localStorage.setItem("theme", savedTheme);
 
     let unlisten: (() => void) | null = null;
     let unlistenFs: (() => void) | null = null;
@@ -141,7 +147,7 @@
           class="absolute inset-0 pointer-events-none bg-primary/10 border-4 border-dashed border-primary flex items-center justify-center z-50"
         >
           <div
-            class="bg-base-100 px-6 py-3 rounded-lg shadow-lg text-primary font-medium"
+            class="bg-base-100 px-4 py-2 rounded-[var(--mw-radius-sm)] shadow-lg text-primary font-medium text-sm"
           >
             Drop folder to open as workspace
           </div>
