@@ -9,6 +9,8 @@
     "core:default",
     "core:webview:default",
     "core:window:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-toggle-maximize",
     "shell:allow-open",
     "dialog:default"
   ]

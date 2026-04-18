@@ -1,6 +1,22 @@
 <script lang="ts">
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { formatRelative } from "$lib/utils/formatRelative";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
+
+  let lastClickAt = 0;
+
+  function onTitlebarMouseDown(e: MouseEvent): void {
+    if (e.button !== 0) return;
+    const now = Date.now();
+    const isDoubleClick = now - lastClickAt < 400;
+    lastClickAt = isDoubleClick ? 0 : now;
+    const win = getCurrentWindow();
+    if (isDoubleClick) {
+      void win.toggleMaximize();
+    } else {
+      void win.startDragging();
+    }
+  }
 
   const root = $derived(workspace.info?.root ?? "");
 
@@ -39,7 +55,11 @@
   });
 </script>
 
-<div class="titlebar">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+  class="titlebar"
+  onmousedown={onTitlebarMouseDown}
+>
   <div class="titlebar-drag"></div>
   <div class="titlebar-left"></div>
   <div class="titlebar-center">
@@ -90,6 +110,7 @@
     align-items: baseline;
     gap: 8px;
     min-width: 0;
+    -webkit-app-region: drag;
   }
   .titlebar-workspace {
     color: var(--mw-ink-1);
@@ -118,6 +139,7 @@
     color: var(--mw-ink-2);
     position: relative;
     z-index: 1;
+    -webkit-app-region: drag;
   }
   .titlebar-save {
     color: var(--mw-ink-2);
