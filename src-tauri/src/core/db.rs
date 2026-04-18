@@ -72,6 +72,7 @@ impl DbState {
             DEFINE FIELD IF NOT EXISTS last_path ON workspace TYPE string;
             DEFINE FIELD IF NOT EXISTS created_ts ON workspace TYPE int;
             DEFINE FIELD IF NOT EXISTS last_opened_ts ON workspace TYPE int;
+            DEFINE FIELD IF NOT EXISTS hidden ON workspace TYPE option<bool>;
 
             DEFINE TABLE IF NOT EXISTS note SCHEMAFULL;
             DEFINE FIELD IF NOT EXISTS workspace ON note TYPE record<workspace>;
@@ -102,7 +103,7 @@ impl DbState {
             .await
             .map_err(|e| format!("apply migrations: {e}"))?;
         self.db
-            .query("UPSERT _meta:current SET schema_version = 2;")
+            .query("UPSERT _meta:current SET schema_version = 3;")
             .await
             .map_err(|e| format!("seed schema_version: {e}"))?;
         Ok(())
@@ -143,7 +144,9 @@ impl DbState {
                 .map_err(|e| format!("create workspace: {e}"))?;
         } else {
             self.db
-                .query("UPDATE $id SET name = $n, last_path = $lp, last_opened_ts = $now")
+                .query(
+                    "UPDATE $id SET name = $n, last_path = $lp, last_opened_ts = $now, hidden = NONE",
+                )
                 .bind(("id", ws_thing.clone()))
                 .bind(("n", name))
                 .bind(("lp", last_path))

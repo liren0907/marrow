@@ -3,6 +3,7 @@
   import { openDirectoryDialog } from "$lib/workspace/tauri";
   import { Button } from "$lib/components/ui";
   import PaneContainer from "$lib/panes/PaneContainer.svelte";
+  import RecentList from "$lib/workspace/RecentList.svelte";
   import { showError } from "$lib/stores/toastStore.svelte";
 
   async function pickFolder() {
@@ -24,7 +25,7 @@
 {#if workspace.info}
   <PaneContainer />
 {:else}
-  <div class="flex-1 flex items-center justify-center p-8">
+  <div class="flex-1 flex items-center justify-center p-8 overflow-y-auto">
     <div class="flex flex-col items-center gap-4 text-center max-w-md">
       <span class="material-symbols-rounded text-[72px] text-base-content/20"
         >folder_open</span
@@ -40,6 +41,7 @@
         >
         Open folder…
       </Button>
+      <RecentList />
     </div>
   </div>
 {/if}

@@ -118,3 +118,23 @@ export function loadGraphLayout(): Promise<Record<string, unknown> | null> {
 export function saveGraphLayout(data: Record<string, unknown>): Promise<void> {
   return invoke<void>("save_graph_layout", { data });
 }
+
+export interface WorkspaceSummary {
+  id: string;
+  name: string;
+  last_path: string;
+  last_opened_ts: number;
+  created_ts: number;
+}
+
+export function listRecentWorkspaces(limit = 10): Promise<WorkspaceSummary[]> {
+  return invoke<WorkspaceSummary[]>("list_recent_workspaces", { limit });
+}
+
+export function forgetWorkspace(id: string): Promise<void> {
+  return invoke<void>("forget_workspace", { id });
+}
+
+export function pathExists(path: string): Promise<boolean> {
+  return invoke<boolean>("path_exists", { path });
+}

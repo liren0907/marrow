@@ -16,7 +16,17 @@
   import NamePromptModal from "$lib/tree/NamePromptModal.svelte";
   import RenameModal from "$lib/tree/RenameModal.svelte";
   import FileHistoryModal from "$lib/history/FileHistoryModal.svelte";
-  import { showError, showSuccess } from "$lib/stores/toastStore.svelte";
+  import RecentWorkspacePicker from "$lib/workspace/RecentWorkspacePicker.svelte";
+  import {
+    listRecentWorkspaces,
+    forgetWorkspace,
+    pathExists,
+  } from "$lib/workspace/tauri";
+  import {
+    showError,
+    showSuccess,
+    showWarning,
+  } from "$lib/stores/toastStore.svelte";
   import "../app.css";
   import "katex/dist/katex.min.css";
 
@@ -26,9 +36,29 @@
   let sidebarWidth = $state(256);
   let isResizing = $state(false);
   let dragOver = $state(false);
+  let isLg = $state(true);
+  let isDrawerOpen = $state(false);
 
   const MIN_SIDEBAR_WIDTH = 200;
   const MAX_SIDEBAR_WIDTH = 480;
+
+  async function autoReopenRecent() {
+    if (workspace.info) return;
+    try {
+      const recents = await listRecentWorkspaces(1);
+      const top = recents[0];
+      if (!top) return;
+      if (workspace.info) return;
+      if (!(await pathExists(top.last_path))) {
+        showWarning(`Last workspace "${top.name}" is no longer available`);
+        await forgetWorkspace(top.id);
+        return;
+      }
+      await workspace.open(top.last_path);
+    } catch (e) {
+      console.warn("[layout] auto-reopen failed", e);
+    }
+  }
 
   function handleResizeStart(e: MouseEvent) {
     e.preventDefault();
@@ -62,9 +92,18 @@
     document.documentElement.setAttribute("data-theme", savedTheme);
     if (stored && legacyMap[stored]) localStorage.setItem("theme", savedTheme);
 
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const syncLg = () => {
+      isLg = mq.matches;
+      if (isLg) isDrawerOpen = false;
+    };
+    syncLg();
+    mq.addEventListener("change", syncLg);
+
     let unlisten: (() => void) | null = null;
     let unlistenFs: (() => void) | null = null;
     const unlistenShortcuts = initShortcuts();
+    void autoReopenRecent();
     (async () => {
       try {
         unlistenFs = await initFsEvents();
@@ -102,11 +141,16 @@
       if (unlisten) unlisten();
       if (unlistenFs) unlistenFs();
       unlistenShortcuts();
+      mq.removeEventListener("change", syncLg);
     };
   });
 
   function toggleSidebar() {
-    isSidebarExpanded = !isSidebarExpanded;
+    if (isLg) {
+      isSidebarExpanded = !isSidebarExpanded;
+    } else {
+      isDrawerOpen = !isDrawerOpen;
+    }
   }
 </script>
 
@@ -116,11 +160,16 @@
   class:resizing={isResizing}
   style:--sidebar-width="{sidebarWidth}px"
 >
-  <input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
+  <input
+    id="sidebar-drawer"
+    type="checkbox"
+    class="drawer-toggle"
+    bind:checked={isDrawerOpen}
+  />
 
   <div class="drawer-content flex flex-col min-h-0 min-w-0">
     <main class="flex-1 flex flex-col min-h-0 min-w-0 bg-base-100 relative">
-      {#if !isSidebarExpanded}
+      {#if (isLg && !isSidebarExpanded) || (!isLg && !isDrawerOpen)}
         <div class="absolute top-2 left-2 z-30">
           <button
             onclick={toggleSidebar}
@@ -185,6 +234,7 @@
 <NamePromptModal />
 <RenameModal />
 <FileHistoryModal />
+<RecentWorkspacePicker />
 
 <style>
   .app.resizing {

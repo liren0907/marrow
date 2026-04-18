@@ -8,6 +8,7 @@ import { toggleSearch } from "$lib/search/searchState.svelte";
 import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
 import { peek } from "$lib/peek/peekState.svelte";
 import { toggleBreadcrumb } from "$lib/settings/uiSettings.svelte";
+import { openRecentWorkspacePicker } from "$lib/workspace/recentWorkspacePickerState.svelte";
 
 export interface Command {
   id: string;
@@ -123,6 +124,12 @@ export function getCommands(): Command[] {
     },
 
     // Workspace
+    {
+      id: "workspace.openRecent",
+      title: "Open recent workspace…",
+      category: "Workspace",
+      action: () => queueMicrotask(openRecentWorkspacePicker),
+    },
     {
       id: "split-pane",
       title: "Split pane",

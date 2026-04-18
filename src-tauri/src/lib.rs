@@ -35,6 +35,9 @@ pub fn run() {
             commands::history::restore_snapshot,
             commands::graph::load_graph_layout,
             commands::graph::save_graph_layout,
+            commands::recent::list_recent_workspaces,
+            commands::recent::forget_workspace,
+            commands::recent::path_exists,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
