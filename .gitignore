@@ -16,6 +16,7 @@ stored/src-tauri/tests/resources/
 stored/
 references/
 reference/
+design_examples/
 
 # temp files
 tmp/

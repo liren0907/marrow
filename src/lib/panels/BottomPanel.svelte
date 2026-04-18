@@ -90,61 +90,54 @@
   <div
     class="flex items-center justify-between px-2 py-1 border-b border-base-200 shrink-0"
   >
-    <div class="flex items-center gap-1">
+    <div class="flex items-center gap-0">
       <button
         type="button"
-        class="px-2 py-0.5 text-xs rounded"
-        class:bg-base-200={bottomPanel.activeTab === "backlinks"}
-        class:font-semibold={bottomPanel.activeTab === "backlinks"}
+        class="bp-tab"
+        class:active={bottomPanel.activeTab === "backlinks"}
         onclick={() => selectTab("backlinks")}
       >
         Backlinks
       </button>
       <button
         type="button"
-        class="px-2 py-0.5 text-xs rounded"
-        class:bg-base-200={bottomPanel.activeTab === "unresolved"}
-        class:font-semibold={bottomPanel.activeTab === "unresolved"}
+        class="bp-tab"
+        class:active={bottomPanel.activeTab === "unresolved"}
         onclick={() => selectTab("unresolved")}
       >
         Unresolved
         {#if backlinks.unresolvedBySource.size > 0}
-          <span class="ml-1 text-base-content/50"
-            >({backlinks.unresolvedBySource.size})</span
-          >
+          <span class="bp-tab-count">({backlinks.unresolvedBySource.size})</span>
         {/if}
       </button>
       <button
         type="button"
-        class="px-2 py-0.5 text-xs rounded"
-        class:bg-base-200={bottomPanel.activeTab === "tags"}
-        class:font-semibold={bottomPanel.activeTab === "tags"}
+        class="bp-tab"
+        class:active={bottomPanel.activeTab === "tags"}
         onclick={() => selectTab("tags")}
       >
         Tags
         {#if tags.byTag.size > 0}
-          <span class="ml-1 text-base-content/50">({tags.byTag.size})</span>
+          <span class="bp-tab-count">({tags.byTag.size})</span>
         {/if}
       </button>
       <button
         type="button"
-        class="px-2 py-0.5 text-xs rounded"
-        class:bg-base-200={bottomPanel.activeTab === "outline"}
-        class:font-semibold={bottomPanel.activeTab === "outline"}
+        class="bp-tab"
+        class:active={bottomPanel.activeTab === "outline"}
         onclick={() => selectTab("outline")}
       >
         Outline
       </button>
       <button
         type="button"
-        class="px-2 py-0.5 text-xs rounded"
-        class:bg-base-200={bottomPanel.activeTab === "peek"}
-        class:font-semibold={bottomPanel.activeTab === "peek"}
+        class="bp-tab"
+        class:active={bottomPanel.activeTab === "peek"}
         onclick={() => selectTab("peek")}
       >
         Peek
         {#if peek.depth > 0}
-          <span class="ml-1 text-base-content/50">({peek.depth})</span>
+          <span class="bp-tab-count">({peek.depth})</span>
         {/if}
       </button>
       {#if backlinks.isBuilding || tags.isBuilding}
@@ -193,5 +186,35 @@
   }
   .bottom-panel {
     position: relative;
+  }
+  .bp-tab {
+    padding: 3px 10px;
+    font-size: 11px;
+    color: var(--mw-ink-2);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    position: relative;
+  }
+  .bp-tab:hover {
+    color: var(--mw-ink-1);
+  }
+  .bp-tab.active {
+    color: var(--color-base-content);
+  }
+  .bp-tab.active::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: -2px;
+    height: 1px;
+    background: var(--mw-accent);
+  }
+  .bp-tab-count {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--mw-ink-3);
+    margin-left: 3px;
   }
 </style>

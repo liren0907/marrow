@@ -9,6 +9,6 @@
     let { children }: { children?: Snippet } = $props();
 </script>
 
-<label class="text-xs font-bold text-base-content/40 uppercase tracking-wider">
+<label class="mw-meta">
     {@render children?.()}
 </label>

@@ -10,30 +10,13 @@
   import FileTree from "$lib/tree/FileTree.svelte";
   import { showError } from "$lib/stores/toastStore.svelte";
   import { openRecentWorkspacePicker } from "$lib/workspace/recentWorkspacePickerState.svelte";
+  import { activityBar } from "$lib/chrome/activityBarState.svelte";
+  import SearchSidebarPanel from "$lib/chrome/SearchSidebarPanel.svelte";
+  import GraphMiniPanel from "$lib/chrome/GraphMiniPanel.svelte";
+  import TagsTab from "$lib/panels/TagsTab.svelte";
+  import BacklinksTab from "$lib/panels/BacklinksTab.svelte";
 
-  let {
-    isSidebarExpanded = true,
-    toggleSidebar = () => {},
-    width = 256,
-  }: {
-    isSidebarExpanded?: boolean;
-    toggleSidebar?: () => void;
-    width?: number;
-  } = $props();
-
-  let isDark = $state(false);
-
-  $effect(() => {
-    const t = document.documentElement.getAttribute("data-theme") ?? "";
-    isDark = t === "marrow-pro-dark" || t === "dark";
-  });
-
-  function toggleTheme() {
-    isDark = !isDark;
-    const theme = isDark ? "marrow-pro-dark" : "marrow-pro-light";
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
-  }
+  let { width = 256 }: { width?: number } = $props();
 
   async function pickFolder() {
     closeSwitcher();
@@ -154,15 +137,6 @@
         {switcherOpen ? "expand_less" : "expand_more"}
       </span>
     </button>
-    <button
-      onclick={toggleSidebar}
-      class="btn btn-ghost btn-xs btn-square text-base-content/40 hover:text-base-content shrink-0"
-      title="Collapse sidebar"
-      aria-label="Collapse sidebar"
-    >
-      <span class="material-symbols-rounded text-[18px]">first_page</span>
-    </button>
-
     {#if switcherOpen}
       <div
         bind:this={switcherMenuEl}
@@ -170,10 +144,7 @@
       >
         {#if switcherItems.length > 0}
           <div class="px-2 pt-0.5 pb-1">
-            <span
-              class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider"
-              >Switch to</span
-            >
+            <span class="mw-meta">Switch to</span>
           </div>
           {#each switcherItems as entry (entry.id)}
             <button
@@ -245,9 +216,23 @@
     </div>
   {/if}
 
-  <!-- File Tree -->
-  <div class="flex-1 min-h-0 overflow-y-auto tree-scroll">
-    <FileTree />
+  <!-- Activity body -->
+  <div class="flex-1 min-h-0 flex flex-col tree-scroll">
+    {#if activityBar.current === "files"}
+      <div class="flex-1 min-h-0 overflow-y-auto">
+        <FileTree />
+      </div>
+    {:else if activityBar.current === "search"}
+      <SearchSidebarPanel />
+    {:else if activityBar.current === "tags"}
+      <div class="activity-panel-header mw-meta">Tags</div>
+      <TagsTab />
+    {:else if activityBar.current === "backlinks"}
+      <div class="activity-panel-header mw-meta">Backlinks</div>
+      <BacklinksTab />
+    {:else if activityBar.current === "graph"}
+      <GraphMiniPanel />
+    {/if}
   </div>
 
   <!-- Footer -->
@@ -265,15 +250,6 @@
       </button>
     {/if}
     <div class="flex-1"></div>
-    <button
-      onclick={toggleTheme}
-      class="btn btn-ghost btn-xs btn-square text-base-content/60"
-      title={isDark ? "Switch to light" : "Switch to dark"}
-    >
-      <span class="material-symbols-rounded text-[16px]">
-        {isDark ? "dark_mode" : "light_mode"}
-      </span>
-    </button>
   </div>
 </div>
 
@@ -283,5 +259,9 @@
   }
   .tree-scroll::-webkit-scrollbar {
     display: none;
+  }
+  .activity-panel-header {
+    padding: 10px 14px 4px;
+    flex-shrink: 0;
   }
 </style>

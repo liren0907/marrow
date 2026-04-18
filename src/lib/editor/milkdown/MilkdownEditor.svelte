@@ -255,9 +255,19 @@
     max-width: 46rem;
     margin: 0 auto;
     padding: 2.5rem 3rem 6rem 3rem;
-    font-size: 15px;
-    line-height: 1.7;
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.65;
     color: var(--color-base-content);
+    text-wrap: pretty;
+  }
+  :global(.milkdown-host .ProseMirror h1),
+  :global(.milkdown-host .ProseMirror h2),
+  :global(.milkdown-host .ProseMirror h3),
+  :global(.milkdown-host .ProseMirror h4),
+  :global(.milkdown-host .ProseMirror h5),
+  :global(.milkdown-host .ProseMirror h6) {
+    font-family: var(--font-display);
   }
   :global(.milkdown-host .ProseMirror h1) {
     font-size: 1.875rem;
@@ -402,23 +412,31 @@
 
   :global(.milkdown-host .ProseMirror .wiki-link) {
     display: inline;
-    color: var(--color-primary);
-    background-color: color-mix(in oklch, var(--color-primary) 8%, transparent);
-    padding: 0.05rem 0.3rem;
-    border-radius: 0.25rem;
+    color: var(--mw-accent);
+    background-color: transparent;
+    border-bottom: 1px solid color-mix(in oklch, var(--mw-accent) 35%, transparent);
+    padding: 0 1px;
+    border-radius: 0;
     cursor: pointer;
     text-decoration: none;
     font-weight: 500;
+    transition: background 0.1s, border-bottom-color 0.1s;
   }
   :global(.milkdown-host .ProseMirror .wiki-link:hover) {
-    background-color: color-mix(in oklch, var(--color-primary) 15%, transparent);
+    background-color: color-mix(in oklch, var(--mw-accent) 15%, transparent);
+    border-bottom-color: var(--mw-accent);
   }
   :global(.milkdown-host .ProseMirror .wiki-link.unresolved) {
-    color: color-mix(in oklch, var(--color-base-content) 40%, transparent);
+    color: var(--mw-ink-3);
     background-color: transparent;
-    border-bottom: 1px dashed color-mix(in oklch, var(--color-base-content) 30%, transparent);
-    border-radius: 0;
-    padding: 0;
+    border-bottom: 1px dashed var(--mw-ink-3);
+  }
+  :global(.milkdown-host .ProseMirror .wiki-link.unresolved:hover) {
+    background-color: color-mix(in oklch, var(--color-base-content) 5%, transparent);
+    border-bottom-color: var(--mw-ink-2);
+  }
+  :global(.milkdown-host .ProseMirror ::selection) {
+    background: var(--mw-selection);
   }
   :global(.milkdown-host .ProseMirror .wiki-link.unresolved:hover) {
     background-color: color-mix(in oklch, var(--color-base-content) 5%, transparent);

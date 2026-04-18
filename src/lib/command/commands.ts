@@ -7,8 +7,12 @@ import {
 import { toggleSearch } from "$lib/search/searchState.svelte";
 import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
 import { peek } from "$lib/peek/peekState.svelte";
-import { toggleBreadcrumb } from "$lib/settings/uiSettings.svelte";
+import {
+  toggleBreadcrumb,
+  togglePaneOutline,
+} from "$lib/settings/uiSettings.svelte";
 import { openRecentWorkspacePicker } from "$lib/workspace/recentWorkspacePickerState.svelte";
+import { openTweaks } from "$lib/settings/tweaksState.svelte";
 
 export interface Command {
   id: string;
@@ -121,6 +125,19 @@ export function getCommands(): Command[] {
       title: "Toggle editor breadcrumb",
       category: "View",
       action: toggleBreadcrumb,
+    },
+    {
+      id: "toggle-pane-outline",
+      title: "Toggle pane outline (right gutter)",
+      category: "View",
+      action: togglePaneOutline,
+    },
+    {
+      id: "open-tweaks",
+      title: "Open tweaks (theme + accent)",
+      category: "View",
+      shortcut: "⌘,",
+      action: openTweaks,
     },
 
     // Workspace

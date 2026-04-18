@@ -16,7 +16,9 @@
         "title": "Marrow",
         "width": 1200,
         "height": 800,
-        "dragDropEnabled": true
+        "dragDropEnabled": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       }
     ],
     "security": {

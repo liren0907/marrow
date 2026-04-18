@@ -50,6 +50,7 @@ export interface Tab {
   title: string;
   isDirty: boolean;
   lastKnownMtime?: number;
+  lastSavedTs?: number;
   reloadToken?: number;
   missing?: boolean;
 }

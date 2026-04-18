@@ -3,6 +3,7 @@ import type { FsEventPayload } from "./types";
 import { workspace } from "./workspace.svelte";
 import { updateBacklinksForFile } from "./backlinkIndex.svelte";
 import { updateTagsForFile } from "./tagIndex.svelte";
+import { scheduleGitRefresh } from "./gitState.svelte";
 import { notifyTransclusionTargets } from "$lib/editor/milkdown/transclusion/nodeView";
 import { tree } from "$lib/tree/treeState.svelte";
 
@@ -31,6 +32,7 @@ function handleFsEvent(payload: FsEventPayload): void {
       notifyTransclusionTargets(path);
     }
   }
+  scheduleGitRefresh();
   for (const parent of parents) {
     // Only refresh directories the user has already expanded / loaded.
     if (tree.getChildren(parent) !== undefined) {

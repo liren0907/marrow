@@ -65,8 +65,12 @@ export const workspace = {
     // Backlink + tag builds run after file index so resolveBasename works.
     const { rebuildBacklinks } = await import("./backlinkIndex.svelte");
     const { rebuildTags } = await import("./tagIndex.svelte");
+    const { refreshGitBranch } = await import("./gitState.svelte");
+    const { reloadMiniGraph } = await import("$lib/graph/miniGraphState.svelte");
     void rebuildBacklinks();
     void rebuildTags();
+    void refreshGitBranch();
+    void reloadMiniGraph();
   },
 
   close(): void {

@@ -111,6 +111,16 @@
   }
 </script>
 
+<style>
+  :global(.search-hit) {
+    background: color-mix(in oklch, var(--mw-accent) 25%, transparent);
+    color: var(--color-base-content);
+    padding: 0 1px;
+    border-radius: 2px;
+    font-weight: 600;
+  }
+</style>
+
 {#if search.isOpen}
   <div class="modal modal-open z-[60]" role="dialog" aria-label="Search workspace">
     <button
@@ -176,12 +186,10 @@
                           class="text-[10px] text-base-content/40 font-mono shrink-0 w-8 text-right"
                           >{hit.line}</span
                         >
-                        <span class="font-mono truncate flex-1">
+                        <span class="font-mono truncate flex-1 search-line">
                           {#each renderContent(hit) as part}
                             {#if part.on}
-                              <span class="text-primary font-semibold"
-                                >{part.text}</span
-                              >
+                              <mark class="search-hit">{part.text}</mark>
                             {:else}{part.text}{/if}
                           {/each}
                         </span>

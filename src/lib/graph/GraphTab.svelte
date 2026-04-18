@@ -500,6 +500,12 @@
     cy?.fit(undefined, 60);
   }
 
+  function centerViewport(): void {
+    if (!cy) return;
+    cy.resize();
+    cy.fit(undefined, 60);
+  }
+
   // ===== Phase 7: layout persistence =====
 
   interface PersistedLayout {
@@ -544,6 +550,8 @@
     };
     try {
       await saveGraphLayout(data as unknown as Record<string, unknown>);
+      const { reloadMiniGraph } = await import("./miniGraphState.svelte");
+      void reloadMiniGraph();
     } catch (e) {
       console.warn("[graph] save layout failed", e);
     }
@@ -607,11 +615,17 @@
         cy?.nodes().unlock();
         startLayout();
       }, 500);
-      cy.fit(undefined, 60);
     } else {
       runInitialLayout();
       startLayout();
     }
+
+    // Defer the initial fit until the flex container has settled its size.
+    // Two rAFs is the belt-and-braces pattern; cy.resize() forces cytoscape
+    // to re-read container bounds so cy.fit lands the graph centered.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(centerViewport);
+    });
 
     cy.on("tap", "node", (e) => {
       const path = e.target.id() as string;

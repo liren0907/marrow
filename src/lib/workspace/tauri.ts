@@ -138,3 +138,15 @@ export function forgetWorkspace(id: string): Promise<void> {
 export function pathExists(path: string): Promise<boolean> {
   return invoke<boolean>("path_exists", { path });
 }
+
+export function getGitBranch(root: string): Promise<string | null> {
+  return invoke<string | null>("get_git_branch", { root });
+}
+
+export interface WatcherStatus {
+  running: boolean;
+}
+
+export function getWatcherStatus(): Promise<WatcherStatus> {
+  return invoke<WatcherStatus>("get_watcher_status");
+}

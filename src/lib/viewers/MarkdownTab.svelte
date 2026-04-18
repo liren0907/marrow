@@ -20,6 +20,7 @@
   import type { PeekRequest } from "$lib/editor/milkdown/MilkdownEditor.svelte";
   import { openConflict } from "$lib/conflict/conflictState.svelte";
   import MilkdownEditor from "$lib/editor/milkdown/MilkdownEditor.svelte";
+  import EditorMetaHeader from "$lib/editor/EditorMetaHeader.svelte";
   import type { WikiLinkSuggestion } from "$lib/editor/milkdown/wikiLink/suggest";
   import type { TransclusionSuggestion } from "$lib/editor/milkdown/transclusion/suggest";
   import { debounce } from "$lib/utils/debounce";
@@ -123,6 +124,7 @@
       workspace.patchTab(tab.id, {
         isDirty: false,
         lastKnownMtime: result.mtime,
+        lastSavedTs: Date.now(),
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -229,24 +231,27 @@
   });
 </script>
 
-<div class="w-full h-full relative">
+<div class="w-full h-full relative flex flex-col min-h-0">
   {#if loadError}
     <div class="p-6 text-error text-sm">Failed to load: {loadError}</div>
   {:else if loaded}
-    {#key reloadKey}
-      <MilkdownEditor
-        initial={initialContent}
-        onChange={handleChange}
-        onWikiLinkClick={handleWikiLinkClick}
-        {getWikiLinkSuggestions}
-        {isWikiLinkResolved}
-        onTransclusionClick={handleTransclusionClick}
-        {getTransclusionSuggestions}
-        onReady={handleEditorReady}
-        onOutlineUpdate={handleOutlineUpdate}
-        onPeekRequest={handlePeekRequest}
-      />
-    {/key}
+    <EditorMetaHeader {tab} />
+    <div class="flex-1 min-h-0 overflow-hidden">
+      {#key reloadKey}
+        <MilkdownEditor
+          initial={initialContent}
+          onChange={handleChange}
+          onWikiLinkClick={handleWikiLinkClick}
+          {getWikiLinkSuggestions}
+          {isWikiLinkResolved}
+          onTransclusionClick={handleTransclusionClick}
+          {getTransclusionSuggestions}
+          onReady={handleEditorReady}
+          onOutlineUpdate={handleOutlineUpdate}
+          onPeekRequest={handlePeekRequest}
+        />
+      {/key}
+    </div>
   {:else}
     <div class="p-6 text-base-content/40 text-sm">Loading…</div>
   {/if}

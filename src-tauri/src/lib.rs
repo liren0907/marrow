@@ -38,6 +38,8 @@ pub fn run() {
             commands::recent::list_recent_workspaces,
             commands::recent::forget_workspace,
             commands::recent::path_exists,
+            commands::git::get_git_branch,
+            commands::git::get_watcher_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

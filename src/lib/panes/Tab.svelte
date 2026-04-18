@@ -13,6 +13,27 @@
     active,
   }: { tab: TabType; paneId: string; active: boolean } = $props();
 
+  const kindLetter = $derived.by(() => {
+    switch (tab.kind) {
+      case "markdown":
+        return "M";
+      case "graph":
+        return "◉";
+      case "image":
+        return "I";
+      case "video":
+        return "V";
+      case "audio":
+        return "A";
+      case "pdf":
+        return "P";
+      case "text":
+        return "T";
+      default:
+        return "·";
+    }
+  });
+
   function activate() {
     workspace.setActiveTab(paneId, tab.id);
   }
@@ -54,10 +75,8 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
-  class="flex items-center gap-1.5 px-3 border-r border-base-200 cursor-pointer text-xs whitespace-nowrap select-none
-    {active
-    ? 'bg-base-200 text-base-content'
-    : 'text-base-content/60 hover:bg-base-200/50'}"
+  class="mw-tab"
+  class:active
   onclick={activate}
   oncontextmenu={onContextMenu}
   role="tab"
@@ -68,15 +87,94 @@
   data-tab-id={tab.id}
   data-pane-id={paneId}
 >
-  <span class="truncate max-w-[180px]">{tab.title}</span>
+  <span class="mw-tab-kind" data-kind={tab.kind}>{kindLetter}</span>
+  <span class="mw-tab-title">{tab.title}</span>
   {#if tab.isDirty}
-    <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
+    <span class="mw-tab-dirty" aria-label="Modified"></span>
   {/if}
   <button
-    class="btn btn-ghost btn-xs btn-circle h-5 min-h-0 w-5 p-0 shrink-0"
+    class="mw-tab-close"
     onclick={close}
     aria-label="Close tab"
   >
-    <span class="material-symbols-rounded text-[14px]">close</span>
+    <span class="material-symbols-rounded">close</span>
   </button>
 </div>
+
+<style>
+  .mw-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    font-size: 12px;
+    color: var(--mw-ink-2);
+    cursor: pointer;
+    border-right: 1px solid var(--mw-rule);
+    background: var(--mw-tab-inactive);
+    max-width: 220px;
+    min-width: 0;
+    position: relative;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .mw-tab:hover {
+    color: var(--mw-ink-1);
+  }
+  .mw-tab.active {
+    background: var(--color-base-100);
+    color: var(--color-base-content);
+  }
+  .mw-tab.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: var(--mw-accent);
+  }
+  .mw-tab-kind {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--mw-ink-3);
+    width: 12px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .mw-tab-kind[data-kind="graph"] {
+    color: var(--mw-accent);
+  }
+  .mw-tab-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .mw-tab-dirty {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--mw-accent);
+    flex-shrink: 0;
+  }
+  .mw-tab-close {
+    color: var(--mw-ink-3);
+    padding: 0 4px;
+    border-radius: 2px;
+    font-size: 14px;
+    line-height: 1;
+    background: transparent;
+    border: none;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .mw-tab-close:hover {
+    background: var(--color-base-300);
+    color: var(--color-base-content);
+  }
+  .mw-tab-close :global(.material-symbols-rounded) {
+    font-size: 14px;
+  }
+</style>

@@ -52,6 +52,10 @@ impl WatcherState {
         }
     }
 
+    pub fn is_running(&self) -> bool {
+        self.watcher.lock().map(|g| g.is_some()).unwrap_or(false)
+    }
+
     pub fn note_own_write(&self, path: &Path) {
         let canonical = canonicalize(path);
         let mut map = self.recent_writes.lock().unwrap();

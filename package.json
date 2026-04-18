@@ -48,7 +48,6 @@
     "webcola": "^3.4.0"
   },
   "devDependencies": {
-    "@fontsource/fira-mono": "^5.0.0",
     "@sveltejs/adapter-auto": "^7.0.1",
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.55.0",
