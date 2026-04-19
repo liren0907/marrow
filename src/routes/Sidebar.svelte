@@ -234,23 +234,6 @@
       <GraphMiniPanel />
     {/if}
   </div>
-
-  <!-- Footer -->
-  <div
-    class="border-t border-base-200 px-2 py-1.5 flex items-center gap-1 shrink-0"
-  >
-    {#if workspace.info}
-      <button
-        onclick={() => workspace.openGraph()}
-        class="btn btn-ghost btn-xs btn-square text-base-content/60"
-        title="Open graph view (⌘⇧G)"
-        aria-label="Open graph view"
-      >
-        <span class="material-symbols-rounded text-[16px]">hub</span>
-      </button>
-    {/if}
-    <div class="flex-1"></div>
-  </div>
 </div>
 
 <style>

@@ -1,6 +1,5 @@
 import { workspace } from "./workspace.svelte";
 import { tabPeekRegistry } from "./tabRegistry.svelte";
-import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
 import { toggleBottomPanel } from "$lib/panels/bottomPanelState.svelte";
 import { toggleSearch } from "$lib/search/searchState.svelte";
 import { toggleCommandPalette } from "$lib/command/commandPaletteState.svelte";
@@ -48,14 +47,10 @@ export function initShortcuts(): () => void {
       if (pane.activeTabId) workspace.closeTab(pane.id, pane.activeTabId);
       return;
     }
-    // Cmd+P — toggle quick-open
+    // Cmd+P — toggle full-text search modal
     if (k === "p" && !e.shiftKey) {
       e.preventDefault();
-      quickOpen.isOpen = !quickOpen.isOpen;
-      if (quickOpen.isOpen) {
-        quickOpen.query = "";
-        quickOpen.selectedIdx = 0;
-      }
+      toggleSearch();
       return;
     }
     // Cmd+Shift+P — toggle command palette

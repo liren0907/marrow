@@ -5,7 +5,6 @@ import {
   toggleBottomPanel,
 } from "$lib/panels/bottomPanelState.svelte";
 import { toggleSearch } from "$lib/search/searchState.svelte";
-import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
 import { peek } from "$lib/peek/peekState.svelte";
 import {
   toggleBreadcrumb,
@@ -26,21 +25,10 @@ export function getCommands(): Command[] {
   return [
     // Navigation
     {
-      id: "quick-open",
-      title: "Quick open file",
-      category: "Navigation",
-      shortcut: "⌘P",
-      action: () => {
-        quickOpen.isOpen = true;
-        quickOpen.query = "";
-        quickOpen.selectedIdx = 0;
-      },
-    },
-    {
       id: "search-workspace",
       title: "Search in workspace",
       category: "Navigation",
-      shortcut: "⇧⌘F",
+      shortcut: "⌘P / ⇧⌘F",
       action: toggleSearch,
     },
     {

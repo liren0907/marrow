@@ -6,7 +6,6 @@
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { initFsEvents } from "$lib/workspace/fsEvents";
   import { initShortcuts } from "$lib/workspace/shortcuts.svelte";
-  import QuickOpen from "$lib/quickopen/QuickOpen.svelte";
   import SearchModal from "$lib/search/SearchModal.svelte";
   import CommandPalette from "$lib/command/CommandPalette.svelte";
   import ConflictModal from "$lib/conflict/ConflictModal.svelte";
@@ -183,7 +182,6 @@
 </div>
 
 <Toast />
-<QuickOpen />
 <SearchModal />
 <CommandPalette />
 <ConflictModal />

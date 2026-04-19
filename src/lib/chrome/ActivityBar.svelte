@@ -4,7 +4,6 @@
     setActivity,
     type Activity,
   } from "./activityBarState.svelte";
-  import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
   import { toggleCommandPalette } from "$lib/command/commandPaletteState.svelte";
 
   interface Item {
@@ -21,11 +20,6 @@
     { id: "backlinks", icon: "arrow_back", label: "Backlinks" },
   ];
 
-  function openQuick(): void {
-    quickOpen.isOpen = true;
-    quickOpen.query = "";
-    quickOpen.selectedIdx = 0;
-  }
 </script>
 
 <nav class="activity-bar" aria-label="Activity">
@@ -33,10 +27,10 @@
     {#each items as item (item.id)}
       <button
         type="button"
-        class="activity-btn"
+        class="activity-btn tooltip tooltip-right"
         class:active={activityBar.current === item.id}
         onclick={() => setActivity(item.id)}
-        title={item.label}
+        data-tip={item.label}
         aria-label={item.label}
         aria-pressed={activityBar.current === item.id}
       >
@@ -47,18 +41,9 @@
   <div class="activity-group">
     <button
       type="button"
-      class="activity-btn"
-      onclick={openQuick}
-      title="Quick open (⌘P)"
-      aria-label="Quick open"
-    >
-      <span class="material-symbols-rounded">subject</span>
-    </button>
-    <button
-      type="button"
-      class="activity-btn"
+      class="activity-btn tooltip tooltip-right"
       onclick={toggleCommandPalette}
-      title="Command palette (⇧⌘P)"
+      data-tip="Command palette · ⇧⌘P"
       aria-label="Command palette"
     >
       <span class="material-symbols-rounded">terminal</span>

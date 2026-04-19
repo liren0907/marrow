@@ -226,7 +226,18 @@
 </script>
 
 <div class="panel">
-  <div class="panel-header mw-meta">Graph</div>
+  <div class="panel-header-row">
+    <span class="mw-meta">Graph</span>
+    <button
+      type="button"
+      class="header-action"
+      onclick={openGraph}
+      title="Open full graph (⇧⌘G)"
+      aria-label="Open full graph"
+    >
+      <span class="material-symbols-rounded">open_in_full</span>
+    </button>
+  </div>
   {#if hasLayout}
     <div
       bind:this={wrapEl}
@@ -239,9 +250,6 @@
     >
       <canvas bind:this={canvasEl} class="mini-graph-canvas"></canvas>
     </div>
-    <button type="button" class="mini-graph-expand mw-meta" onclick={openGraph}>
-      Open full graph · ⇧⌘G
-    </button>
   {:else}
     <div
       class="mini-graph-placeholder"
@@ -298,6 +306,31 @@
   .panel-header {
     padding: 10px 14px 4px;
   }
+  .panel-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 10px 4px 14px;
+  }
+  .header-action {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    color: var(--mw-ink-2);
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: color 0.1s, background 0.1s;
+  }
+  .header-action:hover {
+    color: var(--color-base-content);
+    background: var(--color-base-300);
+  }
+  .header-action :global(.material-symbols-rounded) {
+    font-size: 14px;
+  }
   .mini-graph-live {
     margin: 4px 10px 4px;
     height: 180px;
@@ -312,20 +345,6 @@
     display: block;
     width: 100%;
     height: 100%;
-  }
-  .mini-graph-expand {
-    margin: 0 12px 12px;
-    padding: 4px 8px;
-    background: transparent;
-    border: none;
-    text-align: left;
-    color: var(--mw-ink-2);
-    cursor: pointer;
-    border-radius: 3px;
-  }
-  .mini-graph-expand:hover {
-    color: var(--color-base-content);
-    background: var(--color-base-300);
   }
   .mini-graph-placeholder {
     margin: 4px 10px 12px;

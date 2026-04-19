@@ -1,7 +1,7 @@
 <script lang="ts">
   import { commandPalette } from "./commandPaletteState.svelte";
   import { getCommands, type Command } from "./commands";
-  import { fuzzyMatch } from "$lib/quickopen/fuzzy";
+  import { fuzzyMatch } from "$lib/utils/fuzzy";
 
   interface Result {
     cmd: Command;

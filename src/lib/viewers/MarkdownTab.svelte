@@ -16,7 +16,7 @@
     type Heading,
   } from "$lib/workspace/tabRegistry.svelte";
   import { peek } from "$lib/peek/peekState.svelte";
-  import { quickOpen } from "$lib/quickopen/quickOpenState.svelte";
+  import { search, scheduleSearch } from "$lib/search/searchState.svelte";
   import type { PeekRequest } from "$lib/editor/milkdown/MilkdownEditor.svelte";
   import { openConflict } from "$lib/conflict/conflictState.svelte";
   import MilkdownEditor from "$lib/editor/milkdown/MilkdownEditor.svelte";
@@ -190,10 +190,11 @@
       void peek.push(path, req.section);
       return;
     }
-    // Word fallback: open quick-open pre-filled with the word.
-    quickOpen.query = req.word;
-    quickOpen.selectedIdx = 0;
-    quickOpen.isOpen = true;
+    // Word fallback: open full-text search pre-filled with the word.
+    search.query = req.word;
+    search.selectedIdx = 0;
+    search.isOpen = true;
+    scheduleSearch();
   }
 
   onDestroy(() => {
