@@ -1,37 +1,53 @@
 <script lang="ts">
   import { workspace } from "$lib/workspace/workspace.svelte";
-  import type { SearchHit } from "$lib/workspace/tauri";
-  import { search, scheduleSearch, closeSearch } from "./searchState.svelte";
+  import type { CrossHit, SearchHit } from "$lib/workspace/tauri";
+  import { peek } from "$lib/peek/peekState.svelte";
+  import {
+    search,
+    scheduleSearch,
+    closeSearch,
+    setScope,
+    type SearchScope,
+  } from "./searchState.svelte";
 
   let inputEl: HTMLInputElement | undefined = $state();
 
-  // Group consecutive hits in the same file so we render a single file header
-  // with multiple match rows underneath.
-  interface HitGroup {
+  // Nested grouping: workspace → file → hits. When scope=current there is
+  // exactly one workspace group and we hide its header.
+  interface FileGroup {
     path: string;
     relPath: string;
-    hits: SearchHit[];
+    hits: CrossHit[];
+  }
+  interface WsGroup {
+    id: string;
+    name: string;
+    files: FileGroup[];
   }
 
   const groups = $derived.by(() => {
-    const out: HitGroup[] = [];
-    const root = workspace.info?.root ?? "";
-    for (const hit of search.results) {
-      const last = out[out.length - 1];
-      if (last && last.path === hit.path) {
-        last.hits.push(hit);
+    const out: WsGroup[] = [];
+    for (const ch of search.results) {
+      let ws = out[out.length - 1];
+      if (!ws || ws.id !== ch.workspace_id) {
+        ws = { id: ch.workspace_id, name: ch.workspace_name, files: [] };
+        out.push(ws);
+      }
+      const last = ws.files[ws.files.length - 1];
+      const root = ch.workspace_root;
+      const rel =
+        root && ch.hit.path.startsWith(root)
+          ? ch.hit.path.slice(root.length).replace(/^[/\\]/, "")
+          : ch.hit.path;
+      if (last && last.path === ch.hit.path) {
+        last.hits.push(ch);
       } else {
-        let rel = hit.path;
-        if (root && hit.path.startsWith(root)) {
-          rel = hit.path.slice(root.length).replace(/^[/\\]/, "");
-        }
-        out.push({ path: hit.path, relPath: rel, hits: [hit] });
+        ws.files.push({ path: ch.hit.path, relPath: rel, hits: [ch] });
       }
     }
     return out;
   });
 
-  // Flat index of selectable rows (each hit is a row).
   const flatHits = $derived(search.results);
 
   $effect(() => {
@@ -42,12 +58,22 @@
   });
 
   function pick(idx: number, newTab: boolean): void {
-    const hit = flatHits[idx];
-    if (!hit) return;
+    const ch = flatHits[idx];
+    if (!ch) return;
+    const currentRoot = workspace.info?.root ?? "";
+    const sameWorkspace = ch.workspace_root === currentRoot;
+    if (!sameWorkspace) {
+      void peek.push(ch.hit.path, null, {
+        root: ch.workspace_root,
+        name: ch.workspace_name,
+      });
+      closeSearch();
+      return;
+    }
     if (newTab) {
-      workspace.openFile(hit.path);
+      workspace.openFile(ch.hit.path);
     } else {
-      workspace.replaceCurrentTab(hit.path);
+      workspace.replaceCurrentTab(ch.hit.path);
     }
     closeSearch();
   }
@@ -76,8 +102,6 @@
     scheduleSearch();
   }
 
-  // Render a hit's content with the matched portion highlighted. Defensive:
-  // if match_start === match_end (no match position), fall back to indexOf.
   interface ContentSpan {
     text: string;
     on: boolean;
@@ -104,10 +128,12 @@
     ];
   }
 
-  // Compute global selectedIdx that maps to a position within a group's hits
-  // so we can highlight the right row.
-  function indexOfHit(targetHit: SearchHit): number {
-    return flatHits.indexOf(targetHit);
+  function indexOfHit(target: CrossHit): number {
+    return flatHits.indexOf(target);
+  }
+
+  function pickScope(s: SearchScope): void {
+    setScope(s);
   }
 </script>
 
@@ -119,10 +145,34 @@
     border-radius: 2px;
     font-weight: 600;
   }
+  .scope-toggle {
+    display: inline-flex;
+    gap: 0;
+    border: 1px solid var(--mw-rule);
+    border-radius: 4px;
+    overflow: hidden;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--mw-ink-2);
+  }
+  .scope-btn {
+    padding: 2px 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+  }
+  .scope-btn:hover {
+    background: var(--color-base-300);
+  }
+  .scope-btn.active {
+    background: var(--mw-accent);
+    color: var(--color-base-100);
+  }
 </style>
 
 {#if search.isOpen}
-  <div class="modal modal-open z-[60]" role="dialog" aria-label="Search workspace">
+  <div class="modal modal-open z-[60]" role="dialog" aria-label="Search">
     <button
       type="button"
       class="modal-backdrop cursor-default"
@@ -141,11 +191,27 @@
           bind:this={inputEl}
           type="text"
           class="flex-1 bg-transparent outline-none text-base px-1 py-1"
-          placeholder="Search workspace contents…"
+          placeholder={search.scope === "all"
+            ? "Search all workspaces…"
+            : "Search workspace contents…"}
           bind:value={search.query}
           oninput={onQueryInput}
           onkeydown={onInputKeydown}
         />
+        <div class="scope-toggle">
+          <button
+            type="button"
+            class="scope-btn"
+            class:active={search.scope === "current"}
+            onclick={() => pickScope("current")}>This ws</button
+          >
+          <button
+            type="button"
+            class="scope-btn"
+            class:active={search.scope === "all"}
+            onclick={() => pickScope("all")}>All ws</button
+          >
+        </div>
         {#if search.isSearching}
           <span class="loading loading-spinner loading-xs text-base-content/40"
           ></span>
@@ -164,39 +230,50 @@
           </div>
         {:else}
           <ul class="flex flex-col">
-            {#each groups as group (group.path)}
-              <li class="mb-1">
-                <div
-                  class="px-3 py-1 text-[11px] text-base-content/50 font-semibold sticky top-0 bg-base-100"
-                >
-                  {group.relPath}
-                </div>
-                <ul>
-                  {#each group.hits as hit (hit.path + ":" + hit.line)}
-                    {@const idx = indexOfHit(hit)}
-                    <li>
-                      <button
-                        type="button"
-                        class="w-full flex items-baseline gap-3 px-3 py-1 text-left text-xs hover:bg-base-200"
-                        class:bg-base-200={idx === search.selectedIdx}
-                        onmousemove={() => (search.selectedIdx = idx)}
-                        onclick={(e) => pick(idx, e.metaKey || e.ctrlKey)}
-                      >
-                        <span
-                          class="text-[10px] text-base-content/40 font-mono shrink-0 w-8 text-right"
-                          >{hit.line}</span
-                        >
-                        <span class="font-mono truncate flex-1 search-line">
-                          {#each renderContent(hit) as part}
-                            {#if part.on}
-                              <mark class="search-hit">{part.text}</mark>
-                            {:else}{part.text}{/if}
-                          {/each}
-                        </span>
-                      </button>
-                    </li>
-                  {/each}
-                </ul>
+            {#each groups as ws (ws.id)}
+              <li class="mb-2">
+                {#if search.scope === "all"}
+                  <div
+                    class="mw-meta px-3 pt-2 pb-1 sticky top-0 bg-base-100"
+                  >
+                    {ws.name}
+                  </div>
+                {/if}
+                {#each ws.files as file (file.path)}
+                  <div class="mb-1">
+                    <div
+                      class="px-3 py-1 text-[11px] text-base-content/50 font-semibold"
+                    >
+                      {file.relPath}
+                    </div>
+                    <ul>
+                      {#each file.hits as ch (ch.hit.path + ":" + ch.hit.line)}
+                        {@const idx = indexOfHit(ch)}
+                        <li>
+                          <button
+                            type="button"
+                            class="w-full flex items-baseline gap-3 px-3 py-1 text-left text-xs hover:bg-base-200"
+                            class:bg-base-200={idx === search.selectedIdx}
+                            onmousemove={() => (search.selectedIdx = idx)}
+                            onclick={(e) => pick(idx, e.metaKey || e.ctrlKey)}
+                          >
+                            <span
+                              class="text-[10px] text-base-content/40 font-mono shrink-0 w-8 text-right"
+                              >{ch.hit.line}</span
+                            >
+                            <span class="font-mono truncate flex-1 search-line">
+                              {#each renderContent(ch.hit) as part}
+                                {#if part.on}
+                                  <mark class="search-hit">{part.text}</mark>
+                                {:else}{part.text}{/if}
+                              {/each}
+                            </span>
+                          </button>
+                        </li>
+                      {/each}
+                    </ul>
+                  </div>
+                {/each}
               </li>
             {/each}
           </ul>

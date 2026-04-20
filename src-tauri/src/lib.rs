@@ -21,6 +21,7 @@ pub fn run() {
             commands::workspace::list_directory,
             commands::workspace::list_workspace_files,
             commands::workspace::search_workspace,
+            commands::search_all::search_all_workspaces,
             commands::workspace::read_text_file,
             commands::workspace::read_binary_file,
             commands::workspace::write_text_file,

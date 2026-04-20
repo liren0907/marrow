@@ -224,10 +224,9 @@ pub fn list_workspace_files(root: String) -> Result<Vec<FileMeta>, String> {
     Ok(out)
 }
 
-#[tauri::command]
-pub fn search_workspace(
-    root: String,
-    query: String,
+pub(crate) fn search_root_impl(
+    root: &str,
+    query: &str,
     max_results: Option<usize>,
 ) -> Result<Vec<SearchHit>, String> {
     use grep::matcher::Matcher;
@@ -240,7 +239,7 @@ pub fn search_workspace(
     }
     let limit = max_results.unwrap_or(200);
 
-    let root_path = Path::new(&root);
+    let root_path = Path::new(root);
     if !root_path.is_dir() {
         return Err(format!("Not a directory: {}", root));
     }
@@ -326,6 +325,15 @@ pub fn search_workspace(
     }
 
     Ok(hits)
+}
+
+#[tauri::command]
+pub fn search_workspace(
+    root: String,
+    query: String,
+    max_results: Option<usize>,
+) -> Result<Vec<SearchHit>, String> {
+    search_root_impl(&root, &query, max_results)
 }
 
 #[tauri::command]

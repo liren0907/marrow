@@ -3,12 +3,21 @@ import { basename } from "$lib/workspace/fileKind";
 import { bottomPanel } from "$lib/panels/bottomPanelState.svelte";
 import { showWarning, showError } from "$lib/stores/toastStore.svelte";
 
+export interface ForeignWorkspace {
+  root: string;
+  name: string;
+}
+
 export interface PeekLayer {
   path: string;
   section: string | null;
   content: string;
   scrollY: number;
   label: string;
+  // When set, the peeked file lives in a different workspace than the currently
+  // active one. Wiki-link resolution is disabled (would hit the wrong index)
+  // and the header shows an "Open in NAME" button.
+  foreignWorkspace?: ForeignWorkspace;
 }
 
 export const MAX_PEEK_DEPTH = 5;
@@ -33,7 +42,11 @@ export const peek = {
     return state.layers.length;
   },
 
-  async push(path: string, section: string | null): Promise<void> {
+  async push(
+    path: string,
+    section: string | null,
+    foreignWorkspace?: ForeignWorkspace,
+  ): Promise<void> {
     if (state.layers.length >= MAX_PEEK_DEPTH) {
       showWarning(`Peek depth limit (${MAX_PEEK_DEPTH}) reached`);
       return;
@@ -59,6 +72,7 @@ export const peek = {
       content,
       scrollY: 0,
       label,
+      foreignWorkspace,
     });
 
     if (!bottomPanel.isOpen) bottomPanel.isOpen = true;

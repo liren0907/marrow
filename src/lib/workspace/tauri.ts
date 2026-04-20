@@ -49,6 +49,23 @@ export function searchWorkspace(
   });
 }
 
+export interface CrossHit {
+  workspace_id: string;
+  workspace_name: string;
+  workspace_root: string;
+  hit: SearchHit;
+}
+
+export function searchAllWorkspaces(
+  query: string,
+  maxResults?: number,
+): Promise<CrossHit[]> {
+  return invoke<CrossHit[]>("search_all_workspaces", {
+    query,
+    maxResults: maxResults ?? null,
+  });
+}
+
 export function readTextFile(path: string): Promise<ReadResult> {
   return invoke<ReadResult>("read_text_file", { path });
 }

@@ -7,6 +7,8 @@
     renderEmbeddedSection,
   } from "$lib/editor/milkdown/transclusion/renderer";
   import { debounce } from "$lib/utils/debounce";
+  import { tabSaveRegistry } from "$lib/workspace/shortcuts.svelte";
+  import { showError } from "$lib/stores/toastStore.svelte";
 
   let container: HTMLDivElement;
   // contentHost is re-bound each render via bind:this and the effect mutates
@@ -27,7 +29,11 @@
   $effect(() => {
     if (!contentHost) return;
     contentHost.innerHTML = html;
-    enhanceWikiLinks(contentHost);
+    // Wiki-link enhancement is workspace-scoped. Skip it for foreign-workspace
+    // peeks since resolution would hit the wrong file index.
+    if (current && !current.foreignWorkspace) {
+      enhanceWikiLinks(contentHost);
+    }
     // Restore remembered scroll for this layer on next frame.
     const target = current;
     if (!target) return;
@@ -121,6 +127,32 @@
     peek.popTo(targetDepth);
   }
 
+  async function openInForeignWorkspace(): Promise<void> {
+    const layer = peek.current;
+    if (!layer || !layer.foreignWorkspace) return;
+    const { root, name } = layer.foreignWorkspace;
+    const targetPath = layer.path;
+    try {
+      // Force-save every dirty tab before tearing down the current workspace.
+      const savePromises: Promise<void>[] = [];
+      for (const fn of tabSaveRegistry.values()) {
+        try {
+          const p = fn();
+          if (p instanceof Promise) savePromises.push(p);
+        } catch (e) {
+          console.warn("[peek] save before switch failed", e);
+        }
+      }
+      await Promise.all(savePromises);
+      peek.clear();
+      await workspace.open(root);
+      workspace.openFile(targetPath);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      showError(`Switch to "${name}" failed: ${msg}`);
+    }
+  }
+
   // Auto-focus the container so Esc / Cmd+Esc work immediately after push.
   $effect(() => {
     void peek.depth;
@@ -169,6 +201,17 @@
         </button>
       {/each}
       <div class="flex-1"></div>
+      {#if peek.current?.foreignWorkspace}
+        <button
+          type="button"
+          class="btn btn-ghost btn-xs gap-1 text-[10px]"
+          title="Save dirty tabs, switch workspace, and open this file"
+          onclick={openInForeignWorkspace}
+        >
+          <span class="material-symbols-rounded text-[12px]">open_in_new</span>
+          Open in "{peek.current.foreignWorkspace.name}"
+        </button>
+      {/if}
       <span class="text-[10px] text-base-content/40">
         {peek.depth}/5
       </span>

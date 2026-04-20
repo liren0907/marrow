@@ -1,16 +1,32 @@
-import { searchWorkspace, type SearchHit } from "$lib/workspace/tauri";
+import {
+  searchWorkspace,
+  searchAllWorkspaces,
+  type CrossHit,
+} from "$lib/workspace/tauri";
 import { workspace } from "$lib/workspace/workspace.svelte";
+
+export type SearchScope = "current" | "all";
+
+const SCOPE_KEY = "marrow.search.scope";
+
+function loadScope(): SearchScope {
+  if (typeof localStorage === "undefined") return "current";
+  const v = localStorage.getItem(SCOPE_KEY);
+  return v === "all" ? "all" : "current";
+}
 
 export const search = $state<{
   isOpen: boolean;
   query: string;
-  results: SearchHit[];
+  scope: SearchScope;
+  results: CrossHit[];
   isSearching: boolean;
   selectedIdx: number;
   error: string | null;
 }>({
   isOpen: false,
   query: "",
+  scope: loadScope(),
   results: [],
   isSearching: false,
   selectedIdx: 0,
@@ -28,10 +44,18 @@ export function scheduleSearch(): void {
   }, 300);
 }
 
+export function setScope(scope: SearchScope): void {
+  if (search.scope === scope) return;
+  search.scope = scope;
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(SCOPE_KEY, scope);
+  }
+  scheduleSearch();
+}
+
 async function runSearch(): Promise<void> {
-  const root = workspace.info?.root;
   const q = search.query.trim();
-  if (!root || q.length < 2) {
+  if (q.length < 2) {
     search.results = [];
     search.error = null;
     search.isSearching = false;
@@ -41,9 +65,28 @@ async function runSearch(): Promise<void> {
   search.isSearching = true;
   search.error = null;
   try {
-    const hits = await searchWorkspace(root, q, 200);
-    if (myToken !== queryToken) return; // a newer query superseded us
-    search.results = hits;
+    let out: CrossHit[];
+    if (search.scope === "all") {
+      out = await searchAllWorkspaces(q, 200);
+    } else {
+      const info = workspace.info;
+      if (!info) {
+        if (myToken === queryToken) {
+          search.results = [];
+          search.isSearching = false;
+        }
+        return;
+      }
+      const hits = await searchWorkspace(info.root, q, 200);
+      out = hits.map((hit) => ({
+        workspace_id: info.root,
+        workspace_name: info.name,
+        workspace_root: info.root,
+        hit,
+      }));
+    }
+    if (myToken !== queryToken) return;
+    search.results = out;
     search.selectedIdx = 0;
   } catch (e) {
     if (myToken !== queryToken) return;
