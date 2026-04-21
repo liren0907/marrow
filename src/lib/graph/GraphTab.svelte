@@ -71,7 +71,6 @@
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let { tab }: { tab: Tab } = $props();
 
   // Register cytoscape extensions once at module load. Idempotent guard
@@ -102,7 +101,27 @@
   let hoverContent = $state("");
   let hoverPos: { x: number; y: number } = $state({ x: 0, y: 0 });
   const previewCache = new Map<string, string>();
+  const PREVIEW_CACHE_MAX = 32;
   let hoverDelayTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // LRU helpers — Map preserves insertion order, so touch-to-back keeps
+  // most-recent at the end and oldest at the front for eviction.
+  function setPreview(path: string, body: string): void {
+    if (previewCache.has(path)) previewCache.delete(path);
+    else if (previewCache.size >= PREVIEW_CACHE_MAX) {
+      const oldest = previewCache.keys().next().value;
+      if (oldest !== undefined) previewCache.delete(oldest);
+    }
+    previewCache.set(path, body);
+  }
+  function getPreview(path: string): string | undefined {
+    const v = previewCache.get(path);
+    if (v !== undefined) {
+      previewCache.delete(path);
+      previewCache.set(path, v);
+    }
+    return v;
+  }
 
   type ViewMode = "all" | "local-1" | "local-2";
   let viewMode: ViewMode = $state("all");
@@ -141,6 +160,14 @@
   const tagOptions = $derived.by(() => {
     void tags.lastBuilt;
     return tagList().map((t) => t.tag);
+  });
+
+  // Path of the currently-active markdown tab (or null if active tab
+  // isn't a markdown file). Drives the `.active` node highlight.
+  const activeNotePath = $derived.by(() => {
+    const pane = workspace.activePane;
+    const t = pane.tabs.find((x) => x.id === pane.activeTabId);
+    return t?.kind === "markdown" ? t.path : null;
   });
 
   function buildGraphData(): {
@@ -202,6 +229,7 @@
     const bc = root.getPropertyValue("--color-base-content").trim() || "oklch(0 0 0)";
     const p = root.getPropertyValue("--color-primary").trim() || "oklch(0.6 0.2 250)";
     const b3 = root.getPropertyValue("--color-base-300").trim() || "oklch(0.85 0 0)";
+    const accent = root.getPropertyValue("--mw-accent").trim() || "oklch(0.72 0.13 55)";
 
     const [nMin, nMax] = NODE_SIZE_MAP[nodeSize];
     const fontPx = LABEL_SIZE_MAP[labelSize];
@@ -233,6 +261,17 @@
         style: {
           "border-width": 2,
           "border-color": bc,
+        },
+      },
+      // Active note — the markdown file currently open in the active pane.
+      // Rendered as an accent ring on top of whatever fill colorMode gave it.
+      // Listed AFTER .highlighted so specificity ties break in .active's favor.
+      {
+        selector: "node.active",
+        style: {
+          "border-width": 2.5,
+          "border-color": accent,
+          "border-opacity": 1,
         },
       },
       {
@@ -390,7 +429,42 @@
     currentLayout = null;
   }
 
-  function rebuild(): void {
+  // Incremental rebuild: only add new nodes, remove gone nodes, replace
+  // edges (cheap; no layout state). Preserves user-placed positions —
+  // a rename or a new link does NOT scramble the layout. Intentionally
+  // does NOT call scheduleSaveLayout() — only real drag events persist.
+  function reconcileGraph(): void {
+    if (!cy) return;
+    const { nodes, edges } = buildGraphData();
+    const newIds = new Set(nodes.map((n) => n.data!.id as string));
+    const oldIds = new Set<string>();
+    cy.nodes().forEach((n) => {
+      oldIds.add(n.id());
+    });
+
+    const toRemove: string[] = [];
+    for (const id of oldIds) if (!newIds.has(id)) toRemove.push(id);
+    const toAdd = nodes.filter((n) => !oldIds.has(n.data!.id as string));
+
+    cy.batch(() => {
+      for (const id of toRemove) cy!.getElementById(id).remove();
+      cy!.edges().remove();
+      if (toAdd.length > 0) cy!.add(toAdd);
+      cy!.add(edges);
+    });
+    annotateDegree();
+    annotateColors();
+
+    // Only run layout for genuinely new nodes — existing positions stay put.
+    if (toAdd.length > 0) {
+      // Keep cola running so new nodes find a place; don't re-run fcose.
+      startLayout();
+    }
+  }
+
+  // Full rebuild: used on workspace switch. Clears everything and re-runs
+  // the initial layout pass. Called rarely.
+  function hardRebuild(): void {
     if (!cy) return;
     stopLayout();
     const { nodes, edges } = buildGraphData();
@@ -402,7 +476,6 @@
     annotateColors();
     runInitialLayout();
     startLayout();
-    scheduleSaveLayout();
   }
 
   function applyFilters(): void {
@@ -477,17 +550,16 @@
         e.addClass("hidden");
       }
     });
+  }
 
-    // Fit viewport on visible subgraph if any filter is active
-    const anyFilter =
-      viewMode !== "all" ||
-      folderFilter.length > 0 ||
-      tagFilter.length > 0 ||
-      q.length > 0;
-    if (anyFilter) {
-      const visible = cy.elements(":visible");
-      if (visible.length > 0) cy.fit(visible, 60);
-    }
+  // Refit viewport to currently-visible elements. Called only for deliberate
+  // scope changes (view mode, folder/tag toggle, Fit button) — NOT on every
+  // search keystroke, which would jitter the viewport as the user types.
+  function refitToVisible(): void {
+    if (!cy) return;
+    const visible = cy.elements(":visible");
+    if (visible.length > 0) cy.fit(visible, 60);
+    else cy.fit(undefined, 60);
   }
 
   function resetFilters(): void {
@@ -570,7 +642,7 @@
     }
     if (cy) {
       cy.nodes().unlock();
-      rebuild();
+      hardRebuild();
     }
   }
 
@@ -594,6 +666,17 @@
     });
     annotateDegree();
     annotateColors();
+    // Seed workspace-root tracker so the hard-rebuild effect doesn't
+    // fire spuriously on the first tick after mount.
+    lastRoot = workspace.info?.root ?? null;
+    // Seed the refit tracker so the filter-refit effect doesn't double-fit
+    // on mount (centerViewport below already handles the initial fit).
+    lastRefitKey = [
+      viewMode,
+      folderFilter.slice().sort().join("|"),
+      tagFilter.slice().sort().join("|"),
+      viewMode !== "all" ? (workspace.activePane.activeTabId ?? "") : "",
+    ].join("::");
 
     if (saved.size > 0) {
       // Apply saved positions, lock those nodes so layout doesn't move them
@@ -630,7 +713,12 @@
     cy.on("tap", "node", (e) => {
       const path = e.target.id() as string;
       const evt = e.originalEvent as MouseEvent | undefined;
-      const wantsReplace = !!(evt && (evt.metaKey || evt.ctrlKey));
+      // Clear any pending hover-preview timer so it doesn't flash after click.
+      if (hoverDelayTimer) {
+        clearTimeout(hoverDelayTimer);
+        hoverDelayTimer = null;
+      }
+      hoverPath = null;
 
       // Smooth center-on-selected animation
       cy?.animate({
@@ -639,10 +727,16 @@
         easing: "ease-in-out-cubic",
       });
 
-      if (wantsReplace) {
+      // Click mapping aligned with FileTreeNode:
+      //   tap             → openFile (current pane, focuses existing tab)
+      //   cmd/ctrl+tap    → openInOtherPane (splits if only one pane)
+      //   shift+tap       → replaceCurrentTab (reuse current tab id)
+      if (evt?.shiftKey) {
         workspace.replaceCurrentTab(path);
-      } else {
+      } else if (evt && (evt.metaKey || evt.ctrlKey)) {
         workspace.openInOtherPane(path);
+      } else {
+        workspace.openFile(path);
       }
     });
     cy.on("mouseover", "node", (e) => {
@@ -659,7 +753,8 @@
       if (hoverDelayTimer) clearTimeout(hoverDelayTimer);
       hoverDelayTimer = setTimeout(async () => {
         hoverDelayTimer = null;
-        if (!previewCache.has(path)) {
+        let cached = getPreview(path);
+        if (cached === undefined) {
           try {
             const result = await readTextFile(path);
             // Strip leading frontmatter and take first 200 chars of body
@@ -668,13 +763,14 @@
               const end = body.indexOf("\n---\n", 4);
               if (end >= 0) body = body.slice(end + 5);
             }
-            previewCache.set(path, body.trim().slice(0, 200));
+            cached = body.trim().slice(0, 200);
           } catch {
-            previewCache.set(path, "(unreadable)");
+            cached = "(unreadable)";
           }
+          setPreview(path, cached);
         }
         hoverPath = path;
-        hoverContent = previewCache.get(path) ?? "";
+        hoverContent = cached;
         if (evt) {
           hoverPos = { x: evt.clientX + 16, y: evt.clientY + 16 };
         }
@@ -744,8 +840,10 @@
     cy = null;
   });
 
-  // Rebuild graph when fileIndex changes or backlinks index gets rebuilt.
-  // Touch the reactive deps explicitly so Svelte tracks them.
+  // Reconcile graph when fileIndex changes or backlinks index gets rebuilt.
+  // Uses the incremental path — existing node positions are preserved.
+  // Full rebuild only happens on workspace switch (handled by the lastRoot
+  // effect below).
   $effect(() => {
     const len = workspace.fileIndex.length;
     const built = backlinks.lastBuilt;
@@ -753,7 +851,37 @@
     if (len !== lastFileIndexLength || built !== lastBacklinksBuilt) {
       lastFileIndexLength = len;
       lastBacklinksBuilt = built;
-      rebuild();
+      reconcileGraph();
+    }
+  });
+
+  // Hard rebuild on workspace switch. Initial mount is handled by initGraph(),
+  // which seeds lastRoot; subsequent root changes trigger a full re-layout.
+  let lastRoot: string | null = null;
+  $effect(() => {
+    const root = workspace.info?.root ?? null;
+    if (!cy) return;
+    if (root !== lastRoot) {
+      lastRoot = root;
+      hardRebuild();
+    }
+  });
+
+  // Belt-and-braces: in addition to IntersectionObserver, watch the owning
+  // pane's activeTabId. If this tab isn't active, pause the cola simulation.
+  // IO covers display:none correctly per spec, but the explicit check is
+  // immediate and handles edge cases where IO doesn't fire (e.g. initial
+  // mount while the tab is already hidden).
+  $effect(() => {
+    const pane = workspace.panes.find((p) =>
+      p.tabs.some((t) => t.id === tab.id),
+    );
+    const isActive = pane?.activeTabId === tab.id;
+    if (!cy) return;
+    if (isActive) {
+      if (!currentLayout) startLayout();
+    } else {
+      stopLayout();
     }
   });
 
@@ -769,12 +897,43 @@
     if (cy) applyFilters();
   });
 
+  // Refit viewport only on deliberate scope changes — view mode, folder/tag
+  // filters, or local-mode center swap. Search keystrokes are intentionally
+  // excluded so typing doesn't jitter the viewport.
+  let lastRefitKey = "";
+  $effect(() => {
+    const key = [
+      viewMode,
+      folderFilter.slice().sort().join("|"),
+      tagFilter.slice().sort().join("|"),
+      viewMode !== "all" ? (workspace.activePane.activeTabId ?? "") : "",
+    ].join("::");
+    if (!cy) return;
+    if (key === lastRefitKey) return;
+    lastRefitKey = key;
+    refitToVisible();
+  });
+
   // Re-annotate node colors when colorMode changes.
   $effect(() => {
     void colorMode;
     if (!cy) return;
     annotateColors();
     cy.style().update();
+  });
+
+  // Keep the .active class in sync with the currently-open markdown note.
+  // Runs whenever activeNotePath changes OR after a rebuild (backlinks
+  // rebuild signal via lastBuilt covers reconcile too).
+  $effect(() => {
+    const p = activeNotePath;
+    void backlinks.lastBuilt;
+    if (!cy) return;
+    cy.nodes(".active").removeClass("active");
+    if (p) {
+      const n = cy.getElementById(p);
+      if (!n.empty()) n.addClass("active");
+    }
   });
 
   // Persist display preferences whenever any of them changes.
