@@ -9,6 +9,7 @@
     outlines,
     tabScrollRegistry,
   } from "$lib/workspace/tabRegistry.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   let { pane }: { pane: PaneType } = $props();
 
@@ -76,7 +77,7 @@
         class="absolute inset-0 flex items-center justify-center text-base-content/30 text-sm"
       >
         <div class="flex flex-col items-center gap-3">
-          <span class="material-symbols-rounded text-[48px]">article</span>
+          <Icon name="file-text" size={48} strokeWidth={1.25} />
           <p>Open a file from the sidebar</p>
         </div>
       </div>

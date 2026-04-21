@@ -15,6 +15,7 @@
   import GraphMiniPanel from "$lib/chrome/GraphMiniPanel.svelte";
   import TagsTab from "$lib/panels/TagsTab.svelte";
   import BacklinksTab from "$lib/panels/BacklinksTab.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   let { width = 256 }: { width?: number } = $props();
 
@@ -104,10 +105,7 @@
     bind:this={switcherAnchorEl}
     class="flex items-center gap-2 px-3 py-2.5 border-b border-base-200 shrink-0 relative"
   >
-    <span
-      class="material-symbols-rounded text-primary text-[20px] shrink-0"
-      >folder_open</span
-    >
+    <Icon name="folder-open" size={20} class="text-primary" />
     <button
       type="button"
       class="flex-1 min-w-0 text-left flex items-center gap-1 rounded-[var(--mw-radius-xs)] hover:bg-base-200/60 px-1 py-0.5 -mx-1 -my-0.5"
@@ -131,11 +129,11 @@
           >
         {/if}
       </div>
-      <span
-        class="material-symbols-rounded text-[16px] text-base-content/40 shrink-0"
-      >
-        {switcherOpen ? "expand_less" : "expand_more"}
-      </span>
+      <Icon
+        name={switcherOpen ? "chevron-up" : "chevron-down"}
+        size={16}
+        class="text-base-content/40"
+      />
     </button>
     {#if switcherOpen}
       <div
@@ -153,10 +151,7 @@
               onclick={() => switchTo(entry)}
               title={entry.last_path}
             >
-              <span
-                class="material-symbols-rounded text-[14px] text-base-content/50 shrink-0"
-                >folder</span
-              >
+              <Icon name="folder" size={14} class="text-base-content/50" />
               <span class="text-xs truncate flex-1">{entry.name}</span>
             </button>
           {/each}
@@ -167,10 +162,7 @@
           class="w-full flex items-center gap-2 px-2 py-1 text-left hover:bg-base-200/70"
           onclick={pickFolder}
         >
-          <span
-            class="material-symbols-rounded text-[14px] text-base-content/50 shrink-0"
-            >folder_open</span
-          >
+          <Icon name="folder-open" size={14} class="text-base-content/50" />
           <span class="text-xs">Open folder…</span>
         </button>
         <button
@@ -178,10 +170,7 @@
           class="w-full flex items-center gap-2 px-2 py-1 text-left hover:bg-base-200/70"
           onclick={openRecentPicker}
         >
-          <span
-            class="material-symbols-rounded text-[14px] text-base-content/50 shrink-0"
-            >history</span
-          >
+          <Icon name="history" size={14} class="text-base-content/50" />
           <span class="text-xs">Open recent workspace…</span>
         </button>
         {#if workspace.info}
@@ -191,10 +180,7 @@
             class="w-full flex items-center gap-2 px-2 py-1 text-left hover:bg-base-200/70"
             onclick={closeWorkspace}
           >
-            <span
-              class="material-symbols-rounded text-[14px] text-base-content/50 shrink-0"
-              >close</span
-            >
+            <Icon name="x" size={14} class="text-base-content/50" />
             <span class="text-xs">Close workspace</span>
           </button>
         {/if}
@@ -210,7 +196,7 @@
         class="btn btn-sm btn-primary w-full"
         title="Open a folder as workspace"
       >
-        <span class="material-symbols-rounded text-[16px]">folder_open</span>
+        <Icon name="folder-open" size={16} />
         Open folder…
       </button>
     </div>

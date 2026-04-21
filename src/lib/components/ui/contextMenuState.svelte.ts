@@ -1,6 +1,8 @@
+import type { IconName } from "./Icon.svelte";
+
 export interface ContextMenuItem {
   label: string;
-  icon?: string;
+  icon?: IconName;
   danger?: boolean;
   divider?: boolean;
   disabled?: boolean;

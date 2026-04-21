@@ -4,17 +4,19 @@
      * Refined input with icon and focus ring from /gallery ExportModal.
      */
 
+    import Icon, { type IconName } from "./Icon.svelte";
+
     let {
         value = "",
         placeholder = "Select...",
         disabled = false,
-        icon = "folder_open",
+        icon = "folder-open",
         onbrowse,
     }: {
         value?: string;
         placeholder?: string;
         disabled?: boolean;
-        icon?: string;
+        icon?: IconName;
         onbrowse?: () => void;
     } = $props();
 
@@ -30,9 +32,7 @@
         class="flex items-center w-full px-2 py-1.5 rounded-[var(--mw-radius-sm)] border border-base-300 bg-base-100 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 transition-all"
         class:opacity-50={disabled}
     >
-        <span class="material-symbols-rounded text-primary/70 text-sm ml-1"
-            >{icon}</span
-        >
+        <Icon name={icon} size={14} class="text-primary/70 ml-1" />
         <input
             type="text"
             {value}

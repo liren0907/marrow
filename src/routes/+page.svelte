@@ -5,6 +5,7 @@
   import PaneContainer from "$lib/panes/PaneContainer.svelte";
   import RecentList from "$lib/workspace/RecentList.svelte";
   import { showError } from "$lib/stores/toastStore.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   async function pickFolder() {
     try {
@@ -27,9 +28,7 @@
 {:else}
   <div class="flex-1 flex items-center justify-center p-8 overflow-y-auto">
     <div class="flex flex-col items-center gap-4 text-center max-w-md">
-      <span class="material-symbols-rounded text-[72px] text-base-content/20"
-        >folder_open</span
-      >
+      <Icon name="folder-open" size={72} strokeWidth={1.25} class="text-base-content/20" />
       <h1 class="text-xl font-semibold">No workspace open</h1>
       <p class="text-sm text-base-content/50">
         Drag a folder onto this window, or click below to pick one. Markdown
@@ -37,8 +36,7 @@
         in-app previews.
       </p>
       <Button onclick={pickFolder}>
-        <span class="material-symbols-rounded text-[16px] mr-1">folder_open</span
-        >
+        <Icon name="folder-open" size={16} class="mr-1" />
         Open folder…
       </Button>
       <RecentList />

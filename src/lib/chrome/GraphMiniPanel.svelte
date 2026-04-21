@@ -2,6 +2,7 @@
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { backlinks, backlinksFor } from "$lib/workspace/backlinkIndex.svelte";
   import { miniGraph, reloadMiniGraph } from "$lib/graph/miniGraphState.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   const activeTab = $derived.by(() => {
     const pane = workspace.activePane;
@@ -235,7 +236,7 @@
       title="Open full graph (⇧⌘G)"
       aria-label="Open full graph"
     >
-      <span class="material-symbols-rounded">open_in_full</span>
+      <Icon name="maximize-2" size={14} />
     </button>
   </div>
   {#if hasLayout}
@@ -259,7 +260,7 @@
       onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openGraph(); } }}
       title="Open full graph view (⇧⌘G)"
     >
-      <span class="material-symbols-rounded placeholder-icon">hub</span>
+      <span class="placeholder-icon"><Icon name="network" size={32} strokeWidth={1.25} /></span>
       <span class="placeholder-text">Open full graph view</span>
       <span class="placeholder-kbd">⇧⌘G</span>
     </div>
@@ -328,9 +329,6 @@
     color: var(--color-base-content);
     background: var(--color-base-300);
   }
-  .header-action :global(.material-symbols-rounded) {
-    font-size: 14px;
-  }
   .mini-graph-live {
     margin: 4px 10px 4px;
     height: 180px;
@@ -365,7 +363,6 @@
     background: var(--color-base-300);
   }
   .placeholder-icon {
-    font-size: 32px;
     color: var(--mw-accent);
   }
   .placeholder-text {

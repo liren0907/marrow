@@ -4,6 +4,7 @@
     closeContextMenu,
     type ContextMenuItem,
   } from "./contextMenuState.svelte";
+  import Icon from "./Icon.svelte";
 
   let menuEl: HTMLDivElement | undefined = $state();
   let selectedIdx = $state(0);
@@ -149,9 +150,7 @@
           onmouseenter={() => (selectedIdx = i)}
         >
           {#if item.icon}
-            <span class="material-symbols-rounded text-[16px] shrink-0"
-              >{item.icon}</span
-            >
+            <Icon name={item.icon} size={16} />
           {/if}
           <span class="label">{item.label}</span>
         </button>

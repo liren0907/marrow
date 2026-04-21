@@ -1,4 +1,6 @@
 <script lang="ts">
+    import Icon, { type IconName } from "./Icon.svelte";
+
     let {
         icon,
         label = undefined,
@@ -13,7 +15,7 @@
         class: className = "",
         onclick,
     }: {
-        icon: string;
+        icon: IconName;
         label?: string | undefined;
         tooltip?: string | undefined;
         active?: boolean;
@@ -26,6 +28,8 @@
         class?: string;
         onclick?: (event: MouseEvent) => void;
     } = $props();
+
+    const iconSize = $derived(size === "sm" ? 18 : size === "md" ? 20 : 24);
 
     function handleClick(event: MouseEvent) {
         if (!disabled && !loading) {
@@ -68,7 +72,7 @@
         onclick={handleClick}
     >
         {#if !loading}
-            <span class="material-symbols-rounded">{icon}</span>
+            <Icon name={icon} size={iconSize} />
             {#if label}
                 <span class="text-sm font-medium {responsiveLabel ? 'hidden xl:inline' : ''}">{label}</span>
             {/if}

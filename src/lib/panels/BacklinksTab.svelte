@@ -1,6 +1,7 @@
 <script lang="ts">
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { backlinksFor } from "$lib/workspace/backlinkIndex.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   const activeTab = $derived.by(() => {
     const pane = workspace.activePane;
@@ -49,10 +50,7 @@
             onclick={() => open(entry.sourcePath)}
           >
             <span class="flex items-center gap-2 text-sm">
-              <span
-                class="material-symbols-rounded text-[16px] text-base-content/40 shrink-0"
-                >description</span
-              >
+              <Icon name="file-text" size={16} class="text-base-content/40" />
               <span class="truncate">{relPath(entry.sourcePath)}</span>
             </span>
             {#if entry.context}

@@ -123,9 +123,10 @@
 	--mw-accent: oklch(0.72 0.13 55);
 }
 
-/* Google Material Symbols base styles
-   wght 300 + opsz 20 + GRAD -25 keeps strokes thin at small chrome sizes
-   (14–20px) where the default 400/24 renders chunkily. */
+/* Google Material Symbols base styles.
+   Chrome UI uses <Icon> from $lib/components/ui/Icon.svelte (Lucide SVG).
+   This font is retained solely for the Milkdown transclusion NodeView
+   (src/lib/editor/milkdown/transclusion/nodeView.ts). */
 .material-symbols-outlined,
 .material-symbols-rounded {
 	font-variation-settings:

@@ -1,4 +1,6 @@
 <script lang="ts">
+    import Icon, { type IconName } from "./Icon.svelte";
+
     let {
         options = [],
         value = $bindable(),
@@ -9,7 +11,7 @@
         options?: Array<{
             value: any;
             label?: string;
-            icon?: string;
+            icon?: IconName;
             tooltip?: string;
         }>;
         value?: any;
@@ -45,9 +47,7 @@
                 aria-label={option.label || option.tooltip}
             >
                 {#if option.icon}
-                    <span class="material-symbols-rounded text-lg"
-                        >{option.icon}</span
-                    >
+                    <Icon name={option.icon} size={18} />
                 {/if}
                 {#if option.label}
                     <span class={responsiveLabels ? 'hidden xl:inline' : ''}>{option.label}</span>

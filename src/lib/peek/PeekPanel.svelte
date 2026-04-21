@@ -9,6 +9,7 @@
   import { debounce } from "$lib/utils/debounce";
   import { tabSaveRegistry } from "$lib/workspace/shortcuts.svelte";
   import { showError } from "$lib/stores/toastStore.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   let container: HTMLDivElement;
   // contentHost is re-bound each render via bind:this and the effect mutates
@@ -208,7 +209,7 @@
           title="Save dirty tabs, switch workspace, and open this file"
           onclick={openInForeignWorkspace}
         >
-          <span class="material-symbols-rounded text-[12px]">open_in_new</span>
+          <Icon name="external-link" size={12} />
           Open in "{peek.current.foreignWorkspace.name}"
         </button>
       {/if}
@@ -222,7 +223,7 @@
         onclick={() => peek.clear()}
         aria-label="Clear peek stack"
       >
-        <span class="material-symbols-rounded text-[14px]">close</span>
+        <Icon name="x" size={14} />
       </button>
     </div>
 

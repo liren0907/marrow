@@ -1,6 +1,7 @@
 <script lang="ts">
     import { toasts, dismissToast } from "$lib/stores/toastStore.svelte";
     import { fly } from "svelte/transition";
+    import Icon, { type IconName } from "$lib/components/ui/Icon.svelte";
 
     const variantStyles = {
         success: "alert-success",
@@ -9,11 +10,11 @@
         warning: "alert-warning",
     };
 
-    const variantIcons = {
-        success: "check_circle",
-        error: "error",
+    const variantIcons: Record<"success" | "error" | "info" | "warning", IconName> = {
+        success: "circle-check",
+        error: "circle-alert",
         info: "info",
-        warning: "warning",
+        warning: "triangle-alert",
     };
 </script>
 
@@ -24,15 +25,13 @@
                 class="alert {variantStyles[toast.variant]} shadow-lg"
                 transition:fly={{ x: 100, duration: 300 }}
             >
-                <span class="material-symbols-rounded"
-                    >{variantIcons[toast.variant]}</span
-                >
+                <Icon name={variantIcons[toast.variant]} size={18} />
                 <span>{toast.message}</span>
                 <button
                     class="btn btn-ghost btn-xs"
                     onclick={() => dismissToast(toast.id)}
                 >
-                    <span class="material-symbols-rounded text-sm">close</span>
+                    <Icon name="x" size={14} />
                 </button>
             </div>
         {/each}

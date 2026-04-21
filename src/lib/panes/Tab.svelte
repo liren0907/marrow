@@ -6,6 +6,7 @@
     type ContextMenuItem,
   } from "$lib/components/ui/contextMenuState.svelte";
   import { openFileHistory } from "$lib/history/fileHistoryState.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   let {
     tab,
@@ -66,7 +67,7 @@
     }
     items.push({
       label: "Close tab",
-      icon: "close",
+      icon: "x",
       onclick: () => workspace.closeTab(paneId, tab.id),
     });
     openContextMenu(e, items);
@@ -97,7 +98,7 @@
     onclick={close}
     aria-label="Close tab"
   >
-    <span class="material-symbols-rounded">close</span>
+    <Icon name="x" size={14} />
   </button>
 </div>
 
@@ -173,8 +174,5 @@
   .mw-tab-close:hover {
     background: var(--color-base-300);
     color: var(--color-base-content);
-  }
-  .mw-tab-close :global(.material-symbols-rounded) {
-    font-size: 14px;
   }
 </style>

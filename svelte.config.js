@@ -12,6 +12,7 @@ const config = {
       // Strip lang="ts" after TypeScript has been processed
       // Svelte 5 compiler doesn't support lang="ts" natively
       markup({ content, filename }) {
+        if (filename && filename.includes('node_modules')) return;
         const processed = content
           .replace(/<script\s+lang="ts">/g, '<script>')
           .replace(/<script\s+lang="ts"\s+/g, '<script ')

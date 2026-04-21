@@ -4,6 +4,7 @@
     backlinks,
     unresolvedAll,
   } from "$lib/workspace/backlinkIndex.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   const groups = $derived.by(() => {
     // Touch the reactive map so this re-runs when entries change.
@@ -38,10 +39,7 @@
             class="w-full flex items-center gap-2 px-2 py-1 text-left text-xs font-semibold text-base-content/70 hover:bg-base-200 rounded"
             onclick={() => open(group.source)}
           >
-            <span
-              class="material-symbols-rounded text-[14px] text-base-content/40 shrink-0"
-              >description</span
-            >
+            <Icon name="file-text" size={14} class="text-base-content/40" />
             <span class="truncate">{relPath(group.source)}</span>
           </button>
           <ul class="ml-6 mt-0.5 flex flex-col gap-0.5">

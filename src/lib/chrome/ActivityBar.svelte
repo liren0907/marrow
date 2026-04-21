@@ -5,21 +5,21 @@
     type Activity,
   } from "./activityBarState.svelte";
   import { toggleCommandPalette } from "$lib/command/commandPaletteState.svelte";
+  import Icon, { type IconName } from "$lib/components/ui/Icon.svelte";
 
   interface Item {
     id: Activity;
-    icon: string;
+    icon: IconName;
     label: string;
   }
 
   const items: Item[] = [
     { id: "files", icon: "folder", label: "Files" },
     { id: "search", icon: "search", label: "Search" },
-    { id: "tags", icon: "sell", label: "Tags" },
-    { id: "graph", icon: "hub", label: "Graph" },
-    { id: "backlinks", icon: "arrow_back", label: "Backlinks" },
+    { id: "tags", icon: "tag", label: "Tags" },
+    { id: "graph", icon: "network", label: "Graph" },
+    { id: "backlinks", icon: "arrow-left", label: "Backlinks" },
   ];
-
 </script>
 
 <nav class="activity-bar" aria-label="Activity">
@@ -34,7 +34,7 @@
         aria-label={item.label}
         aria-pressed={activityBar.current === item.id}
       >
-        <span class="material-symbols-rounded">{item.icon}</span>
+        <Icon name={item.icon} size={20} />
       </button>
     {/each}
   </div>
@@ -46,7 +46,7 @@
       data-tip="Command palette · ⇧⌘P"
       aria-label="Command palette"
     >
-      <span class="material-symbols-rounded">terminal</span>
+      <Icon name="terminal" size={20} />
     </button>
   </div>
 </nav>
@@ -97,8 +97,5 @@
     width: 2px;
     background: var(--mw-accent);
     border-radius: 2px;
-  }
-  .activity-btn :global(.material-symbols-rounded) {
-    font-size: 20px;
   }
 </style>

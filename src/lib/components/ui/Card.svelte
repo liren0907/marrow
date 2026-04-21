@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
+    import Icon, { type IconName } from "./Icon.svelte";
 
     let {
         title = undefined,
@@ -12,7 +13,7 @@
         children,
     }: {
         title?: string;
-        icon?: string;
+        icon?: IconName;
         variant?: "base-100" | "base-200";
         shadow?: "none" | "sm" | "md" | "lg" | "xl";
         bordered?: boolean;
@@ -31,7 +32,7 @@
         <div class="card-body">
             <h2 class="card-title text-sm font-medium flex items-center gap-2">
                 {#if icon}
-                    <span class="material-symbols-rounded text-[16px]">{icon}</span>
+                    <Icon name={icon} size={16} />
                 {/if}
                 {title}
             </h2>

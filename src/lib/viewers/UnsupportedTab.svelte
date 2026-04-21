@@ -3,6 +3,7 @@
   import { open } from "@tauri-apps/plugin-shell";
   import { Button } from "$lib/components/ui";
   import { showError } from "$lib/stores/toastStore.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   let { tab }: { tab: Tab } = $props();
 
@@ -30,15 +31,13 @@
 
 <div class="w-full h-full flex items-center justify-center bg-base-100">
   <div class="flex flex-col items-center gap-4 text-center">
-    <span class="material-symbols-rounded text-[64px] text-base-content/30"
-      >draft</span
-    >
+    <Icon name="file" size={64} strokeWidth={1.25} class="text-base-content/30" />
     <div>
       <p class="text-sm font-mono">{tab.title}</p>
       <p class="text-xs text-base-content/40 mt-1">{kindLabel}</p>
     </div>
     <Button onclick={openWithSystem}>
-      <span class="material-symbols-rounded text-[16px] mr-1">open_in_new</span>
+      <Icon name="external-link" size={16} class="mr-1" />
       Open with system
     </Button>
   </div>

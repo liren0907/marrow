@@ -10,6 +10,7 @@
   import { showError } from "$lib/stores/toastStore.svelte";
   import { formatRelative } from "$lib/utils/formatRelative";
   import SectionLabel from "$lib/components/ui/SectionLabel.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   let items = $state<WorkspaceSummary[]>([]);
   let loading = $state(true);
@@ -73,10 +74,7 @@
           }}
           title={entry.last_path}
         >
-          <span
-            class="material-symbols-rounded text-base-content/50 text-[16px] shrink-0"
-            >folder</span
-          >
+          <Icon name="folder" size={16} class="text-base-content/50" />
           <div class="flex-1 min-w-0">
             <div class="text-sm font-medium truncate text-base-content">
               {entry.name}
@@ -97,7 +95,7 @@
             title="Forget this workspace"
             aria-label="Forget"
           >
-            <span class="material-symbols-rounded text-[14px]">close</span>
+            <Icon name="x" size={14} />
           </button>
         </div>
       {/each}

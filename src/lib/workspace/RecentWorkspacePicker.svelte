@@ -12,6 +12,7 @@
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { showError } from "$lib/stores/toastStore.svelte";
   import { formatRelative } from "$lib/utils/formatRelative";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   let inputEl: HTMLInputElement | undefined = $state();
   let items = $state<WorkspaceSummary[]>([]);
@@ -139,10 +140,7 @@
                 onmousemove={() => (recentWorkspacePicker.selectedIdx = i)}
                 onclick={() => pick(i)}
               >
-                <span
-                  class="material-symbols-rounded text-[16px] text-base-content/50 shrink-0"
-                  >folder</span
-                >
+                <Icon name="folder" size={16} class="text-base-content/50" />
                 <div class="flex-1 min-w-0">
                   <div class="text-sm truncate text-base-content">
                     {entry.name}
@@ -163,7 +161,7 @@
                   title="Forget this workspace"
                   aria-label="Forget"
                 >
-                  <span class="material-symbols-rounded text-[14px]">close</span>
+                  <Icon name="x" size={14} />
                 </button>
               </div>
             </li>

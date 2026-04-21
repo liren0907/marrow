@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
     import { fly } from "svelte/transition";
+    import Icon, { type IconName } from "./Icon.svelte";
 
     let {
         variant = "info",
@@ -13,20 +14,19 @@
         variant?: "info" | "success" | "warning" | "error";
         title?: string;
         dismissible?: boolean;
-        icon?: string;
+        icon?: IconName;
         onclose?: () => void;
         children?: Snippet;
     } = $props();
 
-    // Mapping variants to icons if not provided
-    const defaultIcons = {
+    const defaultIcons: Record<"info" | "success" | "warning" | "error", IconName> = {
         info: "info",
-        success: "check_circle",
-        warning: "warning",
-        error: "error",
+        success: "circle-check",
+        warning: "triangle-alert",
+        error: "circle-alert",
     };
 
-    let resolvedIcon = $derived(icon || defaultIcons[variant]);
+    let resolvedIcon: IconName = $derived(icon || defaultIcons[variant]);
 
     let alertClass = $derived(
         {
@@ -43,7 +43,7 @@
     class="alert {alertClass} shadow-sm"
     transition:fly={{ y: -10, duration: 200 }}
 >
-    <span class="material-symbols-rounded">{resolvedIcon}</span>
+    <Icon name={resolvedIcon} size={20} />
 
     <div class="flex-1">
         {#if title}
@@ -59,7 +59,7 @@
             class="btn btn-sm btn-circle btn-ghost"
             onclick={() => onclose?.()}
         >
-            <span class="material-symbols-rounded">close</span>
+            <Icon name="x" size={18} />
         </button>
     {/if}
 </div>

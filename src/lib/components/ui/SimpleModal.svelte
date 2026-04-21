@@ -58,7 +58,7 @@
                 class="px-4 py-3 flex items-center justify-between border-b border-base-200 bg-base-100 sticky top-0 z-10"
             >
                 <h3 id="modal-title" class="font-semibold text-sm">{title}</h3>
-                <IconButton icon="close" size="sm" onclick={close} />
+                <IconButton icon="x" size="sm" onclick={close} />
             </div>
 
             <!-- Content (Scrollable) -->

@@ -30,7 +30,7 @@
     const items: ContextMenuItem[] = [
       {
         label: "New file",
-        icon: "note_add",
+        icon: "file-plus",
         onclick: () =>
           openNamePrompt({
             title: "New file at workspace root",
@@ -41,7 +41,7 @@
       },
       {
         label: "New folder",
-        icon: "create_new_folder",
+        icon: "folder-plus",
         onclick: () =>
           openNamePrompt({
             title: "New folder at workspace root",

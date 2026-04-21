@@ -8,6 +8,7 @@
     setViewMode,
     restoreSelected,
   } from "./fileHistoryState.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   const md = new MarkdownIt({ html: false, linkify: true, breaks: true });
   const MAX_DIFF_LINES = 5000;
@@ -117,7 +118,7 @@
           onclick={closeFileHistory}
           aria-label="Close"
         >
-          <span class="material-symbols-rounded icon-sm">close</span>
+          <Icon name="x" size={18} />
         </button>
       </div>
 

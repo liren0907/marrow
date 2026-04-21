@@ -13,6 +13,7 @@
   import PeekPanel from "$lib/peek/PeekPanel.svelte";
   import { peek } from "$lib/peek/peekState.svelte";
   import type { ActiveTab } from "./bottomPanelState.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   const MIN_HEIGHT = 120;
   const MAX_HEIGHT_FRACTION = 0.6;
@@ -152,7 +153,7 @@
       title="Close (Cmd+J)"
       onclick={toggleBottomPanel}
     >
-      <span class="material-symbols-rounded text-[16px]">close</span>
+      <Icon name="x" size={16} />
     </button>
   </div>
   {#if bottomPanel.activeTab === "backlinks"}

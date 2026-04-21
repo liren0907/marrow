@@ -9,6 +9,7 @@
     setScope,
     type SearchScope,
   } from "./searchState.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   let inputEl: HTMLInputElement | undefined = $state();
 
@@ -183,10 +184,7 @@
       class="modal-box max-w-3xl bg-base-100 border border-base-300 shadow-2xl flex flex-col p-0 max-h-[80vh] overflow-hidden"
     >
       <div class="px-3 py-2 border-b border-base-200 flex items-center gap-2">
-        <span
-          class="material-symbols-rounded text-[18px] text-base-content/50 shrink-0"
-          >search</span
-        >
+        <Icon name="search" size={18} class="text-base-content/50" />
         <input
           bind:this={inputEl}
           type="text"

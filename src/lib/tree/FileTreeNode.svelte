@@ -18,6 +18,7 @@
   } from "./treeOps";
   import { startFileRename } from "./renameModalState.svelte";
   import { openFileHistory } from "$lib/history/fileHistoryState.svelte";
+  import Icon, { type IconName } from "$lib/components/ui/Icon.svelte";
 
   let {
     entry,
@@ -31,24 +32,24 @@
     ancestorLast?: boolean[];
   } = $props();
 
-  function iconFor(e: DirEntry): string {
-    if (e.is_dir) return tree.isExpanded(e.path) ? "folder_open" : "folder";
+  function iconFor(e: DirEntry): IconName {
+    if (e.is_dir) return tree.isExpanded(e.path) ? "folder-open" : "folder";
     const kind = classifyFile(e.path);
     switch (kind) {
       case "markdown":
-        return "description";
+        return "file-text";
       case "image":
         return "image";
       case "video":
-        return "movie";
+        return "film";
       case "audio":
-        return "music_note";
+        return "music";
       case "pdf":
-        return "picture_as_pdf";
+        return "file-text";
       case "text":
-        return "article";
+        return "file-code";
       default:
-        return "draft";
+        return "file";
     }
   }
 
@@ -91,7 +92,7 @@
       items.push(
         {
           label: "New file",
-          icon: "note_add",
+          icon: "file-plus",
           onclick: () =>
             openNamePrompt({
               title: `New file in ${entry.name}`,
@@ -102,7 +103,7 @@
         },
         {
           label: "New folder",
-          icon: "create_new_folder",
+          icon: "folder-plus",
           onclick: () =>
             openNamePrompt({
               title: `New folder in ${entry.name}`,
@@ -114,7 +115,7 @@
         { label: "", divider: true },
         {
           label: "Rename folder",
-          icon: "drive_file_rename_outline",
+          icon: "pencil",
           onclick: () =>
             openNamePrompt({
               title: `Rename ${entry.name}`,
@@ -125,7 +126,7 @@
         },
         {
           label: "Delete folder",
-          icon: "delete",
+          icon: "trash-2",
           danger: true,
           onclick: () => deleteEntry(entry.path, true),
         },
@@ -135,12 +136,12 @@
       items.push(
         {
           label: "Open",
-          icon: "open_in_new",
+          icon: "external-link",
           onclick: () => workspace.openFile(entry.path),
         },
         {
           label: "Open in other pane",
-          icon: "vertical_split",
+          icon: "columns-2",
           onclick: () => workspace.openInOtherPane(entry.path),
         },
       );
@@ -149,7 +150,7 @@
           { label: "", divider: true },
           {
             label: "Rename",
-            icon: "drive_file_rename_outline",
+            icon: "pencil",
             onclick: () => startFileRename(entry.path),
           },
           {
@@ -163,7 +164,7 @@
         { label: "", divider: true },
         {
           label: "Delete",
-          icon: "delete",
+          icon: "trash-2",
           danger: true,
           onclick: () => deleteEntry(entry.path, false),
         },
@@ -179,7 +180,7 @@
       const items: ContextMenuItem[] = [
         {
           label: "New file",
-          icon: "note_add",
+          icon: "file-plus",
           onclick: () =>
             openNamePrompt({
               title: `New file in ${entry.name}`,
@@ -190,7 +191,7 @@
         },
         {
           label: "New folder",
-          icon: "create_new_folder",
+          icon: "folder-plus",
           onclick: () =>
             openNamePrompt({
               title: `New folder in ${entry.name}`,
@@ -239,18 +240,15 @@
     <span class="chev-slot" aria-hidden="true">
       {#if entry.is_dir}
         <span
-          class="material-symbols-rounded text-[14px] chev-icon"
+          class="chev-icon"
           style:transform="rotate({tree.isExpanded(entry.path) ? 90 : 0}deg)"
         >
-          chevron_right
+          <Icon name="chevron-right" size={14} />
         </span>
       {/if}
     </span>
-    <span
-      class="material-symbols-rounded text-[16px] icon shrink-0"
-      style:color={colorFor(entry)}
-    >
-      {iconFor(entry)}
+    <span class="icon" style:color={colorFor(entry)}>
+      <Icon name={iconFor(entry)} size={16} />
     </span>
     <span class="name truncate text-xs flex-1">{entry.name}</span>
     {#if folderCount !== null}
@@ -264,9 +262,7 @@
     aria-label={entry.is_dir ? "New in folder" : "Open in other pane"}
     title={entry.is_dir ? "New in folder" : "Open in other pane"}
   >
-    <span class="material-symbols-rounded text-[14px]">
-      {entry.is_dir ? "add" : "vertical_split"}
-    </span>
+    <Icon name={entry.is_dir ? "plus" : "columns-2"} size={14} />
   </button>
 </div>
 
