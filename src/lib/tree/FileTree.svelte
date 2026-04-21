@@ -60,7 +60,7 @@
   {@const entries = tree.getChildren(root)}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
-    class="flex flex-col gap-0.5 py-1 overflow-y-auto min-h-full"
+    class="flex flex-col py-1 overflow-y-auto min-h-full"
     oncontextmenu={handleRootContextMenu}
   >
     {#if entries}
@@ -69,8 +69,13 @@
           Empty folder
         </div>
       {:else}
-        {#each entries as entry (entry.path)}
-          <FileTreeNode {entry} depth={0} />
+        {#each entries as entry, i (entry.path)}
+          <FileTreeNode
+            {entry}
+            depth={0}
+            isLast={i === entries.length - 1}
+            ancestorLast={[]}
+          />
         {/each}
       {/if}
     {:else}
