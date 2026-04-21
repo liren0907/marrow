@@ -35,6 +35,9 @@
     CircleCheck,
     TriangleAlert,
     CircleAlert,
+    RotateCcw,
+    MoveRight,
+    SlidersHorizontal,
   } from "lucide";
 
   export type IconName =
@@ -67,7 +70,10 @@
     | "info"
     | "circle-check"
     | "triangle-alert"
-    | "circle-alert";
+    | "circle-alert"
+    | "rotate-ccw"
+    | "move-right"
+    | "sliders-horizontal";
 
   const MAP = {
     "plus": Plus,
@@ -100,6 +106,9 @@
     "circle-check": CircleCheck,
     "triangle-alert": TriangleAlert,
     "circle-alert": CircleAlert,
+    "rotate-ccw": RotateCcw,
+    "move-right": MoveRight,
+    "sliders-horizontal": SlidersHorizontal,
   } satisfies Record<IconName, unknown>;
 </script>
 

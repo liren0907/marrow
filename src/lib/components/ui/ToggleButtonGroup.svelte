@@ -6,6 +6,7 @@
         value = $bindable(),
         size = "sm",
         responsiveLabels = false,
+        tooltipPosition = "top",
         onchange,
     }: {
         options?: Array<{
@@ -17,8 +18,13 @@
         value?: any;
         size?: "sm" | "md";
         responsiveLabels?: boolean;
+        tooltipPosition?: "top" | "bottom" | "left" | "right";
         onchange?: (value: any) => void;
     } = $props();
+
+    const tooltipClass = $derived(
+        tooltipPosition === "top" ? "tooltip" : `tooltip tooltip-${tooltipPosition}`,
+    );
 
     function select(optionValue: any) {
         if (value !== optionValue) {
@@ -32,7 +38,7 @@
 
 <div class="join border border-base-300 bg-base-100 rounded-[var(--mw-radius-sm)] p-1 space-x-1">
     {#each options as option}
-        <div class="tooltip" data-tip={option.tooltip}>
+        <div class={tooltipClass} data-tip={option.tooltip}>
             <button
                 class="btn {sizeClass} join-item border-none hover:bg-base-200 transition-all duration-200"
                 class:btn-square={option.icon && !option.label}

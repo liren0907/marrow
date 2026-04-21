@@ -30,7 +30,7 @@
     nodeSize: "sm",
     labelSize: "sm",
     labelMode: "always",
-    showEdgeArrows: true,
+    showEdgeArrows: false,
     edgeWidth: 1,
   };
 
@@ -66,6 +66,48 @@
   function saveDisplayPrefs(p: DisplayPrefs): void {
     try {
       localStorage.setItem(DISPLAY_STORAGE_KEY, JSON.stringify(p));
+    } catch {
+      // storage full / disabled — silently skip
+    }
+  }
+
+  // Filter state persistence — view mode / color mode / folder / tag filters
+  // carry over between sessions. searchFilter is intentionally NOT persisted:
+  // a stale search string across sessions is confusing.
+  interface SavedFilters {
+    viewMode: "all" | "local-1" | "local-2";
+    colorMode: "default" | "folder" | "tag";
+    folderFilter: string[];
+    tagFilter: string[];
+  }
+  const DEFAULT_FILTERS: SavedFilters = {
+    viewMode: "all",
+    colorMode: "default",
+    folderFilter: [],
+    tagFilter: [],
+  };
+  const FILTERS_STORAGE_KEY = "marrow.graph.filters";
+
+  function loadSavedFilters(): SavedFilters {
+    if (typeof localStorage === "undefined") return { ...DEFAULT_FILTERS };
+    try {
+      const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
+      if (!raw) return { ...DEFAULT_FILTERS };
+      const parsed = JSON.parse(raw) as Partial<SavedFilters>;
+      return {
+        viewMode: parsed.viewMode ?? DEFAULT_FILTERS.viewMode,
+        colorMode: parsed.colorMode ?? DEFAULT_FILTERS.colorMode,
+        folderFilter: Array.isArray(parsed.folderFilter) ? parsed.folderFilter : [],
+        tagFilter: Array.isArray(parsed.tagFilter) ? parsed.tagFilter : [],
+      };
+    } catch {
+      return { ...DEFAULT_FILTERS };
+    }
+  }
+
+  function saveFilters(f: SavedFilters): void {
+    try {
+      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(f));
     } catch {
       // storage full / disabled — silently skip
     }
@@ -124,10 +166,12 @@
   }
 
   type ViewMode = "all" | "local-1" | "local-2";
-  let viewMode: ViewMode = $state("all");
-
   type ColorMode = "default" | "folder" | "tag";
-  let colorMode: ColorMode = $state("default");
+
+  // Persisted filter state loaded from localStorage.
+  const initialFilters = loadSavedFilters();
+  let viewMode: ViewMode = $state(initialFilters.viewMode);
+  let colorMode: ColorMode = $state(initialFilters.colorMode);
 
   // Display preferences (persisted to localStorage, exposed via GraphToolbar)
   const initialDisplay = loadDisplayPrefs();
@@ -137,9 +181,9 @@
   let showEdgeArrows = $state(initialDisplay.showEdgeArrows);
   let edgeWidth = $state(initialDisplay.edgeWidth);
 
-  // Phase 6 filters
-  let folderFilter: string[] = $state([]);
-  let tagFilter: string[] = $state([]);
+  // Phase 6 filters (folder/tag persisted; search intentionally not)
+  let folderFilter: string[] = $state(initialFilters.folderFilter);
+  let tagFilter: string[] = $state(initialFilters.tagFilter);
   let searchFilter = $state("");
 
   const folderOptions = $derived.by(() => {
@@ -944,6 +988,17 @@
       labelMode,
       showEdgeArrows,
       edgeWidth,
+    });
+  });
+
+  // Persist filter state (view / color / folder / tag) across sessions.
+  // searchFilter is intentionally excluded.
+  $effect(() => {
+    saveFilters({
+      viewMode,
+      colorMode,
+      folderFilter: [...folderFilter],
+      tagFilter: [...tagFilter],
     });
   });
 
