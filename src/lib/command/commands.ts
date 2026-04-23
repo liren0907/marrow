@@ -1,4 +1,5 @@
 import { workspace } from "$lib/workspace/workspace.svelte";
+import { isConvertible } from "$lib/workspace/fileKind";
 import { tabPeekRegistry } from "$lib/workspace/tabRegistry.svelte";
 import {
   bottomPanel,
@@ -181,6 +182,18 @@ export function getCommands(): Command[] {
       category: "Editor",
       shortcut: "⇧⌘[",
       action: () => workspace.prevTab(),
+    },
+    {
+      id: "convert-to-markdown",
+      title: "Convert current file to Markdown…",
+      category: "Editor",
+      action: () => {
+        const pane = workspace.activePane;
+        const tab = pane.tabs.find((t) => t.id === pane.activeTabId);
+        if (tab && isConvertible(tab.path)) {
+          workspace.openConvert(tab.path);
+        }
+      },
     },
   ];
 }

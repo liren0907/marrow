@@ -7,6 +7,7 @@
   import PdfTab from "$lib/viewers/PdfTab.svelte";
   import TextTab from "$lib/viewers/TextTab.svelte";
   import GraphTab from "$lib/graph/GraphTab.svelte";
+  import ConvertTab from "$lib/viewers/ConvertTab.svelte";
   import UnsupportedTab from "$lib/viewers/UnsupportedTab.svelte";
 
   let { pane }: { pane: PaneType } = $props();
@@ -28,6 +29,8 @@
       <TextTab {tab} />
     {:else if tab.kind === "graph"}
       <GraphTab {tab} />
+    {:else if tab.kind === "convert"}
+      <ConvertTab {tab} />
     {:else}
       <UnsupportedTab {tab} />
     {/if}

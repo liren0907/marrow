@@ -28,6 +28,42 @@ export function classifyFile(path: string): FileKind {
   return "unsupported";
 }
 
+// Extensions for which `uvx markitdown` can produce useful Markdown output.
+// `.md` is intentionally excluded (conversion is a no-op).
+const CONVERTIBLE = new Set([
+  "pdf",
+  "docx",
+  "pptx",
+  "xlsx",
+  "xls",
+  "html",
+  "htm",
+  "epub",
+  "ipynb",
+  "csv",
+  "json",
+  "xml",
+  "msg",
+  "eml",
+  "zip",
+]);
+
+export function isConvertible(path: string): boolean {
+  const ext = (path.split(".").pop() ?? "").toLowerCase();
+  return CONVERTIBLE.has(ext);
+}
+
 export function basename(path: string): string {
   return path.split(/[/\\]/).pop() ?? path;
+}
+
+export function dirname(path: string): string {
+  const idx = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+  return idx > 0 ? path.slice(0, idx) : "";
+}
+
+export function joinPath(dir: string, name: string): string {
+  if (!dir) return name;
+  const sep = dir.includes("\\") && !dir.includes("/") ? "\\" : "/";
+  return dir.endsWith("/") || dir.endsWith("\\") ? `${dir}${name}` : `${dir}${sep}${name}`;
 }

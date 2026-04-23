@@ -5,6 +5,7 @@
     type Activity,
   } from "./activityBarState.svelte";
   import { toggleCommandPalette } from "$lib/command/commandPaletteState.svelte";
+  import { workspace } from "$lib/workspace/workspace.svelte";
   import Icon, { type IconName } from "$lib/components/ui/Icon.svelte";
 
   interface Item {
@@ -39,6 +40,15 @@
     {/each}
   </div>
   <div class="activity-group">
+    <button
+      type="button"
+      class="activity-btn tooltip tooltip-right"
+      onclick={() => workspace.openConvertView()}
+      data-tip="Convert to Markdown"
+      aria-label="Convert to Markdown"
+    >
+      <Icon name="file-code" size={20} />
+    </button>
     <button
       type="button"
       class="activity-btn tooltip tooltip-right"

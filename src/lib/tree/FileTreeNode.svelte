@@ -3,7 +3,7 @@
   import type { DirEntry } from "$lib/workspace/types";
   import { tree } from "./treeState.svelte";
   import { workspace } from "$lib/workspace/workspace.svelte";
-  import { classifyFile } from "$lib/workspace/fileKind";
+  import { classifyFile, isConvertible } from "$lib/workspace/fileKind";
   import Self from "./FileTreeNode.svelte";
   import {
     openContextMenu,
@@ -157,6 +157,15 @@
             label: "View history",
             icon: "history",
             onclick: () => openFileHistory(entry.path),
+          },
+        );
+      } else if (isConvertible(entry.path)) {
+        items.push(
+          { label: "", divider: true },
+          {
+            label: "Convert to Markdown",
+            icon: "file-code",
+            onclick: () => workspace.openConvert(entry.path),
           },
         );
       }

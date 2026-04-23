@@ -167,3 +167,7 @@ export interface WatcherStatus {
 export function getWatcherStatus(): Promise<WatcherStatus> {
   return invoke<WatcherStatus>("get_watcher_status");
 }
+
+export function convertToMarkdown(path: string): Promise<string> {
+  return invoke<string>("convert_to_markdown", { path });
+}

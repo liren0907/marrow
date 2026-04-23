@@ -6,6 +6,7 @@ export type FileKind =
   | "text"
   | "pdf"
   | "graph"
+  | "convert"
   | "unsupported";
 
 export interface DirEntry {

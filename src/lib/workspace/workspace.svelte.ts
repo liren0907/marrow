@@ -313,6 +313,46 @@ export const workspace = {
     pane.activeTabId = tab.id;
   },
 
+  openConvert(path: string): void {
+    const pane = findPane(state.activePaneId) ?? state.panes[0];
+    const existing = pane.tabs.find(
+      (t) => t.kind === "convert" && t.path === path,
+    );
+    if (existing) {
+      pane.activeTabId = existing.id;
+      return;
+    }
+    const tab: Tab = {
+      id: crypto.randomUUID(),
+      path,
+      kind: "convert",
+      title: `Convert: ${basename(path)}`,
+      isDirty: false,
+    };
+    pane.tabs.push(tab);
+    pane.activeTabId = tab.id;
+  },
+
+  openConvertView(): void {
+    const pane = findPane(state.activePaneId) ?? state.panes[0];
+    const existing = pane.tabs.find(
+      (t) => t.kind === "convert" && t.path === "marrow://convert",
+    );
+    if (existing) {
+      pane.activeTabId = existing.id;
+      return;
+    }
+    const tab: Tab = {
+      id: crypto.randomUUID(),
+      path: "marrow://convert",
+      kind: "convert",
+      title: "Convert",
+      isDirty: false,
+    };
+    pane.tabs.push(tab);
+    pane.activeTabId = tab.id;
+  },
+
   openInOtherPane(path: string): void {
     if (state.panes.length < 2) {
       // Create the second pane (don't copy current tab — we want it to host

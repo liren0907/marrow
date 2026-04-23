@@ -1,3 +1,4 @@
+pub mod convert;
 pub mod dialog;
 pub mod git;
 pub mod graph;

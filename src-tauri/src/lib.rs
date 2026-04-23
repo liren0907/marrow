@@ -41,6 +41,7 @@ pub fn run() {
             commands::recent::path_exists,
             commands::git::get_git_branch,
             commands::git::get_watcher_status,
+            commands::convert::convert_to_markdown,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

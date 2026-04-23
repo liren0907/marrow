@@ -6,6 +6,7 @@ import { updateTagsForFile } from "./tagIndex.svelte";
 import { scheduleGitRefresh } from "./gitState.svelte";
 import { notifyTransclusionTargets } from "$lib/editor/milkdown/transclusion/nodeView";
 import { tree } from "$lib/tree/treeState.svelte";
+import { invalidateCached as invalidateConvertCache } from "$lib/viewers/convertCache.svelte";
 
 function parentDir(path: string): string {
   const idx = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
@@ -30,6 +31,8 @@ function handleFsEvent(payload: FsEventPayload): void {
       void updateBacklinksForFile(path, payload.kind === "remove");
       void updateTagsForFile(path, payload.kind === "remove");
       notifyTransclusionTargets(path);
+    } else {
+      invalidateConvertCache(path);
     }
   }
   scheduleGitRefresh();
