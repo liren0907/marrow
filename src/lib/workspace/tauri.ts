@@ -171,3 +171,7 @@ export function getWatcherStatus(): Promise<WatcherStatus> {
 export function convertToMarkdown(path: string): Promise<string> {
   return invoke<string>("convert_to_markdown", { path });
 }
+
+export function convertHtmlToMarkdown(path: string): Promise<string> {
+  return invoke<string>("convert_html_to_markdown", { path });
+}

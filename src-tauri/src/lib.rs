@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod convert;
 pub mod core;
 
 use tauri::Manager;
@@ -42,6 +43,7 @@ pub fn run() {
             commands::git::get_git_branch,
             commands::git::get_watcher_status,
             commands::convert::convert_to_markdown,
+            commands::convert::convert_html_to_markdown,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

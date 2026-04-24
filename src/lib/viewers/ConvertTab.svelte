@@ -13,7 +13,11 @@
     joinPath,
     isConvertible,
   } from "$lib/workspace/fileKind";
-  import { convertToMarkdown, writeTextFile } from "$lib/workspace/tauri";
+  import {
+    convertToMarkdown,
+    convertHtmlToMarkdown,
+    writeTextFile,
+  } from "$lib/workspace/tauri";
   import { pdfToMarkdown } from "$lib/convert/pdfToMarkdown";
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { getCached, setCached } from "./convertCache.svelte";
@@ -136,16 +140,21 @@
     slowHint = false;
     if (slowTimer) clearTimeout(slowTimer);
     const ext = (path.split(".").pop() ?? "").toLowerCase();
-    const isPdf = ext === "pdf";
-    if (!isPdf) {
+    const useMarkitdown = !["pdf", "html", "htm"].includes(ext);
+    if (useMarkitdown) {
       slowTimer = setTimeout(() => {
         if (!cancelled) slowHint = true;
       }, 4000);
     }
     try {
-      const result = isPdf
-        ? await pdfToMarkdown(path)
-        : await convertToMarkdown(path);
+      let result: string;
+      if (ext === "pdf") {
+        result = await pdfToMarkdown(path);
+      } else if (ext === "html" || ext === "htm") {
+        result = await convertHtmlToMarkdown(path);
+      } else {
+        result = await convertToMarkdown(path);
+      }
       if (cancelled || sourcePath !== path) return;
       markdown = result;
       setCached(path, result);
