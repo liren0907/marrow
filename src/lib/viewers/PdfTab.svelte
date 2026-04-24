@@ -1,10 +1,9 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { getDocument, type PDFDocumentProxy } from "pdfjs-dist";
+  import { type PDFDocumentProxy } from "pdfjs-dist";
   import type { Tab } from "$lib/workspace/types";
-  import { readBinaryFile } from "$lib/workspace/tauri";
   import PdfViewer from "./PdfViewer/PdfViewer.svelte";
-  import { ensurePdfWorker } from "./PdfViewer/usePdfWorker";
+  import { loadPdfDoc } from "$lib/pdf/loadPdfDoc";
 
   let { tab }: { tab: Tab } = $props();
 
@@ -15,12 +14,9 @@
   let cancelled = false;
 
   onMount(() => {
-    ensurePdfWorker();
     (async () => {
       try {
-        const bytes = await readBinaryFile(tab.path);
-        if (cancelled) return;
-        const doc = await getDocument({ data: bytes }).promise;
+        const doc = await loadPdfDoc(tab.path);
         if (cancelled) {
           await doc.destroy();
           return;

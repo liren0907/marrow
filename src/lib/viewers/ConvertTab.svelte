@@ -14,6 +14,7 @@
     isConvertible,
   } from "$lib/workspace/fileKind";
   import { convertToMarkdown, writeTextFile } from "$lib/workspace/tauri";
+  import { pdfToMarkdown } from "$lib/convert/pdfToMarkdown";
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { getCached, setCached } from "./convertCache.svelte";
   import { showError, showSuccess } from "$lib/stores/toastStore.svelte";
@@ -134,11 +135,17 @@
     errorMessage = "";
     slowHint = false;
     if (slowTimer) clearTimeout(slowTimer);
-    slowTimer = setTimeout(() => {
-      if (!cancelled) slowHint = true;
-    }, 4000);
+    const ext = (path.split(".").pop() ?? "").toLowerCase();
+    const isPdf = ext === "pdf";
+    if (!isPdf) {
+      slowTimer = setTimeout(() => {
+        if (!cancelled) slowHint = true;
+      }, 4000);
+    }
     try {
-      const result = await convertToMarkdown(path);
+      const result = isPdf
+        ? await pdfToMarkdown(path)
+        : await convertToMarkdown(path);
       if (cancelled || sourcePath !== path) return;
       markdown = result;
       setCached(path, result);
