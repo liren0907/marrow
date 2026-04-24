@@ -44,6 +44,8 @@ pub fn run() {
             commands::git::get_watcher_status,
             commands::convert::convert_to_markdown,
             commands::convert::convert_html_to_markdown,
+            commands::convert::convert_docx_to_markdown,
+            commands::convert::convert_pptx_to_markdown,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -175,3 +175,11 @@ export function convertToMarkdown(path: string): Promise<string> {
 export function convertHtmlToMarkdown(path: string): Promise<string> {
   return invoke<string>("convert_html_to_markdown", { path });
 }
+
+export function convertDocxToMarkdown(path: string): Promise<string> {
+  return invoke<string>("convert_docx_to_markdown", { path });
+}
+
+export function convertPptxToMarkdown(path: string): Promise<string> {
+  return invoke<string>("convert_pptx_to_markdown", { path });
+}

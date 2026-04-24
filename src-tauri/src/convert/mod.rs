@@ -1,4 +1,7 @@
+pub mod docx;
 pub mod html;
+pub mod ooxml_util;
+pub mod pptx;
 
 use thiserror::Error;
 
@@ -12,4 +15,10 @@ pub enum ConvertError {
     Extract(String),
     #[error("markdown serialization: {0}")]
     Serialize(String),
+    #[error("zip: {0}")]
+    Zip(String),
+    #[error("xml: {0}")]
+    Xml(String),
+    #[error("unsupported shape: {0}")]
+    Unsupported(String),
 }

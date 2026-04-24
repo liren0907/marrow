@@ -16,6 +16,8 @@
   import {
     convertToMarkdown,
     convertHtmlToMarkdown,
+    convertDocxToMarkdown,
+    convertPptxToMarkdown,
     writeTextFile,
   } from "$lib/workspace/tauri";
   import { pdfToMarkdown } from "$lib/convert/pdfToMarkdown";
@@ -140,7 +142,7 @@
     slowHint = false;
     if (slowTimer) clearTimeout(slowTimer);
     const ext = (path.split(".").pop() ?? "").toLowerCase();
-    const useMarkitdown = !["pdf", "html", "htm"].includes(ext);
+    const useMarkitdown = !["pdf", "html", "htm", "docx", "pptx"].includes(ext);
     if (useMarkitdown) {
       slowTimer = setTimeout(() => {
         if (!cancelled) slowHint = true;
@@ -152,6 +154,10 @@
         result = await pdfToMarkdown(path);
       } else if (ext === "html" || ext === "htm") {
         result = await convertHtmlToMarkdown(path);
+      } else if (ext === "docx") {
+        result = await convertDocxToMarkdown(path);
+      } else if (ext === "pptx") {
+        result = await convertPptxToMarkdown(path);
       } else {
         result = await convertToMarkdown(path);
       }

@@ -43,3 +43,27 @@ pub async fn convert_html_to_markdown(path: String) -> Result<String, String> {
     .await
     .map_err(|e| format!("task join: {e}"))?
 }
+
+/// Convert a `.docx` file to Markdown using a native Rust OOXML walker
+/// (zip + quick-xml). No external runtime.
+#[tauri::command]
+pub async fn convert_docx_to_markdown(path: String) -> Result<String, String> {
+    tokio::task::spawn_blocking(move || -> Result<String, String> {
+        let bytes = std::fs::read(&path).map_err(|e| format!("read {path}: {e}"))?;
+        crate::convert::docx::docx_to_markdown(&bytes).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| format!("task join: {e}"))?
+}
+
+/// Convert a `.pptx` file to Markdown using a native Rust OOXML walker
+/// (zip + quick-xml). No external runtime.
+#[tauri::command]
+pub async fn convert_pptx_to_markdown(path: String) -> Result<String, String> {
+    tokio::task::spawn_blocking(move || -> Result<String, String> {
+        let bytes = std::fs::read(&path).map_err(|e| format!("read {path}: {e}"))?;
+        crate::convert::pptx::pptx_to_markdown(&bytes).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| format!("task join: {e}"))?
+}
