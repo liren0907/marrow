@@ -3,8 +3,8 @@ use std::collections::{HashMap, HashSet};
 use quick_xml::events::Event;
 use quick_xml::reader::Reader;
 
-use crate::convert::ConvertError;
-use crate::convert::ooxml_util::{Zip, read_zip_text};
+use crate::ConvertError;
+use crate::ooxml::util::{Zip, read_zip_text};
 
 use super::attrs::attr_val;
 

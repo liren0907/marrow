@@ -1,5 +1,4 @@
 pub mod commands;
-pub mod convert;
 pub mod core;
 
 use tauri::Manager;

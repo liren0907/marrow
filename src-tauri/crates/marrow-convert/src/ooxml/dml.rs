@@ -17,8 +17,8 @@ use std::collections::HashMap;
 use quick_xml::events::{BytesStart, BytesText, Event};
 use quick_xml::reader::Reader;
 
-use crate::convert::ConvertError;
-use crate::convert::ooxml_util::{escape_md, wrap_run_full};
+use crate::ConvertError;
+use crate::ooxml::util::{escape_md, wrap_run_full};
 
 #[derive(Default, Clone, Copy, PartialEq, Debug)]
 pub enum BulletKind {
@@ -313,10 +313,6 @@ pub fn extract_paragraphs(
         buf.clear();
     }
     Ok(parser.take_paragraphs())
-}
-
-pub fn render_paragraph(p: &Paragraph) -> String {
-    render_paragraph_with_bullet(p, None)
 }
 
 /// Render a paragraph with an optional `inherited` bullet style used when

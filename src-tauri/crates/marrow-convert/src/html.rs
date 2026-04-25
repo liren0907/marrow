@@ -1,4 +1,4 @@
-use crate::convert::ConvertError;
+use crate::ConvertError;
 use dom_smoothie::{Config, Readability};
 use htmd::HtmlToMarkdown;
 

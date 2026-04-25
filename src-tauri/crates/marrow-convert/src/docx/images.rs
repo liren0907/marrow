@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::convert::ConvertError;
-use crate::convert::ooxml_util::{Zip, read_zip_bytes, unique_asset_name};
+use crate::ConvertError;
+use crate::ooxml::util::{Zip, read_zip_bytes, unique_asset_name};
 
 use super::DocxAsset;
 

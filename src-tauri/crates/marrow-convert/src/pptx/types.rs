@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::convert::ooxml_dml::{BulletKind, Paragraph};
+use crate::ooxml::dml::{BulletKind, Paragraph};
 
 /// Which `<p:txStyles>` block in the slide master a shape's text inherits
 /// its default bullet styling from.

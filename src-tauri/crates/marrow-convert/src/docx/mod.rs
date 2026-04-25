@@ -14,8 +14,8 @@
 //! - [`walker`] — the main `word/document.xml` streaming pass
 //! - [`render`] — paragraph / table markdown rendering helpers
 
-use crate::convert::ConvertError;
-use crate::convert::ooxml_util::{
+use crate::ConvertError;
+use crate::ooxml::util::{
     open_zip, parse_rels, post_process, read_zip_text,
 };
 

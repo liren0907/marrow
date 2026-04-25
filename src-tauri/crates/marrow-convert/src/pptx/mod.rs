@@ -15,11 +15,11 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::convert::ConvertError;
-use crate::convert::ooxml_dml::{
+use crate::ConvertError;
+use crate::ooxml::dml::{
     BulletKind, extract_paragraphs, render_paragraph_with_bullet,
 };
-use crate::convert::ooxml_util::{
+use crate::ooxml::util::{
     find_rel_target, find_rel_targets, list_zip_names, open_zip, parse_rels,
     post_process, read_zip_bytes, read_zip_text, resolve_rel_path,
     unique_asset_name,

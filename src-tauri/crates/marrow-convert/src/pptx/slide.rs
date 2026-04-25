@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::reader::Reader;
 
-use crate::convert::ConvertError;
-use crate::convert::ooxml_dml::{TextBodyParser, render_paragraph_with_bullet};
+use crate::ConvertError;
+use crate::ooxml::dml::{TextBodyParser, render_paragraph_with_bullet};
 
 use super::attrs::attr_val;
 use super::types::{Shape, ShapeKind, Slide, StyleCategory};

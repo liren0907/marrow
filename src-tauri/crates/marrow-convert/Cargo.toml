@@ -1,0 +1,14 @@
+[package]
+name = "marrow-convert"
+version = "0.1.0"
+edition = "2024"
+description = "Native document → Markdown converters (HTML / DOCX / PPTX) for Marrow."
+
+[dependencies]
+thiserror = "2.0.18"
+quick-xml = "0.39.2"
+zip = { version = "8.5.1", default-features = false, features = ["deflate"] }
+chardetng = "1.0.0"
+htmd = "0.5.4"
+dom_smoothie = "0.17.0"
+encoding_rs = "0.8.35"

@@ -3,8 +3,8 @@ use std::collections::HashSet;
 use quick_xml::events::Event;
 use quick_xml::reader::Reader;
 
-use crate::convert::ConvertError;
-use crate::convert::ooxml_util::escape_md;
+use crate::ConvertError;
+use crate::ooxml::util::escape_md;
 
 use super::attrs::{attr_val, attr_val_with_prefix};
 use super::comments::render_comments_for;

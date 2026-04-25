@@ -6,7 +6,7 @@ use quick_xml::reader::Reader;
 use zip::ZipArchive;
 use zip::result::ZipError;
 
-use crate::convert::ConvertError;
+use crate::ConvertError;
 
 pub type Zip<'a> = ZipArchive<Cursor<&'a [u8]>>;
 
@@ -184,47 +184,13 @@ pub fn parse_rels(xml: &str) -> HashMap<String, String> {
     map
 }
 
-/// Wrap a text run with bold/italic markers. Handles:
-/// - empty input → empty output
-/// - pure-whitespace input → passthrough (markers would otherwise swallow whitespace)
-/// - preserves leading/trailing whitespace outside the markers
-pub fn wrap_run(text: &str, bold: bool, italic: bool) -> String {
-    if text.is_empty() {
-        return String::new();
-    }
-    let trimmed = text.trim();
-    if trimmed.is_empty() {
-        return text.to_string();
-    }
-    if !bold && !italic {
-        return text.to_string();
-    }
-    let leading_len = text.len() - text.trim_start().len();
-    let trailing_len = text.len() - text.trim_end().len();
-    let leading = &text[..leading_len];
-    let trailing = &text[text.len() - trailing_len..];
-    let mut out = String::with_capacity(text.len() + 6);
-    out.push_str(leading);
-    if bold {
-        out.push_str("**");
-    }
-    if italic {
-        out.push('*');
-    }
-    out.push_str(trimmed);
-    if italic {
-        out.push('*');
-    }
-    if bold {
-        out.push_str("**");
-    }
-    out.push_str(trailing);
-    out
-}
-
 /// Wrap a run's text with bold / italic / underline / strikethrough
-/// markers in a stable order. Like [`wrap_run`] but covers the full DML /
-/// WordprocessingML run vocabulary. Shared by docx and pptx.
+/// markers in a stable order. Covers the full DML / WordprocessingML run
+/// vocabulary. Shared by docx and pptx.
+///
+/// Handles edge cases: empty input → empty output; pure-whitespace input
+/// → passthrough (markers would swallow the whitespace); preserves
+/// leading/trailing whitespace outside the markers.
 pub fn wrap_run_full(
     text: &str,
     bold: bool,

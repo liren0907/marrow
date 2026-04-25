@@ -1,6 +1,6 @@
-use crate::convert::ConvertError;
-use crate::convert::ooxml_dml::{extract_paragraphs, render_paragraph_with_bullet};
-use crate::convert::ooxml_util::{Zip, parse_rels, read_zip_text};
+use crate::ConvertError;
+use crate::ooxml::dml::{extract_paragraphs, render_paragraph_with_bullet};
+use crate::ooxml::util::{Zip, parse_rels, read_zip_text};
 
 use super::types::{MasterStyles, StyleCategory};
 

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use quick_xml::events::Event;
 use quick_xml::reader::Reader;
 
-use crate::convert::ooxml_dml::BulletKind;
+use crate::ooxml::dml::BulletKind;
 
 use super::types::{MasterStyles, StyleCategory};
 
@@ -16,7 +16,7 @@ use super::types::{MasterStyles, StyleCategory};
 /// - `<p:otherStyle>` — applied to free-form text boxes
 ///
 /// Each cohort holds nine optional `<a:lvlNpPr>` blocks (one per indent
-/// level, 1-indexed in XML, 0-indexed in our [`crate::convert::ooxml_dml::Paragraph::ilvl`]).
+/// level, 1-indexed in XML, 0-indexed in our [`crate::ooxml::dml::Paragraph::ilvl`]).
 /// Each level may carry a `<a:buChar>`, `<a:buAutoNum>`, or `<a:buNone>` —
 /// that's what we capture. Other DML inside `<a:lvlNpPr>` (sizing,
 /// indentation, fonts) is ignored.
@@ -96,7 +96,7 @@ pub(super) fn parse_master_styles(xml: &str) -> MasterStyles {
 }
 
 /// Map element names like `lvl1pPr` … `lvl9pPr` to the 0-indexed level
-/// used by [`crate::convert::ooxml_dml::Paragraph::ilvl`]. Returns `None`
+/// used by [`crate::ooxml::dml::Paragraph::ilvl`]. Returns `None`
 /// for everything else.
 fn parse_lvl_ppr(name: &[u8]) -> Option<usize> {
     let s = std::str::from_utf8(name).ok()?;

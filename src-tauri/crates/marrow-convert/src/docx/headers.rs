@@ -1,8 +1,8 @@
 use quick_xml::events::Event;
 use quick_xml::reader::Reader;
 
-use crate::convert::ConvertError;
-use crate::convert::ooxml_util::{Zip, read_zip_text};
+use crate::ConvertError;
+use crate::ooxml::util::{Zip, read_zip_text};
 
 /// Render every header*.xml + footer*.xml in the zip. Order is alpha by
 /// filename (ZIP-order in practice), which matches the section order. Text

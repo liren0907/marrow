@@ -38,7 +38,7 @@ pub async fn convert_to_markdown(path: String) -> Result<String, String> {
 pub async fn convert_html_to_markdown(path: String) -> Result<String, String> {
     tokio::task::spawn_blocking(move || -> Result<String, String> {
         let bytes = std::fs::read(&path).map_err(|e| format!("read {path}: {e}"))?;
-        crate::convert::html::html_to_markdown(&bytes).map_err(|e| e.to_string())
+        marrow_convert::html::html_to_markdown(&bytes).map_err(|e| e.to_string())
     })
     .await
     .map_err(|e| format!("task join: {e}"))?
@@ -53,7 +53,7 @@ pub async fn convert_docx_to_markdown(path: String) -> Result<ConvertResult, Str
     use base64::{Engine, engine::general_purpose::STANDARD};
     tokio::task::spawn_blocking(move || -> Result<ConvertResult, String> {
         let bytes = std::fs::read(&path).map_err(|e| format!("read {path}: {e}"))?;
-        let result = crate::convert::docx::docx_to_markdown(&bytes)
+        let result = marrow_convert::docx::docx_to_markdown(&bytes)
             .map_err(|e| e.to_string())?;
         let assets = result
             .assets
@@ -99,7 +99,7 @@ pub async fn convert_pptx_to_markdown(path: String) -> Result<ConvertResult, Str
     use base64::{Engine, engine::general_purpose::STANDARD};
     tokio::task::spawn_blocking(move || -> Result<ConvertResult, String> {
         let bytes = std::fs::read(&path).map_err(|e| format!("read {path}: {e}"))?;
-        let result = crate::convert::pptx::pptx_to_markdown(&bytes)
+        let result = marrow_convert::pptx::pptx_to_markdown(&bytes)
             .map_err(|e| e.to_string())?;
         let assets = result
             .assets

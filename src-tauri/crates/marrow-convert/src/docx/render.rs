@@ -1,4 +1,4 @@
-use crate::convert::ooxml_util::{escape_md, wrap_run_full};
+use crate::ooxml::util::{escape_md, wrap_run_full};
 
 use super::types::{Ctx, ListKind, Paragraph, Run};
 

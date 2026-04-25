@@ -1,3 +1,6 @@
+[workspace]
+members = [".", "crates/marrow-convert"]
+
 [package]
 name = "marrow"
 version = "0.1.0"
@@ -30,11 +33,5 @@ sha2 = "0.10"
 hex = "0.4"
 tokio = { version = "1", features = ["fs", "sync", "time", "rt-multi-thread"] }
 uuid = { version = "1", features = ["v4"] }
-thiserror = "2.0.18"
-chardetng = "1.0.0"
-htmd = "0.5.4"
-dom_smoothie = "0.17.0"
-encoding_rs = "0.8.35"
-quick-xml = "0.39.2"
-zip = { version = "8.5.1", default-features = false, features = ["deflate"] }
 base64 = "0.22"
+marrow-convert = { path = "crates/marrow-convert" }
