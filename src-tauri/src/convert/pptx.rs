@@ -11,6 +11,7 @@ use crate::convert::ooxml_dml::{
 use crate::convert::ooxml_util::{
     find_rel_target, find_rel_targets, list_zip_names, open_zip, parse_rels,
     post_process, read_zip_bytes, read_zip_text, resolve_rel_path,
+    unique_asset_name,
 };
 
 /// Which `<p:txStyles>` block in the slide master a shape's text inherits
@@ -456,27 +457,6 @@ fn attr_val_prefixed(
         }
     }
     None
-}
-
-/// Pick a non-conflicting filename for an asset. If `base` is unused, it
-/// is returned verbatim; otherwise we append `-2`, `-3`, … before the
-/// extension until a free name is found.
-fn unique_asset_name(base: &str, used: &HashSet<String>) -> String {
-    if !used.contains(base) {
-        return base.to_string();
-    }
-    let (stem, ext) = match base.rfind('.') {
-        Some(i) => (&base[..i], &base[i..]),
-        None => (base, ""),
-    };
-    let mut n = 2usize;
-    loop {
-        let candidate = format!("{stem}-{n}{ext}");
-        if !used.contains(&candidate) {
-            return candidate;
-        }
-        n += 1;
-    }
 }
 
 /// Read `notes_path` from `zip` and render its paragraphs as a Markdown

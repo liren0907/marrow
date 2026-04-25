@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{Cursor, Read};
 
 use quick_xml::events::Event;
@@ -220,6 +220,82 @@ pub fn wrap_run(text: &str, bold: bool, italic: bool) -> String {
     }
     out.push_str(trailing);
     out
+}
+
+/// Wrap a run's text with bold / italic / underline / strikethrough
+/// markers in a stable order. Like [`wrap_run`] but covers the full DML /
+/// WordprocessingML run vocabulary. Shared by docx and pptx.
+pub fn wrap_run_full(
+    text: &str,
+    bold: bool,
+    italic: bool,
+    underline: bool,
+    strike: bool,
+) -> String {
+    if text.is_empty() {
+        return String::new();
+    }
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return text.to_string();
+    }
+    if !bold && !italic && !underline && !strike {
+        return text.to_string();
+    }
+    let leading_len = text.len() - text.trim_start().len();
+    let trailing_len = text.len() - text.trim_end().len();
+    let leading = &text[..leading_len];
+    let trailing = &text[text.len() - trailing_len..];
+    let mut out = String::with_capacity(text.len() + 12);
+    out.push_str(leading);
+    if bold {
+        out.push_str("**");
+    }
+    if italic {
+        out.push('*');
+    }
+    if underline {
+        out.push_str("<u>");
+    }
+    if strike {
+        out.push_str("~~");
+    }
+    out.push_str(trimmed);
+    if strike {
+        out.push_str("~~");
+    }
+    if underline {
+        out.push_str("</u>");
+    }
+    if italic {
+        out.push('*');
+    }
+    if bold {
+        out.push_str("**");
+    }
+    out.push_str(trailing);
+    out
+}
+
+/// Pick a non-conflicting filename for a sidecar asset. If `base` is
+/// unused, returned verbatim; otherwise we append `-2`, `-3`, … before
+/// the extension until a free name is found.
+pub fn unique_asset_name(base: &str, used: &HashSet<String>) -> String {
+    if !used.contains(base) {
+        return base.to_string();
+    }
+    let (stem, ext) = match base.rfind('.') {
+        Some(i) => (&base[..i], &base[i..]),
+        None => (base, ""),
+    };
+    let mut n = 2usize;
+    loop {
+        let candidate = format!("{stem}-{n}{ext}");
+        if !used.contains(&candidate) {
+            return candidate;
+        }
+        n += 1;
+    }
 }
 
 /// Escape Markdown meta-characters in plain text (for run bodies we emit

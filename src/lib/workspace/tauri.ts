@@ -176,10 +176,6 @@ export function convertHtmlToMarkdown(path: string): Promise<string> {
   return invoke<string>("convert_html_to_markdown", { path });
 }
 
-export function convertDocxToMarkdown(path: string): Promise<string> {
-  return invoke<string>("convert_docx_to_markdown", { path });
-}
-
 export interface ConvertAsset {
   /** Final filename — caller writes to `attachments/<name>` on save. */
   name: string;
@@ -194,4 +190,8 @@ export interface ConvertResult {
 
 export function convertPptxToMarkdown(path: string): Promise<ConvertResult> {
   return invoke<ConvertResult>("convert_pptx_to_markdown", { path });
+}
+
+export function convertDocxToMarkdown(path: string): Promise<ConvertResult> {
+  return invoke<ConvertResult>("convert_docx_to_markdown", { path });
 }

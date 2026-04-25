@@ -176,7 +176,9 @@
       } else if (ext === "html" || ext === "htm") {
         resultMd = await convertHtmlToMarkdown(path);
       } else if (ext === "docx") {
-        resultMd = await convertDocxToMarkdown(path);
+        const r = await convertDocxToMarkdown(path);
+        resultMd = r.markdown;
+        resultAssets = r.assets;
       } else if (ext === "pptx") {
         const r = await convertPptxToMarkdown(path);
         resultMd = r.markdown;

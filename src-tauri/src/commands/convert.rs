@@ -45,12 +45,28 @@ pub async fn convert_html_to_markdown(path: String) -> Result<String, String> {
 }
 
 /// Convert a `.docx` file to Markdown using a native Rust OOXML walker
-/// (zip + quick-xml). No external runtime.
+/// (zip + quick-xml). No external runtime. Returns Markdown plus any
+/// embedded media as base64-encoded sidecar assets (same shape as the
+/// PPTX converter — frontend writes them under `attachments/<name>`).
 #[tauri::command]
-pub async fn convert_docx_to_markdown(path: String) -> Result<String, String> {
-    tokio::task::spawn_blocking(move || -> Result<String, String> {
+pub async fn convert_docx_to_markdown(path: String) -> Result<ConvertResult, String> {
+    use base64::{Engine, engine::general_purpose::STANDARD};
+    tokio::task::spawn_blocking(move || -> Result<ConvertResult, String> {
         let bytes = std::fs::read(&path).map_err(|e| format!("read {path}: {e}"))?;
-        crate::convert::docx::docx_to_markdown(&bytes).map_err(|e| e.to_string())
+        let result = crate::convert::docx::docx_to_markdown(&bytes)
+            .map_err(|e| e.to_string())?;
+        let assets = result
+            .assets
+            .into_iter()
+            .map(|a| ConvertAsset {
+                name: a.name,
+                bytes_b64: STANDARD.encode(&a.bytes),
+            })
+            .collect();
+        Ok(ConvertResult {
+            markdown: result.markdown,
+            assets,
+        })
     })
     .await
     .map_err(|e| format!("task join: {e}"))?

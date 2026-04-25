@@ -18,7 +18,7 @@ use quick_xml::events::{BytesStart, BytesText, Event};
 use quick_xml::reader::Reader;
 
 use crate::convert::ConvertError;
-use crate::convert::ooxml_util::escape_md;
+use crate::convert::ooxml_util::{escape_md, wrap_run_full};
 
 #[derive(Default, Clone, Copy, PartialEq, Debug)]
 pub enum BulletKind {
@@ -277,56 +277,6 @@ pub fn merge_adjacent_runs(runs: &[Run]) -> Vec<Run> {
         }
         out.push(r.clone());
     }
-    out
-}
-
-/// Wrap a run's text with bold / italic / underline / strikethrough
-/// markers in a stable order (`**…**` outside, `*…*`, then `<u>…</u>`,
-/// then `~~…~~`). Mirrors [`crate::convert::ooxml_util::wrap_run`] but
-/// covers the full DML run vocabulary.
-fn wrap_run_full(text: &str, bold: bool, italic: bool, underline: bool, strike: bool) -> String {
-    if text.is_empty() {
-        return String::new();
-    }
-    let trimmed = text.trim();
-    if trimmed.is_empty() {
-        return text.to_string();
-    }
-    if !bold && !italic && !underline && !strike {
-        return text.to_string();
-    }
-    let leading_len = text.len() - text.trim_start().len();
-    let trailing_len = text.len() - text.trim_end().len();
-    let leading = &text[..leading_len];
-    let trailing = &text[text.len() - trailing_len..];
-    let mut out = String::with_capacity(text.len() + 12);
-    out.push_str(leading);
-    if bold {
-        out.push_str("**");
-    }
-    if italic {
-        out.push('*');
-    }
-    if underline {
-        out.push_str("<u>");
-    }
-    if strike {
-        out.push_str("~~");
-    }
-    out.push_str(trimmed);
-    if strike {
-        out.push_str("~~");
-    }
-    if underline {
-        out.push_str("</u>");
-    }
-    if italic {
-        out.push('*');
-    }
-    if bold {
-        out.push_str("**");
-    }
-    out.push_str(trailing);
     out
 }
 
