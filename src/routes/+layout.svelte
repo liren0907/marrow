@@ -1,4 +1,5 @@
 <script lang="ts">
+  import "$lib/polyfills/readableStreamAsyncIterator";
   import { onMount } from "svelte";
   import { getCurrentWebview } from "@tauri-apps/api/webview";
   import Sidebar from "./Sidebar.svelte";

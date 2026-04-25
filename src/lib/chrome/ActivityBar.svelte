@@ -52,6 +52,15 @@
     <button
       type="button"
       class="activity-btn tooltip tooltip-right"
+      onclick={() => workspace.openNativeConvertView()}
+      data-tip="Native Convert (playground)"
+      aria-label="Native Convert playground"
+    >
+      <Icon name="flask-conical" size={20} />
+    </button>
+    <button
+      type="button"
+      class="activity-btn tooltip tooltip-right"
       onclick={toggleCommandPalette}
       data-tip="Command palette · ⇧⌘P"
       aria-label="Command palette"

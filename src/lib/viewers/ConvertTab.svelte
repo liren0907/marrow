@@ -34,7 +34,12 @@
 
   let { tab }: { tab: Tab } = $props();
 
-  const isWorkspaceMode = $derived(tab.path === "marrow://convert");
+  const NATIVE_EXTS = ["pdf", "html", "htm", "docx", "pptx"];
+
+  const isNativeMode = $derived(tab.path === "marrow://convert-native");
+  const isWorkspaceMode = $derived(
+    tab.path === "marrow://convert" || tab.path === "marrow://convert-native",
+  );
   let internalSource = $state<string | null>(null);
   const sourcePath = $derived<string | null>(
     isWorkspaceMode ? internalSource : tab.path,
@@ -55,7 +60,13 @@
   let filterQuery = $state("");
   const convertibleFiles = $derived.by(() => {
     const q = filterQuery.trim().toLowerCase();
-    const all = workspace.fileIndex.filter((f) => isConvertible(f.path));
+    const predicate = isNativeMode
+      ? (p: string) => {
+          const ext = (p.split(".").pop() ?? "").toLowerCase();
+          return NATIVE_EXTS.includes(ext);
+        }
+      : isConvertible;
+    const all = workspace.fileIndex.filter((f) => predicate(f.path));
     if (!q) return all;
     return all.filter((f) => f.name.toLowerCase().includes(q));
   });
@@ -142,8 +153,9 @@
     slowHint = false;
     if (slowTimer) clearTimeout(slowTimer);
     const ext = (path.split(".").pop() ?? "").toLowerCase();
-    const useMarkitdown = !["pdf", "html", "htm", "docx", "pptx"].includes(ext);
-    if (useMarkitdown) {
+    const isNativeExt = NATIVE_EXTS.includes(ext);
+    const useMarkitdown = !isNativeExt;
+    if (useMarkitdown && !isNativeMode) {
       slowTimer = setTimeout(() => {
         if (!cancelled) slowHint = true;
       }, 4000);
@@ -158,6 +170,8 @@
         result = await convertDocxToMarkdown(path);
       } else if (ext === "pptx") {
         result = await convertPptxToMarkdown(path);
+      } else if (isNativeMode) {
+        throw new Error(`Native convert does not support .${ext} yet`);
       } else {
         result = await convertToMarkdown(path);
       }
@@ -197,13 +211,15 @@
         multiple: false,
         filters: [
           {
-            name: "Convertible files",
-            extensions: [
-              "pdf", "docx", "pptx", "xlsx", "xls",
-              "html", "htm", "epub", "ipynb",
-              "csv", "json", "xml",
-              "msg", "eml", "zip",
-            ],
+            name: isNativeMode ? "Native-supported files" : "Convertible files",
+            extensions: isNativeMode
+              ? ["pdf", "html", "htm", "docx", "pptx"]
+              : [
+                  "pdf", "docx", "pptx", "xlsx", "xls",
+                  "html", "htm", "epub", "ipynb",
+                  "csv", "json", "xml",
+                  "msg", "eml", "zip",
+                ],
           },
         ],
       });
@@ -290,7 +306,8 @@
   // Keep the tab title in sync with current source (workspace mode only).
   $effect(() => {
     if (!isWorkspaceMode) return;
-    const title = sourcePath ? `Convert: ${basename(sourcePath)}` : "Convert";
+    const prefix = isNativeMode ? "Native Convert" : "Convert";
+    const title = sourcePath ? `${prefix}: ${basename(sourcePath)}` : prefix;
     if (tab.title !== title) workspace.patchTab(tab.id, { title });
   });
 
@@ -309,7 +326,7 @@
         <span class="truncate">{basename(sourcePath)}</span>
         <span class="text-base-content/40">→ Markdown</span>
       {:else}
-        <span>Convert to Markdown</span>
+        <span>{isNativeMode ? "Native Convert (playground)" : "Convert to Markdown"}</span>
       {/if}
     </div>
     <div class="flex items-center gap-2 shrink-0">
@@ -333,7 +350,9 @@
       {#if isWorkspaceMode && !sourcePath}
         <div class="picker p-4 h-full flex flex-col gap-3 min-h-0">
           <div class="text-xs text-base-content/60">
-            Pick a file to convert to Markdown
+            {isNativeMode
+              ? "Pick a PDF / HTML / DOCX / PPTX to test native conversion"
+              : "Pick a file to convert to Markdown"}
           </div>
           <input
             type="text"
@@ -401,7 +420,7 @@
               <span class="text-sm font-semibold">Conversion failed</span>
             </div>
             <pre class="text-xs whitespace-pre-wrap break-words text-base-content/70 bg-base-200 p-3 rounded max-h-48 overflow-auto w-full">{errorMessage}</pre>
-            {#if isMissingUv}
+            {#if isMissingUv && !isNativeMode}
               <div class="text-xs text-base-content/60">
                 Install <code class="bg-base-200 px-1 rounded">uv</code> with:
                 <pre class="text-xs bg-base-200 p-2 mt-1 rounded">curl -LsSf https://astral.sh/uv/install.sh | sh</pre>

@@ -38,6 +38,7 @@
     RotateCcw,
     MoveRight,
     SlidersHorizontal,
+    FlaskConical,
   } from "lucide";
 
   export type IconName =
@@ -73,7 +74,8 @@
     | "circle-alert"
     | "rotate-ccw"
     | "move-right"
-    | "sliders-horizontal";
+    | "sliders-horizontal"
+    | "flask-conical";
 
   const MAP = {
     "plus": Plus,
@@ -109,6 +111,7 @@
     "rotate-ccw": RotateCcw,
     "move-right": MoveRight,
     "sliders-horizontal": SlidersHorizontal,
+    "flask-conical": FlaskConical,
   } satisfies Record<IconName, unknown>;
 </script>
 
