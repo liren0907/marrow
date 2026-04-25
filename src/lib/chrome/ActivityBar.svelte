@@ -106,15 +106,6 @@
   }
   .activity-btn.active {
     color: var(--color-base-content);
-  }
-  .activity-btn.active::before {
-    content: "";
-    position: absolute;
-    left: -6px;
-    top: 4px;
-    bottom: 4px;
-    width: 2px;
-    background: var(--mw-accent);
-    border-radius: 2px;
+    box-shadow: inset 2px 0 0 var(--mw-accent);
   }
 </style>
