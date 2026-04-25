@@ -24,6 +24,12 @@ struct Shape {
     kind: ShapeKind,
 }
 
+struct Slide {
+    /// `<p:sld show="0">` — slide marked hidden in the deck.
+    hidden: bool,
+    shapes: Vec<Shape>,
+}
+
 pub fn pptx_to_markdown(bytes: &[u8]) -> Result<String, ConvertError> {
     let mut zip = open_zip(bytes)?;
 
@@ -48,12 +54,18 @@ pub fn pptx_to_markdown(bytes: &[u8]) -> Result<String, ConvertError> {
             .map(|s| parse_rels(&s))
             .unwrap_or_default();
 
-        let mut shapes = parse_slide(&slide_xml, &rels)?;
-        shapes.sort_by_key(|s| (s.y, s.x));
+        let mut slide = parse_slide(&slide_xml, &rels)?;
+        if slide.hidden {
+            // Preserve numbering so readers can map output back to the
+            // source deck, but omit body content.
+            out.push_str(&format!("<!-- Slide {} (hidden) -->\n\n", idx + 1));
+            continue;
+        }
+        slide.shapes.sort_by_key(|s| (s.y, s.x));
 
         out.push_str(&format!("<!-- Slide {} -->\n", idx + 1));
         let mut emitted_any = false;
-        for shape in &shapes {
+        for shape in &slide.shapes {
             match &shape.kind {
                 ShapeKind::Title(t) => {
                     let trimmed = t.trim();
@@ -117,17 +129,22 @@ fn attr_val(e: &quick_xml::events::BytesStart, key: &[u8]) -> Option<String> {
 fn parse_slide(
     xml: &str,
     rels: &HashMap<String, String>,
-) -> Result<Vec<Shape>, ConvertError> {
+) -> Result<Slide, ConvertError> {
     let mut reader = Reader::from_str(xml);
     reader.config_mut().trim_text(false);
     let mut buf = Vec::new();
 
     let mut shapes: Vec<Shape> = Vec::new();
+    let mut hidden = false;
 
     let mut in_sp = false;
     let mut in_tbl = false;
     let mut sp_offset: (i64, i64) = (0, 0);
     let mut sp_is_title = false;
+    // `<p:cNvPr name="Title 1">` is the most reliable fallback when the
+    // placeholder lacks an explicit `type="title"` (some templates and
+    // tools omit it). Captured per-shape and consumed at `</p:sp>`.
+    let mut sp_name: Option<String> = None;
 
     let mut parser = TextBodyParser::new();
 
@@ -139,10 +156,23 @@ fn parse_slide(
             Ok(Event::Start(e)) => {
                 let name = e.local_name().as_ref().to_vec();
                 match name.as_slice() {
+                    b"sld" => {
+                        if let Some(v) = attr_val(&e, b"show") {
+                            if v == "0" || v == "false" {
+                                hidden = true;
+                            }
+                        }
+                    }
                     b"sp" => {
                         in_sp = true;
                         sp_offset = (0, 0);
                         sp_is_title = false;
+                        sp_name = None;
+                    }
+                    b"cNvPr" => {
+                        if in_sp {
+                            sp_name = attr_val(&e, b"name");
+                        }
                     }
                     b"ph" => {
                         if let Some(t) = attr_val(&e, b"type") {
@@ -176,6 +206,11 @@ fn parse_slide(
             Ok(Event::Empty(e)) => {
                 let name = e.local_name().as_ref().to_vec();
                 match name.as_slice() {
+                    b"cNvPr" => {
+                        if in_sp {
+                            sp_name = attr_val(&e, b"name");
+                        }
+                    }
                     b"off" => {
                         let x = attr_val(&e, b"x")
                             .and_then(|v| v.parse::<i64>().ok())
@@ -230,7 +265,16 @@ fn parse_slide(
                     b"sp" => {
                         in_sp = false;
                         let sp_paragraphs = parser.take_paragraphs();
-                        if sp_is_title {
+                        let is_title = sp_is_title
+                            || sp_name
+                                .as_deref()
+                                .map(|n| {
+                                    let lower = n.trim().to_ascii_lowercase();
+                                    lower.starts_with("title")
+                                })
+                                .unwrap_or(false);
+                        sp_name = None;
+                        if is_title {
                             let text = sp_paragraphs
                                 .iter()
                                 .map(|p| {
@@ -265,7 +309,7 @@ fn parse_slide(
         buf.clear();
     }
 
-    Ok(shapes)
+    Ok(Slide { hidden, shapes })
 }
 
 fn render_table(rows: &[Vec<String>]) -> String {

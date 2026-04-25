@@ -98,11 +98,9 @@ impl TextBodyParser {
                 self.apply_run_pr(e);
             }
             b"hlinkClick" => {
-                if let Some(id) = attr_val(e, b"id") {
-                    if let Some(url) = rels.get(&id) {
-                        self.cur_run.hyperlink = Some(url.clone());
-                        self.pending_hyperlink = Some(url.clone());
-                    }
+                if let Some(url) = resolve_hyperlink(e, rels) {
+                    self.cur_run.hyperlink = Some(url.clone());
+                    self.pending_hyperlink = Some(url);
                 }
             }
             _ => {}
@@ -136,14 +134,13 @@ impl TextBodyParser {
             }
             b"br" => {
                 if self.in_run {
-                    self.cur_run.text.push('\n');
+                    // Markdown hard line break: two trailing spaces + newline.
+                    self.cur_run.text.push_str("  \n");
                 }
             }
             b"hlinkClick" => {
-                if let Some(id) = attr_val(e, b"id") {
-                    if let Some(url) = rels.get(&id) {
-                        self.cur_run.hyperlink = Some(url.clone());
-                    }
+                if let Some(url) = resolve_hyperlink(e, rels) {
+                    self.cur_run.hyperlink = Some(url);
                 }
             }
             _ => {}
@@ -202,6 +199,35 @@ impl TextBodyParser {
             }
         }
     }
+}
+
+/// Resolve a `<a:hlinkClick>` element to its final URL.
+///
+/// `r:id` looks up a target in `rels`. When the element also carries
+/// `action="ppaction://hlinksldjump"` the target is a sibling slide path
+/// (e.g. `../slides/slide3.xml`), which we collapse to an in-document
+/// anchor `#slide-3` so it does not show up as a broken external link.
+/// Other actions (e.g. `hlinkpres` jump-to-show) currently fall through
+/// to the raw target.
+fn resolve_hyperlink(
+    e: &BytesStart,
+    rels: &HashMap<String, String>,
+) -> Option<String> {
+    let id = attr_val(e, b"id")?;
+    let target = rels.get(&id)?;
+    if attr_val(e, b"action")
+        .map(|a| a.starts_with("ppaction://hlinksldjump"))
+        .unwrap_or(false)
+    {
+        let stem = target.rsplit('/').next().unwrap_or(target.as_str());
+        if let Some(n) = stem
+            .strip_prefix("slide")
+            .and_then(|s| s.strip_suffix(".xml"))
+        {
+            return Some(format!("#slide-{n}"));
+        }
+    }
+    Some(target.clone())
 }
 
 fn attr_val(e: &BytesStart, key: &[u8]) -> Option<String> {
