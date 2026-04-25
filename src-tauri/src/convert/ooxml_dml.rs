@@ -18,7 +18,7 @@ use quick_xml::events::{BytesStart, BytesText, Event};
 use quick_xml::reader::Reader;
 
 use crate::convert::ConvertError;
-use crate::convert::ooxml_util::{escape_md, wrap_run};
+use crate::convert::ooxml_util::escape_md;
 
 #[derive(Default, Clone, Copy, PartialEq, Debug)]
 pub enum BulletKind {
@@ -33,12 +33,18 @@ pub struct Run {
     pub text: String,
     pub bold: bool,
     pub italic: bool,
+    pub underline: bool,
+    pub strike: bool,
     pub hyperlink: Option<String>,
 }
 
 #[derive(Default, Debug)]
 pub struct Paragraph {
-    pub bullet: BulletKind,
+    /// `None` means "no `<a:buXxx>` was seen on this paragraph" — caller
+    /// should fall back to the inherited style from layout/master.
+    /// `Some(BulletKind::None)` means the paragraph explicitly declared
+    /// `<a:buNone>` which suppresses an inherited bullet.
+    pub bullet: Option<BulletKind>,
     pub ilvl: usize,
     pub runs: Vec<Run>,
 }
@@ -76,17 +82,17 @@ impl TextBodyParser {
             }
             b"buChar" => {
                 if let Some(p) = self.cur_p.as_mut() {
-                    p.bullet = BulletKind::Char;
+                    p.bullet = Some(BulletKind::Char);
                 }
             }
             b"buAutoNum" => {
                 if let Some(p) = self.cur_p.as_mut() {
-                    p.bullet = BulletKind::AutoNum;
+                    p.bullet = Some(BulletKind::AutoNum);
                 }
             }
             b"buNone" => {
                 if let Some(p) = self.cur_p.as_mut() {
-                    p.bullet = BulletKind::None;
+                    p.bullet = Some(BulletKind::None);
                 }
             }
             b"r" => {
@@ -118,17 +124,17 @@ impl TextBodyParser {
         match name {
             b"buChar" => {
                 if let Some(p) = self.cur_p.as_mut() {
-                    p.bullet = BulletKind::Char;
+                    p.bullet = Some(BulletKind::Char);
                 }
             }
             b"buAutoNum" => {
                 if let Some(p) = self.cur_p.as_mut() {
-                    p.bullet = BulletKind::AutoNum;
+                    p.bullet = Some(BulletKind::AutoNum);
                 }
             }
             b"buNone" => {
                 if let Some(p) = self.cur_p.as_mut() {
-                    p.bullet = BulletKind::None;
+                    p.bullet = Some(BulletKind::None);
                 }
             }
             b"rPr" => {
@@ -200,6 +206,20 @@ impl TextBodyParser {
                 self.cur_run.italic = true;
             }
         }
+        // `u="none"` is the only "no underline" value; sng / dbl /
+        // wavy* / dotted etc. all read as some form of underline.
+        if let Some(v) = attr_val(e, b"u") {
+            if v != "none" {
+                self.cur_run.underline = true;
+            }
+        }
+        // `strike="noStrike"` means "explicitly not struck"; everything
+        // else (sngStrike / dblStrike) is a strikethrough.
+        if let Some(v) = attr_val(e, b"strike") {
+            if v != "noStrike" {
+                self.cur_run.strike = true;
+            }
+        }
     }
 }
 
@@ -247,6 +267,8 @@ pub fn merge_adjacent_runs(runs: &[Run]) -> Vec<Run> {
         if let Some(last) = out.last_mut() {
             if last.bold == r.bold
                 && last.italic == r.italic
+                && last.underline == r.underline
+                && last.strike == r.strike
                 && last.hyperlink == r.hyperlink
             {
                 last.text.push_str(&r.text);
@@ -255,6 +277,56 @@ pub fn merge_adjacent_runs(runs: &[Run]) -> Vec<Run> {
         }
         out.push(r.clone());
     }
+    out
+}
+
+/// Wrap a run's text with bold / italic / underline / strikethrough
+/// markers in a stable order (`**…**` outside, `*…*`, then `<u>…</u>`,
+/// then `~~…~~`). Mirrors [`crate::convert::ooxml_util::wrap_run`] but
+/// covers the full DML run vocabulary.
+fn wrap_run_full(text: &str, bold: bool, italic: bool, underline: bool, strike: bool) -> String {
+    if text.is_empty() {
+        return String::new();
+    }
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return text.to_string();
+    }
+    if !bold && !italic && !underline && !strike {
+        return text.to_string();
+    }
+    let leading_len = text.len() - text.trim_start().len();
+    let trailing_len = text.len() - text.trim_end().len();
+    let leading = &text[..leading_len];
+    let trailing = &text[text.len() - trailing_len..];
+    let mut out = String::with_capacity(text.len() + 12);
+    out.push_str(leading);
+    if bold {
+        out.push_str("**");
+    }
+    if italic {
+        out.push('*');
+    }
+    if underline {
+        out.push_str("<u>");
+    }
+    if strike {
+        out.push_str("~~");
+    }
+    out.push_str(trimmed);
+    if strike {
+        out.push_str("~~");
+    }
+    if underline {
+        out.push_str("</u>");
+    }
+    if italic {
+        out.push('*');
+    }
+    if bold {
+        out.push_str("**");
+    }
+    out.push_str(trailing);
     out
 }
 
@@ -294,11 +366,23 @@ pub fn extract_paragraphs(
 }
 
 pub fn render_paragraph(p: &Paragraph) -> String {
+    render_paragraph_with_bullet(p, None)
+}
+
+/// Render a paragraph with an optional `inherited` bullet style used when
+/// the paragraph itself did not declare one (`p.bullet == None`). An
+/// explicit `Some(BulletKind::None)` on the paragraph still suppresses
+/// any inherited bullet — that's the whole point of `<a:buNone/>`.
+pub fn render_paragraph_with_bullet(
+    p: &Paragraph,
+    inherited: Option<&BulletKind>,
+) -> String {
     let merged = merge_adjacent_runs(&p.runs);
     let mut body = String::new();
     for r in &merged {
         let text_escaped = escape_md(&r.text);
-        let wrapped = wrap_run(&text_escaped, r.bold, r.italic);
+        let wrapped =
+            wrap_run_full(&text_escaped, r.bold, r.italic, r.underline, r.strike);
         if let Some(url) = &r.hyperlink {
             body.push_str(&format!("[{}]({})", wrapped, url));
         } else {
@@ -311,13 +395,17 @@ pub fn render_paragraph(p: &Paragraph) -> String {
         return String::new();
     }
 
-    match p.bullet {
-        BulletKind::None => body,
-        BulletKind::Char => {
+    let effective = match &p.bullet {
+        Some(k) => Some(k),
+        None => inherited,
+    };
+    match effective {
+        None | Some(BulletKind::None) => body,
+        Some(BulletKind::Char) => {
             let indent = "  ".repeat(p.ilvl);
             format!("{indent}- {body}")
         }
-        BulletKind::AutoNum => {
+        Some(BulletKind::AutoNum) => {
             let indent = "  ".repeat(p.ilvl);
             format!("{indent}1. {body}")
         }

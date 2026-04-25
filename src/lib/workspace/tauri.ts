@@ -180,6 +180,18 @@ export function convertDocxToMarkdown(path: string): Promise<string> {
   return invoke<string>("convert_docx_to_markdown", { path });
 }
 
-export function convertPptxToMarkdown(path: string): Promise<string> {
-  return invoke<string>("convert_pptx_to_markdown", { path });
+export interface ConvertAsset {
+  /** Final filename — caller writes to `attachments/<name>` on save. */
+  name: string;
+  /** Base64-encoded raw bytes. Decode before writing. */
+  bytes_b64: string;
+}
+
+export interface ConvertResult {
+  markdown: string;
+  assets: ConvertAsset[];
+}
+
+export function convertPptxToMarkdown(path: string): Promise<ConvertResult> {
+  return invoke<ConvertResult>("convert_pptx_to_markdown", { path });
 }

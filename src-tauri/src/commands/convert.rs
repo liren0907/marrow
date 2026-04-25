@@ -56,13 +56,47 @@ pub async fn convert_docx_to_markdown(path: String) -> Result<String, String> {
     .map_err(|e| format!("task join: {e}"))?
 }
 
+/// One asset extracted from a converted document — for PPTX today this
+/// is an embedded picture from `ppt/media/`. Bytes are base64-encoded so
+/// the value can ride a JSON IPC payload; the frontend writes them to
+/// disk on Save (under `attachments/<name>`).
+#[derive(serde::Serialize)]
+pub struct ConvertAsset {
+    pub name: String,
+    pub bytes_b64: String,
+}
+
+/// Convert result for formats that may carry sidecar assets (currently
+/// PPTX). The `markdown` already references each asset by its final
+/// `attachments/<name>` filename so callers don't need to rewrite text.
+#[derive(serde::Serialize)]
+pub struct ConvertResult {
+    pub markdown: String,
+    pub assets: Vec<ConvertAsset>,
+}
+
 /// Convert a `.pptx` file to Markdown using a native Rust OOXML walker
-/// (zip + quick-xml). No external runtime.
+/// (zip + quick-xml). No external runtime. Returns Markdown plus any
+/// embedded media as base64-encoded sidecar assets.
 #[tauri::command]
-pub async fn convert_pptx_to_markdown(path: String) -> Result<String, String> {
-    tokio::task::spawn_blocking(move || -> Result<String, String> {
+pub async fn convert_pptx_to_markdown(path: String) -> Result<ConvertResult, String> {
+    use base64::{Engine, engine::general_purpose::STANDARD};
+    tokio::task::spawn_blocking(move || -> Result<ConvertResult, String> {
         let bytes = std::fs::read(&path).map_err(|e| format!("read {path}: {e}"))?;
-        crate::convert::pptx::pptx_to_markdown(&bytes).map_err(|e| e.to_string())
+        let result = crate::convert::pptx::pptx_to_markdown(&bytes)
+            .map_err(|e| e.to_string())?;
+        let assets = result
+            .assets
+            .into_iter()
+            .map(|a| ConvertAsset {
+                name: a.name,
+                bytes_b64: STANDARD.encode(&a.bytes),
+            })
+            .collect();
+        Ok(ConvertResult {
+            markdown: result.markdown,
+            assets,
+        })
     })
     .await
     .map_err(|e| format!("task join: {e}"))?

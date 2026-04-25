@@ -19,6 +19,9 @@
     convertDocxToMarkdown,
     convertPptxToMarkdown,
     writeTextFile,
+    writeBinaryFile,
+    createDirectory,
+    type ConvertAsset,
   } from "$lib/workspace/tauri";
   import { pdfToMarkdown } from "$lib/convert/pdfToMarkdown";
   import { workspace } from "$lib/workspace/workspace.svelte";
@@ -53,6 +56,10 @@
 
   let status = $state<"idle" | "loading" | "ready" | "error">("idle");
   let markdown = $state("");
+  /** Sidecar assets for the current conversion (PPTX pictures today).
+   * Held in memory until the user saves; written under
+   * `<saveDir>/attachments/` next to the .md. */
+  let assets = $state<ConvertAsset[]>([]);
   let errorMessage = $state("");
   let slowHint = $state(false);
   let slowTimer: ReturnType<typeof setTimeout> | null = null;
@@ -142,9 +149,10 @@
     if (!force) {
       const cached = getCached(path);
       if (cached !== null) {
-        markdown = cached;
+        markdown = cached.markdown;
+        assets = cached.assets;
         status = "ready";
-        queueMicrotask(() => mountEditorIfNeeded(cached));
+        queueMicrotask(() => mountEditorIfNeeded(cached.markdown));
         return;
       }
     }
@@ -161,25 +169,29 @@
       }, 4000);
     }
     try {
-      let result: string;
+      let resultMd: string;
+      let resultAssets: ConvertAsset[] = [];
       if (ext === "pdf") {
-        result = await pdfToMarkdown(path);
+        resultMd = await pdfToMarkdown(path);
       } else if (ext === "html" || ext === "htm") {
-        result = await convertHtmlToMarkdown(path);
+        resultMd = await convertHtmlToMarkdown(path);
       } else if (ext === "docx") {
-        result = await convertDocxToMarkdown(path);
+        resultMd = await convertDocxToMarkdown(path);
       } else if (ext === "pptx") {
-        result = await convertPptxToMarkdown(path);
+        const r = await convertPptxToMarkdown(path);
+        resultMd = r.markdown;
+        resultAssets = r.assets;
       } else if (isNativeMode) {
         throw new Error(`Native convert does not support .${ext} yet`);
       } else {
-        result = await convertToMarkdown(path);
+        resultMd = await convertToMarkdown(path);
       }
       if (cancelled || sourcePath !== path) return;
-      markdown = result;
-      setCached(path, result);
+      markdown = resultMd;
+      assets = resultAssets;
+      setCached(path, resultMd, resultAssets);
       status = "ready";
-      queueMicrotask(() => mountEditorIfNeeded(result));
+      queueMicrotask(() => mountEditorIfNeeded(resultMd));
     } catch (e) {
       if (cancelled || sourcePath !== path) return;
       errorMessage = e instanceof Error ? e.message : String(e);
@@ -200,6 +212,7 @@
   function handleChangeSource() {
     internalSource = null;
     markdown = "";
+    assets = [];
     errorMessage = "";
     status = "idle";
     lastConvertedPath = null;
@@ -248,6 +261,7 @@
     const defaultDir =
       isWorkspaceMode && !inWorkspace && root ? root : dirname(src);
     const contents = markdown;
+    const assetsAtSave = assets;
     openNamePrompt({
       title: "Save as Markdown",
       initial: suggested,
@@ -261,7 +275,25 @@
         const target = joinPath(defaultDir, finalName);
         try {
           await writeTextFile(target, contents);
-          showSuccess(`Saved ${finalName}`);
+          if (assetsAtSave.length > 0) {
+            const attachDir = joinPath(defaultDir, "attachments");
+            try {
+              await createDirectory(attachDir);
+            } catch (e) {
+              // Tolerate "Already exists" from the backend's create_directory.
+              const msg = e instanceof Error ? e.message : String(e);
+              if (!/already exists/i.test(msg)) throw e;
+            }
+            for (const a of assetsAtSave) {
+              const bytes = decodeBase64(a.bytes_b64);
+              await writeBinaryFile(joinPath(attachDir, a.name), bytes);
+            }
+          }
+          showSuccess(
+            assetsAtSave.length > 0
+              ? `Saved ${finalName} (+${assetsAtSave.length} attachment${assetsAtSave.length === 1 ? "" : "s"})`
+              : `Saved ${finalName}`,
+          );
           void workspace.refreshFileIndex();
           workspace.openFile(target);
         } catch (e) {
@@ -271,6 +303,13 @@
         }
       },
     });
+  }
+
+  function decodeBase64(b64: string): Uint8Array {
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
   }
 
   const isMissingUv = $derived(

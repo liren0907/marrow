@@ -27,6 +27,20 @@ pub fn read_zip_text(zip: &mut Zip, path: &str) -> Result<Option<String>, Conver
     Ok(Some(s))
 }
 
+/// Read a file from the zip as raw bytes. Returns `Ok(None)` when the
+/// entry does not exist (treat optional parts the same way as
+/// [`read_zip_text`]).
+pub fn read_zip_bytes(zip: &mut Zip, path: &str) -> Result<Option<Vec<u8>>, ConvertError> {
+    let mut file = match zip.by_name(path) {
+        Ok(f) => f,
+        Err(ZipError::FileNotFound) => return Ok(None),
+        Err(e) => return Err(ConvertError::Zip(format!("{e}"))),
+    };
+    let mut buf = Vec::with_capacity(file.size() as usize);
+    file.read_to_end(&mut buf)?;
+    Ok(Some(buf))
+}
+
 /// List zip entry names matching a prefix. Useful for enumerating
 /// `ppt/slides/slide*.xml`. Returns names in insertion order.
 pub fn list_zip_names(zip: &Zip, prefix: &str) -> Vec<String> {
@@ -34,6 +48,44 @@ pub fn list_zip_names(zip: &Zip, prefix: &str) -> Vec<String> {
         .filter(|n| n.starts_with(prefix))
         .map(|n| n.to_string())
         .collect()
+}
+
+/// Collect every `Target` whose `Relationship` has a `Type` attribute
+/// ending with `type_suffix`. Use when a part can have multiple sibling
+/// relationships of the same kind (e.g. modern PPTX comments — one rel
+/// per comment file).
+pub fn find_rel_targets(xml: &str, type_suffix: &str) -> Vec<String> {
+    let mut reader = Reader::from_str(xml);
+    reader.config_mut().trim_text(false);
+    let mut buf = Vec::new();
+    let mut out = Vec::new();
+    loop {
+        match reader.read_event_into(&mut buf) {
+            Ok(Event::Empty(e)) | Ok(Event::Start(e))
+                if e.local_name().as_ref() == b"Relationship" =>
+            {
+                let mut ty = None;
+                let mut target = None;
+                for attr in e.attributes().flatten() {
+                    match attr.key.local_name().as_ref() {
+                        b"Type" => ty = attr.unescape_value().ok().map(|c| c.into_owned()),
+                        b"Target" => target = attr.unescape_value().ok().map(|c| c.into_owned()),
+                        _ => {}
+                    }
+                }
+                if let (Some(ty), Some(target)) = (ty, target) {
+                    if ty.ends_with(type_suffix) {
+                        out.push(target);
+                    }
+                }
+            }
+            Ok(Event::Eof) => break,
+            Err(_) => break,
+            _ => {}
+        }
+        buf.clear();
+    }
+    out
 }
 
 /// Find the `Target` of the first `Relationship` whose `Type` attribute
