@@ -36,6 +36,65 @@ pub fn list_zip_names(zip: &Zip, prefix: &str) -> Vec<String> {
         .collect()
 }
 
+/// Find the `Target` of the first `Relationship` whose `Type` attribute
+/// ends with `type_suffix`. Used to locate optional sibling parts (notes
+/// slide, comments, etc.) without enumerating every relationship type.
+pub fn find_rel_target(xml: &str, type_suffix: &str) -> Option<String> {
+    let mut reader = Reader::from_str(xml);
+    reader.config_mut().trim_text(false);
+    let mut buf = Vec::new();
+    loop {
+        match reader.read_event_into(&mut buf) {
+            Ok(Event::Empty(e)) | Ok(Event::Start(e))
+                if e.local_name().as_ref() == b"Relationship" =>
+            {
+                let mut ty = None;
+                let mut target = None;
+                for attr in e.attributes().flatten() {
+                    match attr.key.local_name().as_ref() {
+                        b"Type" => ty = attr.unescape_value().ok().map(|c| c.into_owned()),
+                        b"Target" => target = attr.unescape_value().ok().map(|c| c.into_owned()),
+                        _ => {}
+                    }
+                }
+                if ty.as_deref().map(|t| t.ends_with(type_suffix)).unwrap_or(false) {
+                    return target;
+                }
+            }
+            Ok(Event::Eof) => break,
+            Err(_) => break,
+            _ => {}
+        }
+        buf.clear();
+    }
+    None
+}
+
+/// Resolve a relationship `Target` (which is relative to the part that
+/// declares it) against the source part's path.
+///
+/// Example: source `ppt/slides/slide5.xml`, target `../notesSlides/notesSlide5.xml`
+/// resolves to `ppt/notesSlides/notesSlide5.xml`.
+pub fn resolve_rel_path(source_part: &str, target: &str) -> String {
+    let mut parts: Vec<&str> = source_part
+        .rsplit_once('/')
+        .map(|(dir, _)| dir)
+        .unwrap_or("")
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .collect();
+    for seg in target.split('/') {
+        match seg {
+            ".." => {
+                parts.pop();
+            }
+            "." | "" => {}
+            other => parts.push(other),
+        }
+    }
+    parts.join("/")
+}
+
 /// Parse an OOXML `<Relationships>` XML document → `HashMap<Id, Target>`.
 pub fn parse_rels(xml: &str) -> HashMap<String, String> {
     let mut reader = Reader::from_str(xml);

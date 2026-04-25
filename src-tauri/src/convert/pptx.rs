@@ -4,9 +4,12 @@ use quick_xml::events::Event;
 use quick_xml::reader::Reader;
 
 use crate::convert::ConvertError;
-use crate::convert::ooxml_dml::{Paragraph, TextBodyParser, render_paragraph};
+use crate::convert::ooxml_dml::{
+    Paragraph, TextBodyParser, extract_paragraphs, render_paragraph,
+};
 use crate::convert::ooxml_util::{
-    list_zip_names, open_zip, parse_rels, post_process, read_zip_text,
+    find_rel_target, list_zip_names, open_zip, parse_rels, post_process,
+    read_zip_text, resolve_rel_path,
 };
 
 enum ShapeKind {
@@ -50,9 +53,14 @@ pub fn pptx_to_markdown(bytes: &[u8]) -> Result<String, ConvertError> {
             .rsplit_once('/')
             .map(|(dir, file)| format!("{dir}/_rels/{file}.rels"))
             .unwrap_or_default();
-        let rels = read_zip_text(&mut zip, &rels_path)?
-            .map(|s| parse_rels(&s))
+        let rels_xml = read_zip_text(&mut zip, &rels_path)?;
+        let rels = rels_xml
+            .as_deref()
+            .map(parse_rels)
             .unwrap_or_default();
+        let notes_target = rels_xml
+            .as_deref()
+            .and_then(|x| find_rel_target(x, "notesSlide"));
 
         let mut slide = parse_slide(&slide_xml, &rels)?;
         if slide.hidden {
@@ -97,12 +105,74 @@ pub fn pptx_to_markdown(bytes: &[u8]) -> Result<String, ConvertError> {
                 }
             }
         }
+        if let Some(target) = notes_target.as_deref() {
+            let notes_path = resolve_rel_path(path, target);
+            if let Some(rendered) = render_speaker_notes(&mut zip, &notes_path)? {
+                if !emitted_any {
+                    // Make sure the notes block has a leading blank line even
+                    // when the slide body was empty.
+                    out.push('\n');
+                }
+                out.push_str(&rendered);
+                out.push('\n');
+                emitted_any = true;
+            }
+        }
         if !emitted_any {
             out.push('\n');
         }
     }
 
     Ok(post_process(out))
+}
+
+/// Read `notes_path` from `zip` and render its paragraphs as a Markdown
+/// blockquote. Returns `Ok(None)` when the notes part is missing or
+/// contains no rendered text.
+fn render_speaker_notes(
+    zip: &mut crate::convert::ooxml_util::Zip<'_>,
+    notes_path: &str,
+) -> Result<Option<String>, ConvertError> {
+    let xml = match read_zip_text(zip, notes_path)? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    // Notes can carry their own hyperlinks; the rels file is optional.
+    let notes_rels_path = notes_path
+        .rsplit_once('/')
+        .map(|(dir, file)| format!("{dir}/_rels/{file}.rels"))
+        .unwrap_or_default();
+    let rels = read_zip_text(zip, &notes_rels_path)?
+        .as_deref()
+        .map(parse_rels)
+        .unwrap_or_default();
+
+    let paragraphs = extract_paragraphs(&xml, &rels)?;
+    let body: Vec<String> = paragraphs
+        .iter()
+        .map(render_paragraph)
+        .filter(|s| !s.trim().is_empty())
+        .collect();
+    if body.is_empty() {
+        return Ok(None);
+    }
+
+    let mut block = String::from("> **Notes:**\n>\n");
+    for (i, p) in body.iter().enumerate() {
+        if i > 0 {
+            block.push_str(">\n");
+        }
+        for line in p.lines() {
+            if line.is_empty() {
+                block.push_str(">\n");
+            } else {
+                block.push_str("> ");
+                block.push_str(line);
+                block.push('\n');
+            }
+        }
+    }
+    Ok(Some(block))
 }
 
 fn slide_ordinal(path: &str) -> Option<i64> {

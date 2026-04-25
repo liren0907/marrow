@@ -14,8 +14,10 @@
 
 use std::collections::HashMap;
 
-use quick_xml::events::{BytesStart, BytesText};
+use quick_xml::events::{BytesStart, BytesText, Event};
+use quick_xml::reader::Reader;
 
+use crate::convert::ConvertError;
 use crate::convert::ooxml_util::{escape_md, wrap_run};
 
 #[derive(Default, Clone, Copy, PartialEq, Debug)]
@@ -254,6 +256,41 @@ pub fn merge_adjacent_runs(runs: &[Run]) -> Vec<Run> {
         out.push(r.clone());
     }
     out
+}
+
+/// Walk an arbitrary DML/PML XML document and collect every `<a:p>` it
+/// contains. Use for parts where the outer file-format walker has no
+/// shape-level concerns to track — e.g. notes slides, comments, charts.
+pub fn extract_paragraphs(
+    xml: &str,
+    rels: &HashMap<String, String>,
+) -> Result<Vec<Paragraph>, ConvertError> {
+    let mut reader = Reader::from_str(xml);
+    reader.config_mut().trim_text(false);
+    let mut buf = Vec::new();
+    let mut parser = TextBodyParser::new();
+    loop {
+        match reader.read_event_into(&mut buf) {
+            Ok(Event::Start(e)) => {
+                let n = e.local_name().as_ref().to_vec();
+                parser.on_start(&n, &e, rels);
+            }
+            Ok(Event::Empty(e)) => {
+                let n = e.local_name().as_ref().to_vec();
+                parser.on_empty(&n, &e, rels);
+            }
+            Ok(Event::Text(t)) => parser.on_text(&t),
+            Ok(Event::End(e)) => {
+                let n = e.local_name().as_ref().to_vec();
+                parser.on_end(&n);
+            }
+            Ok(Event::Eof) => break,
+            Err(e) => return Err(ConvertError::Xml(format!("{e}"))),
+            _ => {}
+        }
+        buf.clear();
+    }
+    Ok(parser.take_paragraphs())
 }
 
 pub fn render_paragraph(p: &Paragraph) -> String {
