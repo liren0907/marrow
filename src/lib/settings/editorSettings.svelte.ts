@@ -14,11 +14,17 @@ interface Persisted {
   autosaveDebounceMs: number;
   /** Default PDF page render scale. */
   pdfZoom: number;
+  /** Max suggestions shown in the [[wiki-link]] popup. */
+  wikiSuggestionCount: number;
+  /** Max suggestions shown in the ![[transclusion]] popup. */
+  transclusionSuggestionCount: number;
 }
 
 const DEFAULTS: Persisted = {
   autosaveDebounceMs: 800,
   pdfZoom: 1.5,
+  wikiSuggestionCount: 12,
+  transclusionSuggestionCount: 12,
 };
 
 // Hard bounds — protect against persisted nonsense or future regressions.
@@ -26,6 +32,8 @@ export const AUTOSAVE_DEBOUNCE_MIN = 200;
 export const AUTOSAVE_DEBOUNCE_MAX = 5000;
 export const PDF_ZOOM_MIN = 0.5;
 export const PDF_ZOOM_MAX = 4;
+export const SUGGESTION_COUNT_MIN = 4;
+export const SUGGESTION_COUNT_MAX = 30;
 
 function clamp(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
@@ -49,6 +57,21 @@ function loadPersisted(): Persisted {
         PDF_ZOOM_MIN,
         PDF_ZOOM_MAX,
       ),
+      wikiSuggestionCount: Math.round(
+        clamp(
+          parsed.wikiSuggestionCount ?? DEFAULTS.wikiSuggestionCount,
+          SUGGESTION_COUNT_MIN,
+          SUGGESTION_COUNT_MAX,
+        ),
+      ),
+      transclusionSuggestionCount: Math.round(
+        clamp(
+          parsed.transclusionSuggestionCount ??
+            DEFAULTS.transclusionSuggestionCount,
+          SUGGESTION_COUNT_MIN,
+          SUGGESTION_COUNT_MAX,
+        ),
+      ),
     };
   } catch {
     return { ...DEFAULTS };
@@ -65,6 +88,9 @@ function persist(): void {
       JSON.stringify({
         autosaveDebounceMs: editorSettings.autosaveDebounceMs,
         pdfZoom: editorSettings.pdfZoom,
+        wikiSuggestionCount: editorSettings.wikiSuggestionCount,
+        transclusionSuggestionCount:
+          editorSettings.transclusionSuggestionCount,
       }),
     );
   } catch {
@@ -86,9 +112,26 @@ export function setPdfZoom(zoom: number): void {
   persist();
 }
 
+export function setWikiSuggestionCount(n: number): void {
+  editorSettings.wikiSuggestionCount = Math.round(
+    clamp(n, SUGGESTION_COUNT_MIN, SUGGESTION_COUNT_MAX),
+  );
+  persist();
+}
+
+export function setTransclusionSuggestionCount(n: number): void {
+  editorSettings.transclusionSuggestionCount = Math.round(
+    clamp(n, SUGGESTION_COUNT_MIN, SUGGESTION_COUNT_MAX),
+  );
+  persist();
+}
+
 export function resetEditorSettings(): void {
   editorSettings.autosaveDebounceMs = DEFAULTS.autosaveDebounceMs;
   editorSettings.pdfZoom = DEFAULTS.pdfZoom;
+  editorSettings.wikiSuggestionCount = DEFAULTS.wikiSuggestionCount;
+  editorSettings.transclusionSuggestionCount =
+    DEFAULTS.transclusionSuggestionCount;
   persist();
 }
 

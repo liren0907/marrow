@@ -4,9 +4,8 @@ import type { EditorView } from "@milkdown/prose/view";
 import { workspace } from "$lib/workspace/workspace.svelte";
 import { writeBinaryFile } from "$lib/workspace/tauri";
 import { workspaceSettings } from "$lib/settings/workspaceSettings.svelte";
+import { advancedSettings } from "$lib/settings/advancedSettings.svelte";
 import { showError } from "$lib/stores/toastStore.svelte";
-
-const MAX_IMAGE_BYTES = 50 * 1024 * 1024; // 50 MB
 
 function extFromMime(mime: string): string {
   switch (mime) {
@@ -52,13 +51,15 @@ async function handleImages(view: EditorView, files: File[]): Promise<void> {
     showError("Open a workspace before pasting images");
     return;
   }
-  // Resolve the user-configured attachment folder once per paste batch so
-  // toggling it mid-paste doesn't split files across folders.
+  // Resolve the user-configured attachment folder + size cap once per
+  // paste batch so toggling them mid-paste can't split files across
+  // folders or apply different limits to siblings.
   const attachDir = workspaceSettings.attachmentFolder;
+  const maxBytes = advancedSettings.imagePasteMaxBytes;
   const insertions: string[] = [];
   for (const file of files) {
-    if (file.size > MAX_IMAGE_BYTES) {
-      showError(`Image too large (>${MAX_IMAGE_BYTES / 1024 / 1024}MB), skipped`);
+    if (file.size > maxBytes) {
+      showError(`Image too large (>${Math.round(maxBytes / 1024 / 1024)}MB), skipped`);
       continue;
     }
     try {

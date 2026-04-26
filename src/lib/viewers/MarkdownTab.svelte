@@ -46,7 +46,7 @@
       })
       .filter((f) => f.score >= 0)
       .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
-    return items.slice(0, 12);
+    return items.slice(0, editorSettings.wikiSuggestionCount);
   }
 
   function isWikiLinkResolved(target: string): boolean {
@@ -94,7 +94,7 @@
       })
       .filter((f) => f.score >= 0)
       .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
-    return items.slice(0, 12);
+    return items.slice(0, editorSettings.transclusionSuggestionCount);
   }
 
   function handleTransclusionClick(target: string): void {

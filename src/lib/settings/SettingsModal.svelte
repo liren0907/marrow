@@ -10,6 +10,7 @@
   import AppearanceSection from "./sections/AppearanceSection.svelte";
   import EditorSection from "./sections/EditorSection.svelte";
   import WorkspaceSection from "./sections/WorkspaceSection.svelte";
+  import AdvancedSection from "./sections/AdvancedSection.svelte";
   import AboutSection from "./sections/AboutSection.svelte";
 
   interface TabSpec {
@@ -22,6 +23,7 @@
     { id: "appearance", label: "Appearance", icon: "sliders-horizontal" },
     { id: "editor", label: "Editor", icon: "pencil" },
     { id: "workspace", label: "Workspace", icon: "folder" },
+    { id: "advanced", label: "Advanced", icon: "flask-conical" },
     { id: "about", label: "About", icon: "info" },
   ];
 
@@ -89,6 +91,8 @@
             <EditorSection />
           {:else if settingsModal.activeTab === "workspace"}
             <WorkspaceSection />
+          {:else if settingsModal.activeTab === "advanced"}
+            <AdvancedSection />
           {:else if settingsModal.activeTab === "about"}
             <AboutSection />
           {/if}

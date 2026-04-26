@@ -5,8 +5,7 @@ import { readTextFile } from "$lib/workspace/tauri";
 import { classifyFile } from "$lib/workspace/fileKind";
 import { safeConvertFileSrc } from "$lib/utils/tauriUtils";
 import { renderEmbedded, renderEmbeddedSection } from "./renderer";
-
-const MAX_DEPTH = 5;
+import { advancedSettings } from "$lib/settings/advancedSettings.svelte";
 
 export type TransclusionClickHandler = (target: string) => void;
 
@@ -105,7 +104,10 @@ export const transclusionNodeView = $prose((ctx) => {
             // Depth check via DOM walk — must run AFTER mount, when the embed
             // is in the document and ancestors are visible.
             const depth = ancestorEmbedDepth(dom.parentNode);
-            if (depth >= MAX_DEPTH) {
+            // Read live setting at render time so the user can tune the
+            // limit from the Settings page; existing nodes will pick up
+            // the new value on the next fs-event-driven re-render.
+            if (depth >= advancedSettings.embedMaxDepth) {
               content.innerHTML =
                 '<em class="transclusion-meta">[[recursive embed]]</em>';
               return;

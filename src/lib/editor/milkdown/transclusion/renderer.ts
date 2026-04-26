@@ -1,4 +1,5 @@
 import MarkdownIt from "markdown-it";
+import { advancedSettings } from "$lib/settings/advancedSettings.svelte";
 
 // Singleton renderer for transclusion embeds.
 // `html: false` is critical — innerHTML injection means we cannot allow
@@ -9,11 +10,10 @@ const md = new MarkdownIt({
   breaks: true,
 });
 
-const MAX_RENDER_BYTES = 100 * 1024;
-
 export function renderEmbedded(text: string): string {
-  if (text.length > MAX_RENDER_BYTES) {
-    return `<em>Embed too large to render (>${MAX_RENDER_BYTES / 1024}KB)</em>`;
+  const cap = advancedSettings.embedRenderBytes;
+  if (text.length > cap) {
+    return `<em>Embed too large to render (>${Math.round(cap / 1024)}KB)</em>`;
   }
   return md.render(text);
 }
@@ -35,8 +35,9 @@ export function renderEmbeddedSection(
   text: string,
   headingText: string,
 ): string {
-  if (text.length > MAX_RENDER_BYTES) {
-    return `<em>Embed too large to render (>${MAX_RENDER_BYTES / 1024}KB)</em>`;
+  const cap = advancedSettings.embedRenderBytes;
+  if (text.length > cap) {
+    return `<em>Embed too large to render (>${Math.round(cap / 1024)}KB)</em>`;
   }
   const target = normalizeHeading(headingText);
   const tokens = md.parse(text, {});

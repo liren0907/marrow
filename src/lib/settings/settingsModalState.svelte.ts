@@ -2,9 +2,20 @@
 // the activity bar's gear icon and ⇧⌘,). Independent from TweaksPanel —
 // they share the same underlying stores but expose different surfaces.
 
-export type SettingsTab = "appearance" | "editor" | "workspace" | "about";
+export type SettingsTab =
+  | "appearance"
+  | "editor"
+  | "workspace"
+  | "advanced"
+  | "about";
 
-const TABS: SettingsTab[] = ["appearance", "editor", "workspace", "about"];
+const TABS: SettingsTab[] = [
+  "appearance",
+  "editor",
+  "workspace",
+  "advanced",
+  "about",
+];
 
 interface SettingsModalState {
   isOpen: boolean;

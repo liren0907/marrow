@@ -4,6 +4,7 @@ import {
   type CrossHit,
 } from "$lib/workspace/tauri";
 import { workspace } from "$lib/workspace/workspace.svelte";
+import { advancedSettings } from "$lib/settings/advancedSettings.svelte";
 
 export type SearchScope = "current" | "all";
 
@@ -65,9 +66,12 @@ async function runSearch(): Promise<void> {
   search.isSearching = true;
   search.error = null;
   try {
+    // Read once per query so a mid-flight setting change doesn't
+    // produce mismatched scope vs current-workspace result counts.
+    const limit = advancedSettings.searchResultLimit;
     let out: CrossHit[];
     if (search.scope === "all") {
-      out = await searchAllWorkspaces(q, 200);
+      out = await searchAllWorkspaces(q, limit);
     } else {
       const info = workspace.info;
       if (!info) {
@@ -77,7 +81,7 @@ async function runSearch(): Promise<void> {
         }
         return;
       }
-      const hits = await searchWorkspace(info.root, q, 200);
+      const hits = await searchWorkspace(info.root, q, limit);
       out = hits.map((hit) => ({
         workspace_id: info.root,
         workspace_name: info.name,

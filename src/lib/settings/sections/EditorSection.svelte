@@ -3,10 +3,14 @@
     editorSettings,
     setAutosaveDebounce,
     setPdfZoom,
+    setWikiSuggestionCount,
+    setTransclusionSuggestionCount,
     AUTOSAVE_DEBOUNCE_MIN,
     AUTOSAVE_DEBOUNCE_MAX,
     PDF_ZOOM_MIN,
     PDF_ZOOM_MAX,
+    SUGGESTION_COUNT_MIN,
+    SUGGESTION_COUNT_MAX,
   } from "../editorSettings.svelte";
 
   function onAutosaveInput(e: Event) {
@@ -16,6 +20,14 @@
   function onPdfZoomInput(e: Event) {
     const v = parseFloat((e.target as HTMLInputElement).value);
     if (Number.isFinite(v)) setPdfZoom(v);
+  }
+  function onWikiCountInput(e: Event) {
+    const v = parseInt((e.target as HTMLInputElement).value, 10);
+    if (Number.isFinite(v)) setWikiSuggestionCount(v);
+  }
+  function onTransCountInput(e: Event) {
+    const v = parseInt((e.target as HTMLInputElement).value, 10);
+    if (Number.isFinite(v)) setTransclusionSuggestionCount(v);
   }
 </script>
 
@@ -58,6 +70,44 @@
   </div>
 </div>
 
+<div class="section">
+  <h3 class="section-title">Wiki-link suggestion count</h3>
+  <p class="section-desc">
+    How many filenames to show in the <code>[[…]]</code> autocomplete popup.
+    Higher = more options, more scrolling.
+  </p>
+  <div class="row">
+    <input
+      type="range"
+      min={SUGGESTION_COUNT_MIN}
+      max={SUGGESTION_COUNT_MAX}
+      step="1"
+      value={editorSettings.wikiSuggestionCount}
+      oninput={onWikiCountInput}
+    />
+    <span class="value">{editorSettings.wikiSuggestionCount}</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="section-title">Transclusion suggestion count</h3>
+  <p class="section-desc">
+    Same as above but for the <code>![[…]]</code> embed popup, which can
+    also list images, audio, and video.
+  </p>
+  <div class="row">
+    <input
+      type="range"
+      min={SUGGESTION_COUNT_MIN}
+      max={SUGGESTION_COUNT_MAX}
+      step="1"
+      value={editorSettings.transclusionSuggestionCount}
+      oninput={onTransCountInput}
+    />
+    <span class="value">{editorSettings.transclusionSuggestionCount}</span>
+  </div>
+</div>
+
 <style>
   .section {
     margin-bottom: 28px;
@@ -89,5 +139,13 @@
     color: var(--color-base-content);
     min-width: 64px;
     text-align: right;
+  }
+  code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--color-base-300);
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: var(--color-base-content);
   }
 </style>
