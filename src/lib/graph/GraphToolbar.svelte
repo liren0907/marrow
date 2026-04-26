@@ -1,6 +1,7 @@
 <script lang="ts">
   import Icon from "$lib/components/ui/Icon.svelte";
   import IconButton from "$lib/components/ui/IconButton.svelte";
+  import Popover from "$lib/components/ui/Popover.svelte";
   import ToggleButtonGroup from "$lib/components/ui/ToggleButtonGroup.svelte";
 
   type ViewMode = "all" | "local-1" | "local-2";
@@ -100,6 +101,15 @@
       ? tagFilter.filter((t) => t !== name)
       : [...tagFilter, name];
   }
+
+  // Each popover holds its own open state. Opening one doesn't auto-close
+  // the others, but Popover's window-level mousedown handler will close any
+  // open popover when the user clicks a different trigger — so in practice
+  // only one is open at a time without explicit mutex logic.
+  let colorOpen = $state(false);
+  let foldersOpen = $state(false);
+  let tagsOpen = $state(false);
+  let settingsOpen = $state(false);
 </script>
 
 <div class="mw-gtb">
@@ -118,88 +128,96 @@
   <!-- Group 2: Data shaping — color / folders / tags -->
   <div class="mw-gtb-group">
     <!-- Color mode -->
-    <!-- svelte-ignore a11y_label_has_associated_control -->
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <div class="dropdown tooltip tooltip-bottom" data-tip="Color nodes by">
-      <label tabindex="0" class="mw-gtb-trigger">
-        <span class="mw-gtb-trigger-label">Color</span>
-        <span class="mw-gtb-trigger-value">{COLOR_LABELS[colorMode]}</span>
-        <Icon name="chevron-down" size={11} />
-      </label>
-      <div tabindex="-1" class="dropdown-content mw-gtb-panel">
-        {#each COLOR_OPTIONS as opt (opt.id)}
-          <label class="mw-gtb-row">
-            <input
-              type="radio"
-              name="gtb-color"
-              class="radio radio-xs"
-              checked={colorMode === opt.id}
-              onchange={() => (colorMode = opt.id)}
-            />
-            <span>{opt.label}</span>
-          </label>
-        {/each}
-      </div>
+    <div class="tooltip tooltip-bottom" data-tip="Color nodes by">
+      <Popover bind:open={colorOpen} triggerClass="mw-gtb-trigger" panelClass="mw-gtb-panel">
+        {#snippet trigger()}
+          <span class="mw-gtb-trigger-label">Color</span>
+          <span class="mw-gtb-trigger-value">{COLOR_LABELS[colorMode]}</span>
+          <Icon name="chevron-down" size={11} />
+        {/snippet}
+        {#snippet children()}
+          {#each COLOR_OPTIONS as opt (opt.id)}
+            <label class="mw-gtb-row">
+              <input
+                type="radio"
+                name="gtb-color"
+                class="radio radio-xs"
+                checked={colorMode === opt.id}
+                onchange={() => (colorMode = opt.id)}
+              />
+              <span>{opt.label}</span>
+            </label>
+          {/each}
+        {/snippet}
+      </Popover>
     </div>
 
     <!-- Folders dropdown -->
-    <!-- svelte-ignore a11y_label_has_associated_control -->
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <div class="dropdown tooltip tooltip-bottom" data-tip="Filter by folder">
-      <label tabindex="0" class="mw-gtb-trigger">
-        <span class="mw-gtb-trigger-label">Folders</span>
-        {#if folderFilter.length > 0}
-          <span class="mw-gtb-count">{folderFilter.length}</span>
-        {/if}
-        <Icon name="chevron-down" size={11} />
-      </label>
-      <div tabindex="-1" class="dropdown-content mw-gtb-panel mw-gtb-panel-scroll">
-        {#if folderOptions.length === 0}
-          <div class="mw-gtb-empty">No folders</div>
-        {:else}
-          {#each folderOptions as f (f)}
-            <label class="mw-gtb-row">
-              <input
-                type="checkbox"
-                class="checkbox checkbox-xs"
-                checked={folderFilter.includes(f)}
-                onchange={() => toggleFolder(f)}
-              />
-              <span class="truncate">{f}</span>
-            </label>
-          {/each}
-        {/if}
-      </div>
+    <div class="tooltip tooltip-bottom" data-tip="Filter by folder">
+      <Popover
+        bind:open={foldersOpen}
+        triggerClass="mw-gtb-trigger"
+        panelClass="mw-gtb-panel mw-gtb-panel-scroll"
+      >
+        {#snippet trigger()}
+          <span class="mw-gtb-trigger-label">Folders</span>
+          {#if folderFilter.length > 0}
+            <span class="mw-gtb-count">{folderFilter.length}</span>
+          {/if}
+          <Icon name="chevron-down" size={11} />
+        {/snippet}
+        {#snippet children()}
+          {#if folderOptions.length === 0}
+            <div class="mw-gtb-empty">No folders</div>
+          {:else}
+            {#each folderOptions as f (f)}
+              <label class="mw-gtb-row">
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-xs"
+                  checked={folderFilter.includes(f)}
+                  onchange={() => toggleFolder(f)}
+                />
+                <span class="truncate">{f}</span>
+              </label>
+            {/each}
+          {/if}
+        {/snippet}
+      </Popover>
     </div>
 
     <!-- Tags dropdown -->
-    <!-- svelte-ignore a11y_label_has_associated_control -->
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <div class="dropdown tooltip tooltip-bottom" data-tip="Filter by tag">
-      <label tabindex="0" class="mw-gtb-trigger">
-        <span class="mw-gtb-trigger-label">Tags</span>
-        {#if tagFilter.length > 0}
-          <span class="mw-gtb-count">{tagFilter.length}</span>
-        {/if}
-        <Icon name="chevron-down" size={11} />
-      </label>
-      <div tabindex="-1" class="dropdown-content mw-gtb-panel mw-gtb-panel-scroll">
-        {#if tagOptions.length === 0}
-          <div class="mw-gtb-empty">No tags</div>
-        {:else}
-          {#each tagOptions as t (t)}
-            <label class="mw-gtb-row">
-              <input
-                type="checkbox"
-                class="checkbox checkbox-xs"
-                checked={tagFilter.includes(t)}
-                onchange={() => toggleTag(t)}
-              />
-              <span class="truncate font-mono">#{t}</span>
-            </label>
-          {/each}
-        {/if}
-      </div>
+    <div class="tooltip tooltip-bottom" data-tip="Filter by tag">
+      <Popover
+        bind:open={tagsOpen}
+        triggerClass="mw-gtb-trigger"
+        panelClass="mw-gtb-panel mw-gtb-panel-scroll"
+      >
+        {#snippet trigger()}
+          <span class="mw-gtb-trigger-label">Tags</span>
+          {#if tagFilter.length > 0}
+            <span class="mw-gtb-count">{tagFilter.length}</span>
+          {/if}
+          <Icon name="chevron-down" size={11} />
+        {/snippet}
+        {#snippet children()}
+          {#if tagOptions.length === 0}
+            <div class="mw-gtb-empty">No tags</div>
+          {:else}
+            {#each tagOptions as t (t)}
+              <label class="mw-gtb-row">
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-xs"
+                  checked={tagFilter.includes(t)}
+                  onchange={() => toggleTag(t)}
+                />
+                <span class="truncate font-mono">#{t}</span>
+              </label>
+            {/each}
+          {/if}
+        {/snippet}
+      </Popover>
     </div>
   </div>
 
@@ -240,65 +258,68 @@
     />
 
     <!-- Settings popover -->
-    <!-- svelte-ignore a11y_label_has_associated_control -->
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <div class="dropdown dropdown-end tooltip tooltip-bottom" data-tip="Display settings">
-      <label tabindex="0" class="mw-gtb-icon-trigger">
-        <Icon name="sliders-horizontal" size={14} />
-      </label>
-      <div
-        tabindex="-1"
-        class="dropdown-content mw-gtb-panel mw-gtb-settings-panel"
+    <div class="tooltip tooltip-bottom" data-tip="Display settings">
+      <Popover
+        bind:open={settingsOpen}
+        align="end"
+        triggerClass="mw-gtb-icon-trigger"
+        panelClass="mw-gtb-panel mw-gtb-settings-panel"
+        triggerAriaLabel="Display settings"
       >
-        <div class="mw-gtb-setting">
-          <div class="mw-gtb-setting-label">Node size</div>
-          <ToggleButtonGroup
-            options={NODE_SIZE_OPTIONS}
-            bind:value={nodeSize}
-            size="sm"
-          />
-        </div>
+        {#snippet trigger()}
+          <Icon name="sliders-horizontal" size={14} />
+        {/snippet}
+        {#snippet children()}
+          <div class="mw-gtb-setting">
+            <div class="mw-gtb-setting-label">Node size</div>
+            <ToggleButtonGroup
+              options={NODE_SIZE_OPTIONS}
+              bind:value={nodeSize}
+              size="sm"
+            />
+          </div>
 
-        <div class="mw-gtb-setting">
-          <div class="mw-gtb-setting-label">Label size</div>
-          <ToggleButtonGroup
-            options={LABEL_SIZE_OPTIONS}
-            bind:value={labelSize}
-            size="sm"
-          />
-        </div>
+          <div class="mw-gtb-setting">
+            <div class="mw-gtb-setting-label">Label size</div>
+            <ToggleButtonGroup
+              options={LABEL_SIZE_OPTIONS}
+              bind:value={labelSize}
+              size="sm"
+            />
+          </div>
 
-        <label class="mw-gtb-row">
-          <input
-            type="checkbox"
-            class="checkbox checkbox-xs"
-            checked={labelMode === "hover"}
-            onchange={() =>
-              (labelMode = labelMode === "always" ? "hover" : "always")}
-          />
-          <span>Labels on hover only</span>
-        </label>
+          <label class="mw-gtb-row">
+            <input
+              type="checkbox"
+              class="checkbox checkbox-xs"
+              checked={labelMode === "hover"}
+              onchange={() =>
+                (labelMode = labelMode === "always" ? "hover" : "always")}
+            />
+            <span>Labels on hover only</span>
+          </label>
 
-        <div class="mw-gtb-setting">
-          <div class="mw-gtb-setting-label">Edge width</div>
-          <ToggleButtonGroup
-            options={EDGE_WIDTH_OPTIONS}
-            bind:value={edgeWidth}
-            size="sm"
-          />
-        </div>
+          <div class="mw-gtb-setting">
+            <div class="mw-gtb-setting-label">Edge width</div>
+            <ToggleButtonGroup
+              options={EDGE_WIDTH_OPTIONS}
+              bind:value={edgeWidth}
+              size="sm"
+            />
+          </div>
 
-        <div class="mw-gtb-settings-divider"></div>
+          <div class="mw-gtb-settings-divider"></div>
 
-        <button
-          type="button"
-          class="mw-gtb-danger"
-          onclick={onResetLayout}
-          title="Clear saved node positions and re-run layout"
-        >
-          Reset layout
-        </button>
-      </div>
+          <button
+            type="button"
+            class="mw-gtb-danger"
+            onclick={onResetLayout}
+            title="Clear saved node positions and re-run layout"
+          >
+            Reset layout
+          </button>
+        {/snippet}
+      </Popover>
     </div>
   </div>
 </div>
@@ -337,8 +358,11 @@
     flex-shrink: 0;
   }
 
-  /* Text/value dropdown trigger (Color / Folders / Tags) */
-  .mw-gtb-trigger {
+  /* Text/value popover trigger (Color / Folders / Tags). Marked :global
+     because the trigger element lives inside Popover.svelte's template
+     and won't inherit this component's scope hash via the triggerClass
+     prop (it's just a string, not parsed by Svelte's CSS scoper). */
+  :global(.mw-gtb-trigger) {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -350,10 +374,12 @@
     transition: color 0.1s, background 0.1s;
     user-select: none;
   }
-  .mw-gtb-trigger:hover {
+  :global(.mw-gtb-trigger:hover) {
     background: var(--color-base-300);
     color: var(--color-base-content);
   }
+  /* Children of the trigger snippet ARE in this component's scope (snippets
+     keep their lexical scope), so these stay non-global. */
   .mw-gtb-trigger-label {
     font-size: 11px;
   }
@@ -376,8 +402,8 @@
     border-radius: 7px;
   }
 
-  /* Icon-only dropdown trigger (Settings gear) */
-  .mw-gtb-icon-trigger {
+  /* Icon-only popover trigger (Settings gear). Same :global reasoning. */
+  :global(.mw-gtb-icon-trigger) {
     display: grid;
     place-items: center;
     width: 28px;
@@ -388,7 +414,7 @@
     transition: color 0.1s, background 0.1s;
     user-select: none;
   }
-  .mw-gtb-icon-trigger:hover {
+  :global(.mw-gtb-icon-trigger:hover) {
     background: var(--color-base-300);
     color: var(--color-base-content);
   }
