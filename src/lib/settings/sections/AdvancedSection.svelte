@@ -18,6 +18,15 @@
     DIFF_LINE_CAP_MIN,
     DIFF_LINE_CAP_MAX,
   } from "../advancedSettings.svelte";
+  import {
+    serverSettings,
+    setWatchDebounce,
+    setOwnWriteTtl,
+    WATCH_DEBOUNCE_MIN,
+    WATCH_DEBOUNCE_MAX,
+    OWN_WRITE_TTL_MIN,
+    OWN_WRITE_TTL_MAX,
+  } from "../serverSettings.svelte";
 
   function onImageMax(e: Event) {
     const mb = parseFloat((e.target as HTMLInputElement).value);
@@ -38,6 +47,14 @@
   function onDiffCap(e: Event) {
     const v = parseInt((e.target as HTMLInputElement).value, 10);
     if (Number.isFinite(v)) setDiffLineCap(v);
+  }
+  function onWatchDebounce(e: Event) {
+    const v = parseInt((e.target as HTMLInputElement).value, 10);
+    if (Number.isFinite(v)) setWatchDebounce(v);
+  }
+  function onOwnWriteTtl(e: Event) {
+    const v = parseInt((e.target as HTMLInputElement).value, 10);
+    if (Number.isFinite(v)) setOwnWriteTtl(v);
   }
 
   // Display helpers — store keeps bytes, sliders work in MB / KB.
@@ -150,6 +167,48 @@
       oninput={onDiffCap}
     />
     <span class="value">{advancedSettings.diffLineCap.toLocaleString()} lines</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="section-title">FS watch debounce</h3>
+  <p class="section-desc">
+    Quiet period the file watcher waits after a burst of events before
+    flushing them. Lower = faster reaction to external edits but more
+    redundant work. Higher = smoother during builds / git operations.
+    <strong>Backend setting</strong> — applied immediately.
+  </p>
+  <div class="row">
+    <input
+      type="range"
+      min={WATCH_DEBOUNCE_MIN}
+      max={WATCH_DEBOUNCE_MAX}
+      step="10"
+      value={serverSettings.watchDebounceMs}
+      oninput={onWatchDebounce}
+    />
+    <span class="value">{serverSettings.watchDebounceMs} ms</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="section-title">Own-write grace period</h3>
+  <p class="section-desc">
+    How long after Marrow saves a file the watcher should ignore the
+    resulting fs-event for that path. Prevents the save → reload feedback
+    loop. Only raise if you see ghost reload prompts after saves on a
+    slow filesystem. <strong>Backend setting</strong>.
+  </p>
+  <div class="row">
+    <input
+      type="range"
+      min={OWN_WRITE_TTL_MIN}
+      max={OWN_WRITE_TTL_MAX}
+      step="50"
+      value={serverSettings.ownWriteTtlMs}
+      oninput={onOwnWriteTtl}
+    />
+    <span class="value">{serverSettings.ownWriteTtlMs} ms</span>
   </div>
 </div>
 

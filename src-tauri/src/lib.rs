@@ -9,7 +9,12 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            app.manage(core::fs_watch::WatcherState::new());
+            // Shared app config — both the watcher (live debounce/TTL
+            // reads) and the `set_app_config` command (writes) hold a
+            // clone of the same Arc<RwLock>.
+            let shared_cfg = core::app_config::new_shared();
+            app.manage(core::app_config::AppConfigState(shared_cfg.clone()));
+            app.manage(core::fs_watch::WatcherState::new(shared_cfg));
             let handle = app.handle().clone();
             let db = tauri::async_runtime::block_on(core::db::DbState::open_global(&handle))
                 .expect("open global db");
@@ -45,6 +50,7 @@ pub fn run() {
             commands::convert::convert_html_to_markdown,
             commands::convert::convert_docx_to_markdown,
             commands::convert::convert_pptx_to_markdown,
+            core::app_config::set_app_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

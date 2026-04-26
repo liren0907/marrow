@@ -195,3 +195,18 @@ export function convertPptxToMarkdown(path: string): Promise<ConvertResult> {
 export function convertDocxToMarkdown(path: string): Promise<ConvertResult> {
   return invoke<ConvertResult>("convert_docx_to_markdown", { path });
 }
+
+/** Push the user's app config knobs (deny list, watch debounce, own-write
+ *  TTL) to the Rust backend. localStorage on the frontend is the source
+ *  of truth — Rust holds a live copy that walkers + watcher read from. */
+export function setAppConfig(args: {
+  denyList: string[];
+  watchDebounceMs: number;
+  ownWriteTtlMs: number;
+}): Promise<void> {
+  return invoke<void>("set_app_config", {
+    denyList: args.denyList,
+    watchDebounceMs: args.watchDebounceMs,
+    ownWriteTtlMs: args.ownWriteTtlMs,
+  });
+}

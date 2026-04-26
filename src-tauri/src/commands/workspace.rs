@@ -4,6 +4,7 @@ use std::path::Path;
 use std::time::UNIX_EPOCH;
 use tauri::{AppHandle, State};
 
+use crate::core::app_config::AppConfigState;
 use crate::core::db::DbState;
 use crate::core::fs_watch::WatcherState;
 
@@ -49,7 +50,10 @@ pub struct SearchHit {
     pub match_end: usize,
 }
 
-const DENY_DIRS: &[&str] = &[
+// Fallback used only if AppConfigState isn't yet wired (which would
+// be a setup bug). Real deny list comes from AppConfigState, populated
+// from the frontend's serverSettings via `set_app_config`.
+const FALLBACK_DENY_DIRS: &[&str] = &[
     ".git",
     "node_modules",
     ".obsidian",
@@ -169,13 +173,19 @@ pub fn read_binary_file(path: String) -> Result<Vec<u8>, String> {
 }
 
 #[tauri::command]
-pub fn list_workspace_files(root: String) -> Result<Vec<FileMeta>, String> {
+pub fn list_workspace_files(
+    root: String,
+    config: State<'_, AppConfigState>,
+) -> Result<Vec<FileMeta>, String> {
     let root_path = Path::new(&root);
     if !root_path.is_dir() {
         return Err(format!("Not a directory: {}", root));
     }
     let mut out: Vec<FileMeta> = Vec::new();
 
+    // Snapshot the deny list once per call so a mid-walk config change
+    // can't make the result inconsistent.
+    let deny_list = config.snapshot().deny_list;
     let walker = ignore::WalkBuilder::new(root_path)
         .hidden(true)
         .git_ignore(true)
@@ -183,10 +193,10 @@ pub fn list_workspace_files(root: String) -> Result<Vec<FileMeta>, String> {
         .git_exclude(true)
         .ignore(true)
         .parents(false)
-        .filter_entry(|e| {
+        .filter_entry(move |e| {
             if e.file_type().map(|t| t.is_dir()).unwrap_or(false) {
                 let name = e.file_name().to_string_lossy();
-                if DENY_DIRS.iter().any(|d| *d == name.as_ref()) {
+                if deny_list.iter().any(|d| d == name.as_ref()) {
                     return false;
                 }
             }
@@ -228,6 +238,7 @@ pub(crate) fn search_root_impl(
     root: &str,
     query: &str,
     max_results: Option<usize>,
+    deny_list: Vec<String>,
 ) -> Result<Vec<SearchHit>, String> {
     use grep::matcher::Matcher;
     use grep::regex::RegexMatcherBuilder;
@@ -250,6 +261,14 @@ pub(crate) fn search_root_impl(
         .build(trimmed)
         .map_err(|e| format!("regex: {}", e))?;
 
+    // Empty deny list = caller didn't pass anything; fall back to the
+    // hardcoded defaults so callers that haven't been updated still
+    // see sane behavior. Use the configured value when non-empty.
+    let effective_deny: Vec<String> = if deny_list.is_empty() {
+        FALLBACK_DENY_DIRS.iter().map(|s| s.to_string()).collect()
+    } else {
+        deny_list
+    };
     let walker = ignore::WalkBuilder::new(root_path)
         .hidden(true)
         .git_ignore(true)
@@ -257,10 +276,10 @@ pub(crate) fn search_root_impl(
         .git_exclude(true)
         .ignore(true)
         .parents(false)
-        .filter_entry(|e| {
+        .filter_entry(move |e| {
             if e.file_type().map(|t| t.is_dir()).unwrap_or(false) {
                 let name = e.file_name().to_string_lossy();
-                if DENY_DIRS.iter().any(|d| *d == name.as_ref()) {
+                if effective_deny.iter().any(|d| d == name.as_ref()) {
                     return false;
                 }
             }
@@ -332,8 +351,10 @@ pub fn search_workspace(
     root: String,
     query: String,
     max_results: Option<usize>,
+    config: State<'_, AppConfigState>,
 ) -> Result<Vec<SearchHit>, String> {
-    search_root_impl(&root, &query, max_results)
+    let deny_list = config.snapshot().deny_list;
+    search_root_impl(&root, &query, max_results, deny_list)
 }
 
 #[tauri::command]

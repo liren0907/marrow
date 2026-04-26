@@ -8,6 +8,7 @@ use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
 use crate::commands::workspace::{search_root_impl, SearchHit};
+use crate::core::app_config::AppConfigState;
 use crate::core::db::DbState;
 
 const MAX_CONCURRENT: usize = 4;
@@ -32,7 +33,11 @@ pub async fn search_all_workspaces(
     query: String,
     max_results: Option<usize>,
     db: State<'_, DbState>,
+    config: State<'_, AppConfigState>,
 ) -> Result<Vec<CrossHit>, String> {
+    // Snapshot the deny list once for the whole cross-workspace
+    // search so every task uses an identical filter.
+    let deny_list_snapshot = config.snapshot().deny_list;
     let trimmed = query.trim().to_string();
     if trimmed.len() < 2 {
         return Ok(vec![]);
@@ -70,6 +75,7 @@ pub async fn search_all_workspaces(
         let sem = sem.clone();
         let q = query_arc.clone();
         let root_for_task = root.clone();
+        let deny_for_task = deny_list_snapshot.clone();
         set.spawn(async move {
             let _permit = match sem.acquire_owned().await {
                 Ok(p) => p,
@@ -77,7 +83,7 @@ pub async fn search_all_workspaces(
             };
             let qstr = (*q).clone();
             let r = tokio::task::spawn_blocking(move || {
-                search_root_impl(&root_for_task, &qstr, Some(per_ws_limit))
+                search_root_impl(&root_for_task, &qstr, Some(per_ws_limit), deny_for_task)
             })
             .await
             .map_err(|e| format!("join: {e}"))

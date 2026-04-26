@@ -25,6 +25,7 @@
   import { initAccent } from "$lib/settings/accentState.svelte";
   import { initAppearanceFonts } from "$lib/settings/appearanceSettings.svelte";
   import { initPrismTheme } from "$lib/settings/prismThemeLoader";
+  import { pushServerSettings } from "$lib/settings/serverSettings.svelte";
   import {
     listRecentWorkspaces,
     forgetWorkspace,
@@ -103,6 +104,10 @@
     initAccent();
     initAppearanceFonts();
     initPrismTheme();
+    // Push deny list + watcher debounce values to Rust before any
+    // workspace work happens. Backend has matching defaults so even
+    // if this races with auto-reopen there's no observable mismatch.
+    void pushServerSettings();
 
     let unlisten: (() => void) | null = null;
     let unlistenFs: (() => void) | null = null;

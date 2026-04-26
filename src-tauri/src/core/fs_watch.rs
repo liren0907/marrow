@@ -8,8 +8,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 
-const DEBOUNCE_WINDOW: Duration = Duration::from_millis(150);
-const OWN_WRITE_TTL: Duration = Duration::from_millis(500);
+use crate::core::app_config::SharedAppConfig;
 
 #[derive(Debug, Serialize, Clone)]
 pub struct FsEventPayload {
@@ -21,6 +20,10 @@ pub struct WatcherState {
     watcher: Mutex<Option<RecommendedWatcher>>,
     event_tx: Mutex<Option<Sender<RawEvent>>>,
     recent_writes: Mutex<HashMap<PathBuf, Instant>>,
+    /// Live config — debounce window and own-write TTL are read from
+    /// here on every operation, so updates from the Settings page take
+    /// effect on the next tick without rebuilding the watcher.
+    app_config: SharedAppConfig,
 }
 
 #[derive(Debug)]
@@ -43,12 +46,33 @@ fn classify(kind: EventKind) -> Option<&'static str> {
     }
 }
 
+/// Read the current own-write TTL from shared config. Falls back to
+/// 500ms if the lock is poisoned (should never happen in practice).
+fn own_write_ttl(cfg: &SharedAppConfig) -> Duration {
+    let ms = cfg
+        .read()
+        .map(|g| g.own_write_ttl_ms)
+        .unwrap_or(500);
+    Duration::from_millis(ms)
+}
+
+/// Read the current debounce window from shared config. Falls back to
+/// 150ms if the lock is poisoned.
+fn debounce_window(cfg: &SharedAppConfig) -> Duration {
+    let ms = cfg
+        .read()
+        .map(|g| g.watch_debounce_ms)
+        .unwrap_or(150);
+    Duration::from_millis(ms)
+}
+
 impl WatcherState {
-    pub fn new() -> Self {
+    pub fn new(app_config: SharedAppConfig) -> Self {
         Self {
             watcher: Mutex::new(None),
             event_tx: Mutex::new(None),
             recent_writes: Mutex::new(HashMap::new()),
+            app_config,
         }
     }
 
@@ -58,16 +82,18 @@ impl WatcherState {
 
     pub fn note_own_write(&self, path: &Path) {
         let canonical = canonicalize(path);
+        let ttl = own_write_ttl(&self.app_config);
         let mut map = self.recent_writes.lock().unwrap();
         map.insert(canonical, Instant::now());
-        let cutoff = Instant::now() - OWN_WRITE_TTL;
+        let cutoff = Instant::now() - ttl;
         map.retain(|_, ts| *ts > cutoff);
     }
 
     fn is_own_write(&self, path: &Path) -> bool {
         let canonical = canonicalize(path);
+        let ttl = own_write_ttl(&self.app_config);
         let mut map = self.recent_writes.lock().unwrap();
-        let cutoff = Instant::now() - OWN_WRITE_TTL;
+        let cutoff = Instant::now() - ttl;
         map.retain(|_, ts| *ts > cutoff);
         map.contains_key(&canonical)
     }
@@ -102,8 +128,9 @@ impl WatcherState {
 
         // Debouncer thread: collect bursts, filter own-writes, emit.
         let app_handle = app.clone();
-        // Snapshot a raw pointer-free access path: we need WatcherState on the thread.
-        // Because state is owned by Tauri managed state, use the app handle to re-fetch.
+        // Clone the Arc for the worker thread so it can read live
+        // debounce values without going through the AppHandle.
+        let cfg = self.app_config.clone();
         thread::spawn(move || {
             let mut pending: HashMap<(&'static str, PathBuf), ()> = HashMap::new();
             let mut last_event_at: Option<Instant> = None;
@@ -123,7 +150,12 @@ impl WatcherState {
                     }
                     Err(mpsc::RecvTimeoutError::Timeout) => {
                         if let Some(start) = last_event_at {
-                            if start.elapsed() >= DEBOUNCE_WINDOW && !pending.is_empty() {
+                            // Re-read the debounce window each tick so
+                            // the user can tighten/loosen it from the
+                            // Settings page without restarting.
+                            if start.elapsed() >= debounce_window(&cfg)
+                                && !pending.is_empty()
+                            {
                                 flush(&app_handle, &mut pending);
                                 last_event_at = None;
                             }
