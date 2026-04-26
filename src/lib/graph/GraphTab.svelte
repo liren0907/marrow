@@ -441,6 +441,13 @@
 
   // cola in `infinite: true` mode runs continuously — drag a node and the
   // rest of the graph reacts. This is the "live force" feel.
+  //
+  // `handleDisconnected: false` is intentional. When `true`, every cola
+  // restart (which happens on tab visibility change) repacks disconnected
+  // components in a grid — visually identical to the graph "jumping" even
+  // though the camera hasn't moved. fcose already places disconnected
+  // components reasonably during the initial pre-layout pass, so cola
+  // doesn't need to re-do that work on every resume.
   const colaLayoutOptions = {
     name: "cola",
     infinite: true,
@@ -453,7 +460,7 @@
     edgeLength: () => 80,
     randomize: false,
     avoidOverlap: true,
-    handleDisconnected: true,
+    handleDisconnected: false,
   } as unknown as cytoscape.LayoutOptions;
 
   function runInitialLayout(): void {
@@ -715,11 +722,11 @@
     lastRoot = workspace.info?.root ?? null;
     // Seed the refit tracker so the filter-refit effect doesn't double-fit
     // on mount (centerViewport below already handles the initial fit).
+    // Key shape MUST match the effect at the bottom of this file.
     lastRefitKey = [
       viewMode,
       folderFilter.slice().sort().join("|"),
       tagFilter.slice().sort().join("|"),
-      viewMode !== "all" ? (workspace.activePane.activeTabId ?? "") : "",
     ].join("::");
 
     if (saved.size > 0) {
@@ -764,12 +771,12 @@
       }
       hoverPath = null;
 
-      // Smooth center-on-selected animation
-      cy?.animate({
-        center: { eles: e.target },
-        duration: 350,
-        easing: "ease-in-out-cubic",
-      });
+      // NOTE: previously animated the camera to center the clicked node.
+      // Removed because it disrupted user-controlled panning — the user
+      // would carefully pan to inspect a region, click any node, and the
+      // viewport would slide away. Click-to-open should NOT move the
+      // camera. If "locate active note in graph" is wanted later, expose
+      // it as an explicit toolbar action instead of a click side-effect.
 
       // Click mapping aligned with FileTreeNode:
       //   tap             → openFile (current pane, focuses existing tab)
@@ -941,16 +948,22 @@
     if (cy) applyFilters();
   });
 
-  // Refit viewport only on deliberate scope changes — view mode, folder/tag
-  // filters, or local-mode center swap. Search keystrokes are intentionally
+  // Refit viewport only on deliberate user-driven scope changes — view mode
+  // or folder/tag filter toggles. Search keystrokes are intentionally
   // excluded so typing doesn't jitter the viewport.
+  //
+  // NOTE: activeTabId used to be in this key (in local mode only) so the
+  // camera would follow the active note when its neighborhood changed.
+  // Removed because clicking any graph node calls openFile → activeTabId
+  // changes → camera refits → user perceives "graph keeps jumping". Stable
+  // camera wins over auto-follow; the Fit button (⤢) is always one click
+  // away if the user wants to recenter manually.
   let lastRefitKey = "";
   $effect(() => {
     const key = [
       viewMode,
       folderFilter.slice().sort().join("|"),
       tagFilter.slice().sort().join("|"),
-      viewMode !== "all" ? (workspace.activePane.activeTabId ?? "") : "",
     ].join("::");
     if (!cy) return;
     if (key === lastRefitKey) return;

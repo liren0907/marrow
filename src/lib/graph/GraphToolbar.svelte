@@ -44,10 +44,24 @@
     onResetLayout: () => void;
   } = $props();
 
-  const VIEW_OPTIONS = [
-    { value: "all", label: "All", tooltip: "Show full vault" },
-    { value: "local-1", label: "±1", tooltip: "Direct neighbors of active note" },
-    { value: "local-2", label: "±2", tooltip: "Neighbors of neighbors" },
+  const SCOPE_LABELS: Record<ViewMode, string> = {
+    "all": "All",
+    "local-1": "±1 (direct neighbors)",
+    "local-2": "±2 (neighbors of neighbors)",
+  };
+
+  const SCOPE_OPTIONS: {
+    id: ViewMode;
+    label: string;
+    description: string;
+  }[] = [
+    { id: "all", label: "All", description: "Show full vault" },
+    {
+      id: "local-1",
+      label: "±1",
+      description: "Direct neighbors of active note",
+    },
+    { id: "local-2", label: "±2", description: "Neighbors of neighbors" },
   ];
 
   const NODE_SIZE_OPTIONS = [
@@ -106,6 +120,7 @@
   // the others, but Popover's window-level mousedown handler will close any
   // open popover when the user clicks a different trigger — so in practice
   // only one is open at a time without explicit mutex logic.
+  let scopeOpen = $state(false);
   let colorOpen = $state(false);
   let foldersOpen = $state(false);
   let tagsOpen = $state(false);
@@ -113,27 +128,51 @@
 </script>
 
 <div class="mw-gtb">
-  <!-- Group 1: Scope -->
+  <!-- Group 1: Filtering — scope / color / folders / tags.
+       All four shape WHAT the graph shows; grouped together so the eye reads
+       them as one cluster. -->
   <div class="mw-gtb-group">
-    <ToggleButtonGroup
-      options={VIEW_OPTIONS}
-      bind:value={viewMode}
-      size="sm"
-      tooltipPosition="bottom"
-    />
-  </div>
-
-  <div class="mw-gtb-div"></div>
-
-  <!-- Group 2: Data shaping — color / folders / tags -->
-  <div class="mw-gtb-group">
-    <!-- Color mode -->
-    <div class="tooltip tooltip-bottom" data-tip="Color nodes by">
-      <Popover bind:open={colorOpen} triggerClass="mw-gtb-trigger" panelClass="mw-gtb-panel">
+    <!-- Scope -->
+    <div class="tooltip tooltip-bottom" data-tip="Scope: {SCOPE_LABELS[viewMode]}">
+      <Popover
+        bind:open={scopeOpen}
+        triggerClass={`mw-gtb-icon-trigger${viewMode !== "all" ? " is-active" : ""}`}
+        panelClass="mw-gtb-panel"
+        triggerAriaLabel="Scope: {SCOPE_LABELS[viewMode]}"
+      >
         {#snippet trigger()}
-          <span class="mw-gtb-trigger-label">Color</span>
-          <span class="mw-gtb-trigger-value">{COLOR_LABELS[colorMode]}</span>
-          <Icon name="chevron-down" size={11} />
+          <Icon name="target" size={14} />
+        {/snippet}
+        {#snippet children()}
+          {#each SCOPE_OPTIONS as opt (opt.id)}
+            <label class="mw-gtb-row mw-gtb-row-stack">
+              <input
+                type="radio"
+                name="gtb-scope"
+                class="radio radio-xs"
+                checked={viewMode === opt.id}
+                onchange={() => (viewMode = opt.id)}
+              />
+              <span class="mw-gtb-row-text">
+                <span class="mw-gtb-row-title">{opt.label}</span>
+                <span class="mw-gtb-row-desc">{opt.description}</span>
+              </span>
+            </label>
+          {/each}
+        {/snippet}
+      </Popover>
+    </div>
+
+    <!-- Color mode -->
+    <div class="tooltip tooltip-bottom" data-tip="Color: {COLOR_LABELS[colorMode]}">
+      <Popover
+        bind:open={colorOpen}
+        triggerClass={`mw-gtb-icon-trigger${colorMode !== "default" ? " is-active" : ""}`}
+        panelClass="mw-gtb-panel"
+        triggerAriaLabel="Color: {COLOR_LABELS[colorMode]}"
+      >
+        {#snippet trigger()}
+          <Icon name="palette" size={14} />
         {/snippet}
         {#snippet children()}
           {#each COLOR_OPTIONS as opt (opt.id)}
@@ -156,15 +195,15 @@
     <div class="tooltip tooltip-bottom" data-tip="Filter by folder">
       <Popover
         bind:open={foldersOpen}
-        triggerClass="mw-gtb-trigger"
+        triggerClass="mw-gtb-icon-trigger"
         panelClass="mw-gtb-panel mw-gtb-panel-scroll"
+        triggerAriaLabel="Filter by folder"
       >
         {#snippet trigger()}
-          <span class="mw-gtb-trigger-label">Folders</span>
+          <Icon name="folder" size={14} />
           {#if folderFilter.length > 0}
-            <span class="mw-gtb-count">{folderFilter.length}</span>
+            <span class="mw-gtb-count-badge">{folderFilter.length}</span>
           {/if}
-          <Icon name="chevron-down" size={11} />
         {/snippet}
         {#snippet children()}
           {#if folderOptions.length === 0}
@@ -190,15 +229,15 @@
     <div class="tooltip tooltip-bottom" data-tip="Filter by tag">
       <Popover
         bind:open={tagsOpen}
-        triggerClass="mw-gtb-trigger"
+        triggerClass="mw-gtb-icon-trigger"
         panelClass="mw-gtb-panel mw-gtb-panel-scroll"
+        triggerAriaLabel="Filter by tag"
       >
         {#snippet trigger()}
-          <span class="mw-gtb-trigger-label">Tags</span>
+          <Icon name="tag" size={14} />
           {#if tagFilter.length > 0}
-            <span class="mw-gtb-count">{tagFilter.length}</span>
+            <span class="mw-gtb-count-badge">{tagFilter.length}</span>
           {/if}
-          <Icon name="chevron-down" size={11} />
         {/snippet}
         {#snippet children()}
           {#if tagOptions.length === 0}
@@ -257,14 +296,14 @@
       onclick={onFit}
     />
 
-    <!-- Settings popover -->
-    <div class="tooltip tooltip-bottom" data-tip="Display settings">
+    <!-- Appearance popover -->
+    <div class="tooltip tooltip-bottom" data-tip="Appearance">
       <Popover
         bind:open={settingsOpen}
         align="end"
         triggerClass="mw-gtb-icon-trigger"
         panelClass="mw-gtb-panel mw-gtb-settings-panel"
-        triggerAriaLabel="Display settings"
+        triggerAriaLabel="Appearance"
       >
         {#snippet trigger()}
           <Icon name="sliders-horizontal" size={14} />
@@ -325,6 +364,17 @@
 </div>
 
 <style>
+  /* Two-state toolbar: passive (focused on graph) vs active (focused on toolbar).
+     Passive sinks the bar into the background so the graph content stays the
+     visual focus. Active restores the full chrome — solid surface, stronger
+     border, soft shadow — so controls are easy to read while the user is
+     actually using them.
+
+     `.mw-gtb:has(.popover-panel)` is the important second selector: without it
+     the bar would snap back to passive the moment the user moved the mouse
+     from the bar down into a just-opened popover panel (the panel sits
+     absolutely positioned below the bar, so leaving the bar's bounding box
+     while the popover is still open would otherwise fade everything out). */
   .mw-gtb {
     position: absolute;
     top: 8px;
@@ -334,15 +384,27 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
-    padding: 4px 6px;
-    background: color-mix(in oklch, var(--mw-bg-elev) 88%, transparent);
-    border: 1px solid var(--mw-rule-strong);
+    gap: 6px;
+    padding: 3px 6px;
+    opacity: 0.45;
+    background: color-mix(in oklch, var(--mw-bg-elev) 40%, transparent);
+    border: 1px solid var(--mw-rule);
     border-radius: var(--mw-radius-sm);
     backdrop-filter: blur(8px);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     font-size: 11px;
     color: var(--mw-ink-1);
+    transition:
+      opacity 0.15s ease,
+      background 0.15s ease,
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  .mw-gtb:hover,
+  .mw-gtb:has(:global(.popover-panel)) {
+    opacity: 1;
+    background: color-mix(in oklch, var(--mw-bg-elev) 88%, transparent);
+    border-color: var(--mw-rule-strong);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
 
   .mw-gtb-group {
@@ -353,57 +415,18 @@
 
   .mw-gtb-div {
     width: 1px;
-    height: 18px;
+    height: 14px;
     background: var(--mw-rule-strong);
     flex-shrink: 0;
   }
 
-  /* Text/value popover trigger (Color / Folders / Tags). Marked :global
-     because the trigger element lives inside Popover.svelte's template
-     and won't inherit this component's scope hash via the triggerClass
-     prop (it's just a string, not parsed by Svelte's CSS scoper). */
-  :global(.mw-gtb-trigger) {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    height: 24px;
-    padding: 0 8px;
-    border-radius: var(--mw-radius-xs);
-    color: var(--mw-ink-2);
-    cursor: pointer;
-    transition: color 0.1s, background 0.1s;
-    user-select: none;
-  }
-  :global(.mw-gtb-trigger:hover) {
-    background: var(--color-base-300);
-    color: var(--color-base-content);
-  }
-  /* Children of the trigger snippet ARE in this component's scope (snippets
-     keep their lexical scope), so these stay non-global. */
-  .mw-gtb-trigger-label {
-    font-size: 11px;
-  }
-  .mw-gtb-trigger-value {
-    font-size: 11px;
-    color: var(--mw-ink-1);
-    font-weight: 500;
-  }
-  .mw-gtb-count {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    padding: 0 4px;
-    min-width: 14px;
-    height: 14px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--mw-accent);
-    color: var(--mw-accent-content, #1a1613);
-    border-radius: 7px;
-  }
-
-  /* Icon-only popover trigger (Settings gear). Same :global reasoning. */
+  /* Icon popover trigger — used by Color / Folders / Tags / Appearance.
+     Marked :global because the trigger element lives inside Popover.svelte's
+     template and won't inherit this component's scope hash via the
+     triggerClass prop (it's just a string, not parsed by Svelte's CSS scoper).
+     `position: relative` is the anchor for the count-badge. */
   :global(.mw-gtb-icon-trigger) {
+    position: relative;
     display: grid;
     place-items: center;
     width: 28px;
@@ -417,6 +440,58 @@
   :global(.mw-gtb-icon-trigger:hover) {
     background: var(--color-base-300);
     color: var(--color-base-content);
+  }
+  /* Active state — used by Color trigger when colorMode !== "default" to
+     signal "you've changed the default coloring" without text. */
+  :global(.mw-gtb-icon-trigger.is-active) {
+    color: var(--mw-accent);
+  }
+
+  /* Two-line row variant for popovers that benefit from a description under
+     the main label (Scope's All / ±1 / ±2 entries). The radio sits aligned
+     with the title, description wraps below. Marked :global to match the
+     `.mw-gtb-row` precedent — Svelte's CSS scoper can't statically see
+     classes referenced inside snippets passed to another component. */
+  :global(.mw-gtb-row-stack) {
+    align-items: flex-start;
+    padding: 6px;
+  }
+  :global(.mw-gtb-row-text) {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    line-height: 1.3;
+  }
+  :global(.mw-gtb-row-title) {
+    font-size: 11px;
+    color: var(--mw-ink-1);
+    font-weight: 500;
+  }
+  :global(.mw-gtb-row-desc) {
+    font-size: 10px;
+    color: var(--mw-ink-3);
+  }
+
+  /* Floating count on top-right of an icon trigger (Folders / Tags).
+     Lives inside the trigger snippet, so stays in this component's scope. */
+  .mw-gtb-count-badge {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    min-width: 12px;
+    height: 12px;
+    padding: 0 3px;
+    background: var(--mw-accent);
+    color: var(--mw-accent-content, #1a1613);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    pointer-events: none;
   }
 
   /* Dropdown panels */
