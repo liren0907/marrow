@@ -5,12 +5,18 @@
     setPdfZoom,
     setWikiSuggestionCount,
     setTransclusionSuggestionCount,
+    setSearchDebounce,
+    setPdfLookaheadPages,
     AUTOSAVE_DEBOUNCE_MIN,
     AUTOSAVE_DEBOUNCE_MAX,
     PDF_ZOOM_MIN,
     PDF_ZOOM_MAX,
     SUGGESTION_COUNT_MIN,
     SUGGESTION_COUNT_MAX,
+    SEARCH_DEBOUNCE_MIN,
+    SEARCH_DEBOUNCE_MAX,
+    PDF_LOOKAHEAD_MIN,
+    PDF_LOOKAHEAD_MAX,
   } from "../editorSettings.svelte";
 
   function onAutosaveInput(e: Event) {
@@ -28,6 +34,14 @@
   function onTransCountInput(e: Event) {
     const v = parseInt((e.target as HTMLInputElement).value, 10);
     if (Number.isFinite(v)) setTransclusionSuggestionCount(v);
+  }
+  function onSearchDebounceInput(e: Event) {
+    const v = parseInt((e.target as HTMLInputElement).value, 10);
+    if (Number.isFinite(v)) setSearchDebounce(v);
+  }
+  function onPdfLookaheadInput(e: Event) {
+    const v = parseInt((e.target as HTMLInputElement).value, 10);
+    if (Number.isFinite(v)) setPdfLookaheadPages(v);
   }
 </script>
 
@@ -108,6 +122,51 @@
   </div>
 </div>
 
+<div class="section">
+  <h3 class="section-title">Search input debounce</h3>
+  <p class="section-desc">
+    Delay before the full-text search runs while you type in the search
+    modal. Lower = snappier, higher = fewer wasted queries on long words.
+  </p>
+  <div class="row">
+    <input
+      type="range"
+      min={SEARCH_DEBOUNCE_MIN}
+      max={SEARCH_DEBOUNCE_MAX}
+      step="50"
+      value={editorSettings.searchDebounceMs}
+      oninput={onSearchDebounceInput}
+    />
+    <span class="value">{editorSettings.searchDebounceMs} ms</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="section-title">PDF page lookahead</h3>
+  <p class="section-desc">
+    How many pages above and below the visible one to preload. 0 = render
+    only the current page (lowest memory). Higher = smoother scrolling but
+    more RAM.
+  </p>
+  <div class="row">
+    <input
+      type="range"
+      min={PDF_LOOKAHEAD_MIN}
+      max={PDF_LOOKAHEAD_MAX}
+      step="1"
+      value={editorSettings.pdfLookaheadPages}
+      oninput={onPdfLookaheadInput}
+    />
+    <span class="value">
+      {#if editorSettings.pdfLookaheadPages === 0}
+        current only
+      {:else}
+        ± {editorSettings.pdfLookaheadPages} page{editorSettings.pdfLookaheadPages === 1 ? "" : "s"}
+      {/if}
+    </span>
+  </div>
+</div>
+
 <style>
   .section {
     margin-bottom: 28px;
@@ -137,7 +196,7 @@
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--color-base-content);
-    min-width: 64px;
+    min-width: 96px;
     text-align: right;
   }
   code {

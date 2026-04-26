@@ -3,9 +3,8 @@
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { writeTextFile } from "$lib/workspace/tauri";
   import { showError } from "$lib/stores/toastStore.svelte";
+  import { advancedSettings } from "$lib/settings/advancedSettings.svelte";
   import { conflict, closeConflict } from "./conflictState.svelte";
-
-  const MAX_DIFF_LINES = 5000;
 
   function lineCount(s: string): number {
     let n = 0;
@@ -13,11 +12,13 @@
     return n + 1;
   }
 
+  // Cap is per-side, so the combined disk+mine threshold is 2x.
   const diffParts = $derived.by(() => {
     if (!conflict.showDiff) return null;
     const disk = conflict.diskContent ?? "";
     const mine = conflict.myContent;
-    if (lineCount(disk) + lineCount(mine) > MAX_DIFF_LINES * 2) {
+    const cap = advancedSettings.diffLineCap;
+    if (lineCount(disk) + lineCount(mine) > cap * 2) {
       return { tooLarge: true, parts: [] as ReturnType<typeof diffLines> };
     }
     return { tooLarge: false, parts: diffLines(disk, mine) };
@@ -78,7 +79,7 @@
             <div class="text-base-content/40">無法讀取磁碟版本</div>
           {:else if diffParts?.tooLarge}
             <div class="text-base-content/40 italic">
-              Diff too large to display ({MAX_DIFF_LINES}+ lines)
+              Diff too large to display ({advancedSettings.diffLineCap}+ lines per side)
             </div>
           {:else if diffParts}
             {#each diffParts.parts as part}

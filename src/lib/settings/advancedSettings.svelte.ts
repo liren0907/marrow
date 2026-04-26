@@ -16,6 +16,8 @@ interface Persisted {
   embedRenderBytes: number;
   /** Max hits returned by full-text search per query. */
   searchResultLimit: number;
+  /** Max combined lines across both sides of the conflict diff view. */
+  diffLineCap: number;
 }
 
 const DEFAULTS: Persisted = {
@@ -23,6 +25,7 @@ const DEFAULTS: Persisted = {
   embedMaxDepth: 5,
   embedRenderBytes: 100 * 1024,
   searchResultLimit: 200,
+  diffLineCap: 5000,
 };
 
 // Hard bounds — UI sliders enforce these; loadPersisted clamps too.
@@ -37,6 +40,9 @@ export const EMBED_RENDER_BYTES_MAX = 5 * 1024 * 1024; //  5 MB
 
 export const SEARCH_LIMIT_MIN = 50;
 export const SEARCH_LIMIT_MAX = 2000;
+
+export const DIFF_LINE_CAP_MIN = 1000;
+export const DIFF_LINE_CAP_MAX = 20000;
 
 function clamp(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
@@ -78,6 +84,13 @@ function loadPersisted(): Persisted {
           SEARCH_LIMIT_MAX,
         ),
       ),
+      diffLineCap: Math.round(
+        clamp(
+          parsed.diffLineCap ?? DEFAULTS.diffLineCap,
+          DIFF_LINE_CAP_MIN,
+          DIFF_LINE_CAP_MAX,
+        ),
+      ),
     };
   } catch {
     return { ...DEFAULTS };
@@ -96,6 +109,7 @@ function persist(): void {
         embedMaxDepth: advancedSettings.embedMaxDepth,
         embedRenderBytes: advancedSettings.embedRenderBytes,
         searchResultLimit: advancedSettings.searchResultLimit,
+        diffLineCap: advancedSettings.diffLineCap,
       }),
     );
   } catch {
@@ -131,11 +145,19 @@ export function setSearchResultLimit(n: number): void {
   persist();
 }
 
+export function setDiffLineCap(n: number): void {
+  advancedSettings.diffLineCap = Math.round(
+    clamp(n, DIFF_LINE_CAP_MIN, DIFF_LINE_CAP_MAX),
+  );
+  persist();
+}
+
 export function resetAdvancedSettings(): void {
   advancedSettings.imagePasteMaxBytes = DEFAULTS.imagePasteMaxBytes;
   advancedSettings.embedMaxDepth = DEFAULTS.embedMaxDepth;
   advancedSettings.embedRenderBytes = DEFAULTS.embedRenderBytes;
   advancedSettings.searchResultLimit = DEFAULTS.searchResultLimit;
+  advancedSettings.diffLineCap = DEFAULTS.diffLineCap;
   persist();
 }
 

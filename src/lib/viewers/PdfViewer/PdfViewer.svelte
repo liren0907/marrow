@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from "svelte";
   import type { PDFDocumentProxy } from "pdfjs-dist";
   import PdfPage from "./PdfPage.svelte";
+  import { editorSettings } from "$lib/settings/editorSettings.svelte";
 
   let { pdfDoc }: { pdfDoc: PDFDocumentProxy } = $props();
 
@@ -20,13 +21,17 @@
       (entries) => {
         const next = new Set(visible);
         let lastIntersecting = currentPage;
+        // Read live so the user can tighten/loosen lookahead from
+        // Settings without remounting the viewer.
+        const lookahead = editorSettings.pdfLookaheadPages;
         for (const entry of entries) {
           const num = Number((entry.target as HTMLElement).dataset.page);
           if (entry.isIntersecting) {
             next.add(num);
-            // Lookahead ± 1
-            if (num > 1) next.add(num - 1);
-            if (num < pdfDoc.numPages) next.add(num + 1);
+            for (let i = 1; i <= lookahead; i++) {
+              if (num - i >= 1) next.add(num - i);
+              if (num + i <= pdfDoc.numPages) next.add(num + i);
+            }
             lastIntersecting = num;
           } else {
             next.delete(num);

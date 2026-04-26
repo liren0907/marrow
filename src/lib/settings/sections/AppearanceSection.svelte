@@ -11,10 +11,53 @@
     toggleBreadcrumb,
     togglePaneOutline,
   } from "../uiSettings.svelte";
+  import {
+    appearance,
+    setCmTheme,
+    setPrismTheme,
+    setEditorFont,
+    setEditorFontSize,
+    CM_THEME_LABELS,
+    PRISM_THEME_LABELS,
+    EDITOR_FONT_LABELS,
+    EDITOR_FONT_STACKS,
+    FONT_SIZE_MIN,
+    FONT_SIZE_MAX,
+    type CodeMirrorThemeKey,
+    type PrismThemeKey,
+    type EditorFontKey,
+  } from "../appearanceSettings.svelte";
 
   const accentEntries: { key: AccentKey; label: string }[] = (
     Object.keys(ACCENTS) as AccentKey[]
   ).map((k) => ({ key: k, label: ACCENTS[k].label }));
+
+  const cmThemeEntries = Object.entries(CM_THEME_LABELS) as [
+    CodeMirrorThemeKey,
+    string,
+  ][];
+  const prismThemeEntries = Object.entries(PRISM_THEME_LABELS) as [
+    PrismThemeKey,
+    string,
+  ][];
+  const fontEntries = Object.entries(EDITOR_FONT_LABELS) as [
+    EditorFontKey,
+    string,
+  ][];
+
+  function onFontSizeInput(e: Event) {
+    const v = parseInt((e.target as HTMLInputElement).value, 10);
+    if (Number.isFinite(v)) setEditorFontSize(v);
+  }
+  function onEditorFontChange(e: Event) {
+    setEditorFont((e.currentTarget as HTMLSelectElement).value as EditorFontKey);
+  }
+  function onCmThemeChange(e: Event) {
+    setCmTheme((e.currentTarget as HTMLSelectElement).value as CodeMirrorThemeKey);
+  }
+  function onPrismThemeChange(e: Event) {
+    setPrismTheme((e.currentTarget as HTMLSelectElement).value as PrismThemeKey);
+  }
 
   // Theme is stored in localStorage and reflected on <html data-theme>.
   // Mirrors the logic in TweaksPanel — kept duplicated rather than
@@ -87,6 +130,78 @@
   </label>
 </div>
 
+<div class="section">
+  <h3 class="section-title">Editor font</h3>
+  <p class="section-desc">
+    Font used for the prose body in the markdown editor. Headings keep
+    using the chrome display font.
+  </p>
+  <select
+    class="select-input"
+    value={appearance.editorFont}
+    onchange={onEditorFontChange}
+  >
+    {#each fontEntries as [key, label] (key)}
+      <option value={key} style:font-family={EDITOR_FONT_STACKS[key]}>
+        {label}
+      </option>
+    {/each}
+  </select>
+  <div class="font-preview" style:font-family={EDITOR_FONT_STACKS[appearance.editorFont]}>
+    The quick brown fox jumps over the lazy dog. 1234567890
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="section-title">Editor font size</h3>
+  <p class="section-desc">Body text size in the markdown editor.</p>
+  <div class="row">
+    <input
+      type="range"
+      min={FONT_SIZE_MIN}
+      max={FONT_SIZE_MAX}
+      step="1"
+      value={appearance.editorFontSize}
+      oninput={onFontSizeInput}
+    />
+    <span class="value">{appearance.editorFontSize} px</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="section-title">Code editor theme</h3>
+  <p class="section-desc">
+    Syntax highlighting for the read-only text viewer (.txt / .ts / .py /
+    etc.). "Auto" tracks the Marrow light/dark theme.
+  </p>
+  <select
+    class="select-input"
+    value={appearance.cmTheme}
+    onchange={onCmThemeChange}
+  >
+    {#each cmThemeEntries as [key, label] (key)}
+      <option value={key}>{label}</option>
+    {/each}
+  </select>
+</div>
+
+<div class="section">
+  <h3 class="section-title">Code block syntax colors</h3>
+  <p class="section-desc">
+    Coloring for fenced code blocks rendered inside transclusion previews
+    and other markdown surfaces (Prism).
+  </p>
+  <select
+    class="select-input"
+    value={appearance.prismTheme}
+    onchange={onPrismThemeChange}
+  >
+    {#each prismThemeEntries as [key, label] (key)}
+      <option value={key}>{label}</option>
+    {/each}
+  </select>
+</div>
+
 <style>
   .section {
     margin-bottom: 28px;
@@ -152,5 +267,46 @@
   }
   .check input {
     accent-color: var(--mw-accent);
+  }
+  .select-input {
+    width: 100%;
+    max-width: 320px;
+    background: var(--color-base-200);
+    border: 1px solid var(--mw-rule);
+    border-radius: var(--mw-radius-sm);
+    padding: 6px 10px;
+    font-size: 12.5px;
+    color: var(--color-base-content);
+    cursor: pointer;
+  }
+  .select-input:focus {
+    outline: none;
+    border-color: var(--mw-accent);
+  }
+  .font-preview {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--color-base-200);
+    border: 1px solid var(--mw-rule);
+    border-radius: var(--mw-radius-sm);
+    font-size: 14px;
+    color: var(--color-base-content);
+    line-height: 1.5;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .row input[type="range"] {
+    flex: 1;
+    accent-color: var(--mw-accent);
+  }
+  .value {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-base-content);
+    min-width: 64px;
+    text-align: right;
   }
 </style>

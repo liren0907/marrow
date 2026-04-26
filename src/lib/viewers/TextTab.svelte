@@ -9,6 +9,7 @@
   import { showError } from "$lib/stores/toastStore.svelte";
   import { languageFor } from "./cm/languages";
   import { themeFor } from "./cm/theme";
+  import { registerCmApplyHook } from "$lib/settings/appearanceSettings.svelte";
 
   let { tab }: { tab: Tab } = $props();
 
@@ -19,6 +20,7 @@
   let lastHandledToken = 0;
   const themeCompartment = new Compartment();
   let themeObserver: MutationObserver | null = null;
+  let unregisterCmHook: (() => void) | null = null;
 
   function currentTheme(): string {
     return document.documentElement.getAttribute("data-theme") ?? "light";
@@ -64,6 +66,15 @@
           attributes: true,
           attributeFilter: ["data-theme"],
         });
+        // React to Settings → Appearance → CodeMirror theme changes.
+        // Each open TextTab registers its own subscriber; the hook
+        // returns an unregister function we call on destroy.
+        unregisterCmHook = registerCmApplyHook(() => {
+          if (!view) return;
+          view.dispatch({
+            effects: themeCompartment.reconfigure(themeFor(currentTheme())),
+          });
+        });
       } catch (e) {
         loadError = e instanceof Error ? e.message : String(e);
       }
@@ -74,6 +85,8 @@
     cancelled = true;
     themeObserver?.disconnect();
     themeObserver = null;
+    unregisterCmHook?.();
+    unregisterCmHook = null;
     view?.destroy();
     view = null;
   });

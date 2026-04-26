@@ -18,6 +18,10 @@ interface Persisted {
   wikiSuggestionCount: number;
   /** Max suggestions shown in the ![[transclusion]] popup. */
   transclusionSuggestionCount: number;
+  /** Delay before search runs while typing in the search modal. */
+  searchDebounceMs: number;
+  /** Pages preloaded above and below the visible PDF page. */
+  pdfLookaheadPages: number;
 }
 
 const DEFAULTS: Persisted = {
@@ -25,6 +29,8 @@ const DEFAULTS: Persisted = {
   pdfZoom: 1.5,
   wikiSuggestionCount: 12,
   transclusionSuggestionCount: 12,
+  searchDebounceMs: 300,
+  pdfLookaheadPages: 1,
 };
 
 // Hard bounds — protect against persisted nonsense or future regressions.
@@ -34,6 +40,10 @@ export const PDF_ZOOM_MIN = 0.5;
 export const PDF_ZOOM_MAX = 4;
 export const SUGGESTION_COUNT_MIN = 4;
 export const SUGGESTION_COUNT_MAX = 30;
+export const SEARCH_DEBOUNCE_MIN = 100;
+export const SEARCH_DEBOUNCE_MAX = 1000;
+export const PDF_LOOKAHEAD_MIN = 0;
+export const PDF_LOOKAHEAD_MAX = 5;
 
 function clamp(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
@@ -72,6 +82,20 @@ function loadPersisted(): Persisted {
           SUGGESTION_COUNT_MAX,
         ),
       ),
+      searchDebounceMs: Math.round(
+        clamp(
+          parsed.searchDebounceMs ?? DEFAULTS.searchDebounceMs,
+          SEARCH_DEBOUNCE_MIN,
+          SEARCH_DEBOUNCE_MAX,
+        ),
+      ),
+      pdfLookaheadPages: Math.round(
+        clamp(
+          parsed.pdfLookaheadPages ?? DEFAULTS.pdfLookaheadPages,
+          PDF_LOOKAHEAD_MIN,
+          PDF_LOOKAHEAD_MAX,
+        ),
+      ),
     };
   } catch {
     return { ...DEFAULTS };
@@ -91,6 +115,8 @@ function persist(): void {
         wikiSuggestionCount: editorSettings.wikiSuggestionCount,
         transclusionSuggestionCount:
           editorSettings.transclusionSuggestionCount,
+        searchDebounceMs: editorSettings.searchDebounceMs,
+        pdfLookaheadPages: editorSettings.pdfLookaheadPages,
       }),
     );
   } catch {
@@ -126,12 +152,28 @@ export function setTransclusionSuggestionCount(n: number): void {
   persist();
 }
 
+export function setSearchDebounce(ms: number): void {
+  editorSettings.searchDebounceMs = Math.round(
+    clamp(ms, SEARCH_DEBOUNCE_MIN, SEARCH_DEBOUNCE_MAX),
+  );
+  persist();
+}
+
+export function setPdfLookaheadPages(n: number): void {
+  editorSettings.pdfLookaheadPages = Math.round(
+    clamp(n, PDF_LOOKAHEAD_MIN, PDF_LOOKAHEAD_MAX),
+  );
+  persist();
+}
+
 export function resetEditorSettings(): void {
   editorSettings.autosaveDebounceMs = DEFAULTS.autosaveDebounceMs;
   editorSettings.pdfZoom = DEFAULTS.pdfZoom;
   editorSettings.wikiSuggestionCount = DEFAULTS.wikiSuggestionCount;
   editorSettings.transclusionSuggestionCount =
     DEFAULTS.transclusionSuggestionCount;
+  editorSettings.searchDebounceMs = DEFAULTS.searchDebounceMs;
+  editorSettings.pdfLookaheadPages = DEFAULTS.pdfLookaheadPages;
   persist();
 }
 

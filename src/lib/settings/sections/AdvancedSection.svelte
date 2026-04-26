@@ -5,6 +5,7 @@
     setEmbedMaxDepth,
     setEmbedRenderBytes,
     setSearchResultLimit,
+    setDiffLineCap,
     resetAdvancedSettings,
     IMAGE_PASTE_MAX_MIN,
     IMAGE_PASTE_MAX_MAX,
@@ -14,6 +15,8 @@
     EMBED_RENDER_BYTES_MAX,
     SEARCH_LIMIT_MIN,
     SEARCH_LIMIT_MAX,
+    DIFF_LINE_CAP_MIN,
+    DIFF_LINE_CAP_MAX,
   } from "../advancedSettings.svelte";
 
   function onImageMax(e: Event) {
@@ -31,6 +34,10 @@
   function onSearchLimit(e: Event) {
     const v = parseInt((e.target as HTMLInputElement).value, 10);
     if (Number.isFinite(v)) setSearchResultLimit(v);
+  }
+  function onDiffCap(e: Event) {
+    const v = parseInt((e.target as HTMLInputElement).value, 10);
+    if (Number.isFinite(v)) setDiffLineCap(v);
   }
 
   // Display helpers — store keeps bytes, sliders work in MB / KB.
@@ -123,6 +130,26 @@
       oninput={onSearchLimit}
     />
     <span class="value">{advancedSettings.searchResultLimit}</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="section-title">Diff display line cap</h3>
+  <p class="section-desc">
+    Per-side limit before the conflict modal's diff is hidden behind a
+    "too large to display" notice. Larger diffs are still resolvable —
+    just not visually shown.
+  </p>
+  <div class="row">
+    <input
+      type="range"
+      min={DIFF_LINE_CAP_MIN}
+      max={DIFF_LINE_CAP_MAX}
+      step="500"
+      value={advancedSettings.diffLineCap}
+      oninput={onDiffCap}
+    />
+    <span class="value">{advancedSettings.diffLineCap.toLocaleString()} lines</span>
   </div>
 </div>
 

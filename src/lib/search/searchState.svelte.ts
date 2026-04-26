@@ -5,6 +5,7 @@ import {
 } from "$lib/workspace/tauri";
 import { workspace } from "$lib/workspace/workspace.svelte";
 import { advancedSettings } from "$lib/settings/advancedSettings.svelte";
+import { editorSettings } from "$lib/settings/editorSettings.svelte";
 
 export type SearchScope = "current" | "all";
 
@@ -39,10 +40,12 @@ let queryToken = 0;
 
 export function scheduleSearch(): void {
   if (debounceTimer) clearTimeout(debounceTimer);
+  // Read live so changing the setting takes effect on the very next
+  // keystroke without restart.
   debounceTimer = setTimeout(() => {
     debounceTimer = null;
     void runSearch();
-  }, 300);
+  }, editorSettings.searchDebounceMs);
 }
 
 export function setScope(scope: SearchScope): void {

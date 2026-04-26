@@ -23,6 +23,8 @@
   import TweaksPanel from "$lib/settings/TweaksPanel.svelte";
   import SettingsModal from "$lib/settings/SettingsModal.svelte";
   import { initAccent } from "$lib/settings/accentState.svelte";
+  import { initAppearanceFonts } from "$lib/settings/appearanceSettings.svelte";
+  import { initPrismTheme } from "$lib/settings/prismThemeLoader";
   import {
     listRecentWorkspaces,
     forgetWorkspace,
@@ -99,6 +101,8 @@
     if (stored && legacyMap[stored]) localStorage.setItem("theme", savedTheme);
 
     initAccent();
+    initAppearanceFonts();
+    initPrismTheme();
 
     let unlisten: (() => void) | null = null;
     let unlistenFs: (() => void) | null = null;

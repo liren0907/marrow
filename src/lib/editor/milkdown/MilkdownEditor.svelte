@@ -255,8 +255,10 @@
     max-width: 46rem;
     margin: 0 auto;
     padding: 2.5rem 3rem 6rem 3rem;
-    font-family: var(--font-body);
-    font-size: 16px;
+    /* User-tunable via Settings → Appearance → Editor font / size.
+       Falls back to var(--font-body) / 16px when unset. */
+    font-family: var(--mw-editor-font, var(--font-body));
+    font-size: var(--mw-editor-font-size, 16px);
     line-height: 1.65;
     color: var(--color-base-content);
     text-wrap: pretty;
