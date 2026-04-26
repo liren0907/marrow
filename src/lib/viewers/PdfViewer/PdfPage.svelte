@@ -1,16 +1,23 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
+  import { editorSettings } from "$lib/settings/editorSettings.svelte";
 
   let {
     pdfDoc,
     pageNumber,
-    scale = 1.5,
+    scale,
   }: {
     pdfDoc: PDFDocumentProxy;
     pageNumber: number;
+    /** Override the user-configured zoom for this page (rare). */
     scale?: number;
   } = $props();
+
+  // Use the user-configured zoom unless an explicit override is passed.
+  // The renderer only reads this once in onMount, so subsequent setting
+  // changes apply on the next PDF tab open rather than mid-page re-render.
+  const effectiveScale = $derived(scale ?? editorSettings.pdfZoom);
 
   let canvas: HTMLCanvasElement;
   let renderTask: RenderTask | null = null;
@@ -25,7 +32,7 @@
           page.cleanup();
           return;
         }
-        const viewport = page.getViewport({ scale });
+        const viewport = page.getViewport({ scale: effectiveScale });
         dimensions = { w: viewport.width, h: viewport.height };
         // Wait a tick so canvas size is committed to the DOM.
         await Promise.resolve();

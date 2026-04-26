@@ -3,10 +3,10 @@ import { Plugin, PluginKey } from "@milkdown/prose/state";
 import type { EditorView } from "@milkdown/prose/view";
 import { workspace } from "$lib/workspace/workspace.svelte";
 import { writeBinaryFile } from "$lib/workspace/tauri";
+import { workspaceSettings } from "$lib/settings/workspaceSettings.svelte";
 import { showError } from "$lib/stores/toastStore.svelte";
 
 const MAX_IMAGE_BYTES = 50 * 1024 * 1024; // 50 MB
-const ATTACHMENTS_DIR = "attachments";
 
 function extFromMime(mime: string): string {
   switch (mime) {
@@ -52,6 +52,9 @@ async function handleImages(view: EditorView, files: File[]): Promise<void> {
     showError("Open a workspace before pasting images");
     return;
   }
+  // Resolve the user-configured attachment folder once per paste batch so
+  // toggling it mid-paste doesn't split files across folders.
+  const attachDir = workspaceSettings.attachmentFolder;
   const insertions: string[] = [];
   for (const file of files) {
     if (file.size > MAX_IMAGE_BYTES) {
@@ -63,9 +66,9 @@ async function handleImages(view: EditorView, files: File[]): Promise<void> {
       const bytes = new Uint8Array(buffer);
       const ext = extFromMime(file.type);
       const filename = `pasted-${timestampSlug()}-${randomSuffix()}.${ext}`;
-      const fullPath = joinPath(joinPath(root, ATTACHMENTS_DIR), filename);
+      const fullPath = joinPath(joinPath(root, attachDir), filename);
       await writeBinaryFile(fullPath, bytes);
-      insertions.push(`![${filename}](${ATTACHMENTS_DIR}/${filename})`);
+      insertions.push(`![${filename}](${attachDir}/${filename})`);
     } catch (e) {
       showError(`Failed to write image: ${e instanceof Error ? e.message : String(e)}`);
     }

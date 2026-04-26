@@ -24,6 +24,7 @@
   import type { WikiLinkSuggestion } from "$lib/editor/milkdown/wikiLink/suggest";
   import type { TransclusionSuggestion } from "$lib/editor/milkdown/transclusion/suggest";
   import { debounce } from "$lib/utils/debounce";
+  import { editorSettings } from "$lib/settings/editorSettings.svelte";
   import { showError, showWarning } from "$lib/stores/toastStore.svelte";
 
   function getWikiLinkSuggestions(query: string): WikiLinkSuggestion[] {
@@ -136,7 +137,13 @@
     }
   }
 
-  const debouncedSave = debounce(() => void save(), 800);
+  // Read the live setting at each fire so the user can tune autosave delay
+  // from the Settings page without remounting the tab. See debounce.ts —
+  // the function form re-evaluates per scheduling.
+  const debouncedSave = debounce(
+    () => void save(),
+    () => editorSettings.autosaveDebounceMs,
+  );
 
   function handleChange(md: string) {
     currentContent = md;

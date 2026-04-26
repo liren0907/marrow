@@ -5,6 +5,7 @@
     type Activity,
   } from "./activityBarState.svelte";
   import { toggleCommandPalette } from "$lib/command/commandPaletteState.svelte";
+  import { toggleSettings } from "$lib/settings/settingsModalState.svelte";
   import { workspace } from "$lib/workspace/workspace.svelte";
   import Icon, { type IconName } from "$lib/components/ui/Icon.svelte";
 
@@ -66,6 +67,15 @@
       aria-label="Command palette"
     >
       <Icon name="terminal" size={20} />
+    </button>
+    <button
+      type="button"
+      class="activity-btn tooltip tooltip-right"
+      onclick={toggleSettings}
+      data-tip="Settings · ⇧⌘,"
+      aria-label="Settings"
+    >
+      <Icon name="settings" size={20} />
     </button>
   </div>
 </nav>

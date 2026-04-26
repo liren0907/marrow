@@ -4,6 +4,7 @@ import { toggleBottomPanel } from "$lib/panels/bottomPanelState.svelte";
 import { toggleSearch } from "$lib/search/searchState.svelte";
 import { toggleCommandPalette } from "$lib/command/commandPaletteState.svelte";
 import { toggleTweaks } from "$lib/settings/tweaksState.svelte";
+import { toggleSettings } from "$lib/settings/settingsModalState.svelte";
 
 // Per-tab save dispatcher. Tab viewers (e.g. MarkdownTab) register their
 // save fn on mount and unregister on destroy. The global Cmd+S handler
@@ -112,7 +113,13 @@ export function initShortcuts(): () => void {
       workspace.prevTab();
       return;
     }
-    // Cmd+, — open tweaks (theme + accent)
+    // Cmd+Shift+, — open Settings page (full overlay, all tabs)
+    if (k === "," && e.shiftKey) {
+      e.preventDefault();
+      toggleSettings();
+      return;
+    }
+    // Cmd+, — open tweaks (theme + accent quick popover)
     if (k === ",") {
       e.preventDefault();
       toggleTweaks();

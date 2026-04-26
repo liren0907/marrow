@@ -21,6 +21,7 @@
   import ActivityBar from "$lib/chrome/ActivityBar.svelte";
   import StatusBar from "$lib/chrome/StatusBar.svelte";
   import TweaksPanel from "$lib/settings/TweaksPanel.svelte";
+  import SettingsModal from "$lib/settings/SettingsModal.svelte";
   import { initAccent } from "$lib/settings/accentState.svelte";
   import {
     listRecentWorkspaces,
@@ -192,6 +193,7 @@
 <FileHistoryModal />
 <RecentWorkspacePicker />
 <TweaksPanel />
+<SettingsModal />
 
 <style>
   .marrow-root {
