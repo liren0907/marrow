@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Marrow app icon — source vector.
+  - Outer ring: 4 equal wedges in Google brand colors, clockwise from top:
+    Blue (N) #4285F4 / Red (E) #EA4335 / Yellow (S) #FBBC04 / Green (W) #34A853
+  - Inner: white circle backdrop
+  - Glyph: Lucide v1 `bone` (echoes "marrow" — bone marrow)
+  Geometry on a 1024 canvas:
+    center (512,512), outer radius 480, inner radius 400 (ring width 80)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- White inner disc — slightly larger (r=401) than ring inner edge (r=400)
+       to avoid sub-pixel seam between disc and ring on raster export. -->
+  <circle cx="512" cy="512" r="401" fill="#FFFFFF"/>
+
+  <!-- Top wedge (Blue) — from NW outer (172.5888,172.5888) clockwise to NE outer (851.4112,172.5888),
+       inner edge from NE (794.8427,229.1573) counter-clockwise to NW (229.1573,229.1573). -->
+  <path fill="#4285F4"
+        d="M 172.5888 172.5888 A 480 480 0 0 1 851.4112 172.5888 L 794.8427 229.1573 A 400 400 0 0 0 229.1573 229.1573 Z"/>
+
+  <!-- Right wedge (Red) -->
+  <path fill="#EA4335"
+        d="M 851.4112 172.5888 A 480 480 0 0 1 851.4112 851.4112 L 794.8427 794.8427 A 400 400 0 0 0 794.8427 229.1573 Z"/>
+
+  <!-- Bottom wedge (Yellow) -->
+  <path fill="#FBBC04"
+        d="M 851.4112 851.4112 A 480 480 0 0 1 172.5888 851.4112 L 229.1573 794.8427 A 400 400 0 0 0 794.8427 794.8427 Z"/>
+
+  <!-- Left wedge (Green) -->
+  <path fill="#34A853"
+        d="M 172.5888 851.4112 A 480 480 0 0 1 172.5888 172.5888 L 229.1573 229.1573 A 400 400 0 0 0 229.1573 794.8427 Z"/>
+
+  <!-- Lucide v1 `bone` — translate to canvas center, scale 20x, then translate
+       the 24x24 viewBox so its center (12,12) lands on (512,512). -->
+  <g transform="translate(512 512) scale(20) translate(-12 -12)"
+     fill="none" stroke="#1F2937" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 10c.7-.7 1.69 0 2.5 0a2.5 2.5 0 1 0 0-5 .5.5 0 0 1-.5-.5 2.5 2.5 0 1 0-5 0c0 .81.7 1.8 0 2.5l-7 7c-.7.7-1.69 0-2.5 0a2.5 2.5 0 0 0 0 5c.28 0 .5.22.5.5a2.5 2.5 0 1 0 5 0c0-.81-.7-1.8 0-2.5Z"/>
+  </g>
+</svg>

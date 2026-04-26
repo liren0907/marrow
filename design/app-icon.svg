@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Marrow app icon v2 — macOS squircle full-bleed.
+  Structure (outer → inner):
+    1. Apple-spec squircle (1024 canvas, 100px padding, 824×824 visible, rx=184)
+    2. 70px-thick frame filled with pseudo-conic spectrum gradient
+       (4 linear gradients, one per side, end colors match at corners
+        to give a smooth "wrap around" feeling without 4-color seams)
+    3. White inner squircle (684×684, rx=114) as bone backdrop
+    4. Lucide v1 `bone` glyph (deep-gray stroke, ~63% of inner area)
+  Spectrum colors (clockwise from top-left corner):
+    pink #FF66B2 → orange #FF9500 → yellow #FFCC00 → green #4CD964 →
+    cyan #00C7BE → blue #007AFF → purple #AF52DE → magenta #FF2D55 → (back to pink)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Top edge (left → right): pink → orange → yellow -->
+    <linearGradient id="gTop" x1="0" y1="0" x2="1024" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#FF66B2"/>
+      <stop offset="50%"  stop-color="#FF9500"/>
+      <stop offset="100%" stop-color="#FFCC00"/>
+    </linearGradient>
+    <!-- Right edge (top → bottom): yellow → green → cyan -->
+    <linearGradient id="gRight" x1="0" y1="0" x2="0" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#FFCC00"/>
+      <stop offset="50%"  stop-color="#4CD964"/>
+      <stop offset="100%" stop-color="#00C7BE"/>
+    </linearGradient>
+    <!-- Bottom edge (right → left): cyan → blue → purple -->
+    <linearGradient id="gBottom" x1="1024" y1="0" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#00C7BE"/>
+      <stop offset="50%"  stop-color="#007AFF"/>
+      <stop offset="100%" stop-color="#AF52DE"/>
+    </linearGradient>
+    <!-- Left edge (bottom → top): purple → magenta → pink -->
+    <linearGradient id="gLeft" x1="0" y1="1024" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#AF52DE"/>
+      <stop offset="50%"  stop-color="#FF2D55"/>
+      <stop offset="100%" stop-color="#FF66B2"/>
+    </linearGradient>
+
+    <!-- Frame mask: visible region = outer squircle MINUS inner squircle.
+         70px frame thickness (100 → 170 inset). -->
+    <mask id="frameMask" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect x="100" y="100" width="824" height="824" rx="184" fill="white"/>
+      <rect x="170" y="170" width="684" height="684" rx="114" fill="black"/>
+    </mask>
+
+    <!-- 4 triangular clip regions, sharing the canvas center (512,512).
+         Each one covers exactly one side of the frame. -->
+    <clipPath id="clipTop"    clipPathUnits="userSpaceOnUse"><polygon points="0,0 1024,0 512,512"/></clipPath>
+    <clipPath id="clipRight"  clipPathUnits="userSpaceOnUse"><polygon points="1024,0 1024,1024 512,512"/></clipPath>
+    <clipPath id="clipBottom" clipPathUnits="userSpaceOnUse"><polygon points="1024,1024 0,1024 512,512"/></clipPath>
+    <clipPath id="clipLeft"   clipPathUnits="userSpaceOnUse"><polygon points="0,1024 0,0 512,512"/></clipPath>
+  </defs>
+
+  <!-- Frame: 4 sides, each masked to the donut ring and clipped to its triangle.
+       At corners, gradient end-colors of adjacent sides match → no visible seam. -->
+  <g mask="url(#frameMask)">
+    <rect width="1024" height="1024" fill="url(#gTop)"    clip-path="url(#clipTop)"/>
+    <rect width="1024" height="1024" fill="url(#gRight)"  clip-path="url(#clipRight)"/>
+    <rect width="1024" height="1024" fill="url(#gBottom)" clip-path="url(#clipBottom)"/>
+    <rect width="1024" height="1024" fill="url(#gLeft)"   clip-path="url(#clipLeft)"/>
+  </g>
+
+  <!-- White interior — slightly inset to avoid sub-pixel seam vs. mask cutout. -->
+  <rect x="171" y="171" width="682" height="682" rx="113" fill="#FFFFFF"/>
+
+  <!-- Lucide v1 `bone` — translate to canvas center, scale 18x, then translate
+       the 24-unit viewBox so its center (12,12) lands on (512,512).
+       Final bone bounding box ~432px (≈63% of 684px inner area). -->
+  <g transform="translate(512 512) scale(18) translate(-12 -12)"
+     fill="none" stroke="#1F2937" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 10c.7-.7 1.69 0 2.5 0a2.5 2.5 0 1 0 0-5 .5.5 0 0 1-.5-.5 2.5 2.5 0 1 0-5 0c0 .81.7 1.8 0 2.5l-7 7c-.7.7-1.69 0-2.5 0a2.5 2.5 0 0 0 0 5c.28 0 .5.22.5.5a2.5 2.5 0 1 0 5 0c0-.81-.7-1.8 0-2.5Z"/>
+  </g>
+</svg>
