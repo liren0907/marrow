@@ -3,8 +3,53 @@
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";
 @plugin "daisyui" {
-	themes: marrow-pro-light --default, marrow-pro-dark --prefersdark, light, dark, cupcake, corporate;
+	themes: marrow-pro-light --default, marrow-pro-dark --prefersdark, marrow-light, light, dark, cupcake, corporate;
 	logs: false;
+}
+
+/* ─── marrow-light ─────────────────────────────────────────
+   Notion-inspired soft white. Warmer than #ffffff (which felt
+   too cold / clinical) — a barely-warm off-white with the same
+   marrow accent family so switching themes doesn't change the
+   product's identity, only its mood. */
+@plugin "daisyui/theme" {
+	name: "marrow-light";
+	default: false;
+	prefersdark: false;
+	color-scheme: light;
+
+	--color-base-100: #fefefc;
+	--color-base-200: #f8f7f4;
+	--color-base-300: #efedE9;
+	--color-base-content: #2b2a28;
+
+	--color-primary: oklch(0.62 0.13 55);
+	--color-primary-content: #ffffff;
+	--color-secondary: #6b665d;
+	--color-secondary-content: #ffffff;
+	--color-accent: oklch(0.62 0.13 55);
+	--color-accent-content: #ffffff;
+	--color-neutral: #ece9e2;
+	--color-neutral-content: #2d2926;
+	--color-info: oklch(60% 0.12 240);
+	--color-info-content: #ffffff;
+	--color-success: oklch(55% 0.15 150);
+	--color-success-content: #ffffff;
+	--color-warning: oklch(70% 0.15 80);
+	--color-warning-content: #2d2926;
+	--color-error: oklch(60% 0.2 25);
+	--color-error-content: #ffffff;
+
+	--radius-selector: 4px;
+	--radius-field: 4px;
+	--radius-box: 6px;
+
+	--size-selector: 0.25rem;
+	--size-field: 0.25rem;
+
+	--border: 1px;
+	--depth: 0;
+	--noise: 0;
 }
 
 @plugin "daisyui/theme" {
@@ -13,7 +58,7 @@
 	prefersdark: false;
 	color-scheme: light;
 
-	/* Warm paper/ink palette — cream */
+	/* Warm paper/ink palette — cream (Marrow's "intermediate" mode) */
 	--color-base-100: #ece6d9;
 	--color-base-200: #e4ddcd;
 	--color-base-300: #eee7d6;
@@ -121,6 +166,23 @@
 	--mw-editor-bg: #1f1a16;
 	--mw-editor-paper: #201b17;
 	--mw-accent: oklch(0.72 0.13 55);
+}
+
+/* Notion-inspired soft white. Cooler/lighter than the cream
+   "intermediate", but still slightly warm — keeps the marrow
+   accent family for identity continuity. */
+[data-theme="marrow-light"] {
+	--mw-ink-1: #494742;
+	--mw-ink-2: #6b6862;
+	--mw-ink-3: #94908a;
+	--mw-rule: rgba(50, 45, 35, 0.07);
+	--mw-rule-strong: rgba(50, 45, 35, 0.13);
+	--mw-bg-elev: #ffffff;
+	--mw-selection: rgba(168, 106, 44, 0.16);
+	--mw-tab-inactive: #f0eeea;
+	--mw-editor-bg: #fefefc;
+	--mw-editor-paper: #ffffff;
+	--mw-accent: oklch(0.62 0.13 55);
 }
 
 /* Google Material Symbols base styles.

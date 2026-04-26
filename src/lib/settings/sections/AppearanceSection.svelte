@@ -62,27 +62,60 @@
   // Theme is stored in localStorage and reflected on <html data-theme>.
   // Mirrors the logic in TweaksPanel — kept duplicated rather than
   // extracted because the two surfaces stay decoupled.
-  let theme = $state<"light" | "dark">("light");
+  //
+  // Three modes:
+  //   light        → marrow-light       (Notion-inspired soft white)
+  //   intermediate → marrow-pro-light   (cream paper — Marrow's signature)
+  //   dark         → marrow-pro-dark
+  type ThemeMode = "light" | "intermediate" | "dark";
+  let theme = $state<ThemeMode>("intermediate");
+
+  function readMode(): ThemeMode {
+    const t = document.documentElement.getAttribute("data-theme") ?? "";
+    if (t === "marrow-pro-dark" || t === "dark") return "dark";
+    if (t === "marrow-light") return "light";
+    return "intermediate";
+  }
 
   $effect(() => {
-    const t = document.documentElement.getAttribute("data-theme") ?? "";
-    theme = t === "marrow-pro-dark" || t === "dark" ? "dark" : "light";
+    theme = readMode();
   });
 
-  function setTheme(next: "light" | "dark") {
+  function setTheme(next: ThemeMode) {
     theme = next;
-    const name = next === "dark" ? "marrow-pro-dark" : "marrow-pro-light";
+    const name =
+      next === "dark"
+        ? "marrow-pro-dark"
+        : next === "light"
+          ? "marrow-light"
+          : "marrow-pro-light";
     document.documentElement.setAttribute("data-theme", name);
     localStorage.setItem("theme", name);
   }
+
+  // Accent swatch preview only cares about light-vs-dark contrast —
+  // intermediate uses the same accent palette as light.
+  const accentMode = $derived<"light" | "dark">(
+    theme === "dark" ? "dark" : "light",
+  );
 </script>
 
 <div class="section">
   <h3 class="section-title">Theme</h3>
-  <p class="section-desc">Choose the overall light or dark color scheme.</p>
+  <p class="section-desc">
+    <strong>Light</strong> is Notion-inspired soft white,
+    <strong>Intermediate</strong> is Marrow's signature warm cream, and
+    <strong>Dark</strong> is the low-light counterpart.
+  </p>
   <div class="seg">
     <button class:on={theme === "light"} onclick={() => setTheme("light")}>
       Light
+    </button>
+    <button
+      class:on={theme === "intermediate"}
+      onclick={() => setTheme("intermediate")}
+    >
+      Intermediate
     </button>
     <button class:on={theme === "dark"} onclick={() => setTheme("dark")}>
       Dark
@@ -103,7 +136,7 @@
         onclick={() => setAccent(entry.key)}
         title={entry.label}
         aria-label={entry.label}
-        style:background={accentColor(entry.key, theme)}
+        style:background={accentColor(entry.key, accentMode)}
       ></button>
     {/each}
   </div>

@@ -12,20 +12,37 @@
     Object.keys(ACCENTS) as AccentKey[]
   ).map((k) => ({ key: k, label: ACCENTS[k].label }));
 
-  let theme = $state<"light" | "dark">("light");
+  // Three modes mirror AppearanceSection. light → marrow-light (Notion-y soft
+  // white), intermediate → marrow-pro-light (cream paper, Marrow's signature),
+  // dark → marrow-pro-dark.
+  type ThemeMode = "light" | "intermediate" | "dark";
+  let theme = $state<ThemeMode>("intermediate");
 
   $effect(() => {
     if (!tweaks.isOpen) return;
     const t = document.documentElement.getAttribute("data-theme") ?? "";
-    theme = t === "marrow-pro-dark" || t === "dark" ? "dark" : "light";
+    if (t === "marrow-pro-dark" || t === "dark") theme = "dark";
+    else if (t === "marrow-light") theme = "light";
+    else theme = "intermediate";
   });
 
-  function setTheme(next: "light" | "dark") {
+  function setTheme(next: ThemeMode) {
     theme = next;
-    const name = next === "dark" ? "marrow-pro-dark" : "marrow-pro-light";
+    const name =
+      next === "dark"
+        ? "marrow-pro-dark"
+        : next === "light"
+          ? "marrow-light"
+          : "marrow-pro-light";
     document.documentElement.setAttribute("data-theme", name);
     localStorage.setItem("theme", name);
   }
+
+  // Accent preview only needs light-vs-dark contrast — light & intermediate
+  // share the same accent palette.
+  const accentMode = $derived<"light" | "dark">(
+    theme === "dark" ? "dark" : "light",
+  );
 
   let panelEl: HTMLDivElement | undefined = $state();
 
@@ -55,6 +72,13 @@
         <button class:on={theme === "light"} onclick={() => setTheme("light")}>
           Light
         </button>
+        <button
+          class:on={theme === "intermediate"}
+          onclick={() => setTheme("intermediate")}
+          title="Marrow's signature warm cream"
+        >
+          Inter.
+        </button>
         <button class:on={theme === "dark"} onclick={() => setTheme("dark")}>
           Dark
         </button>
@@ -71,7 +95,7 @@
             onclick={() => setAccent(entry.key)}
             title={entry.label}
             aria-label={entry.label}
-            style:background={accentColor(entry.key, theme)}
+            style:background={accentColor(entry.key, accentMode)}
           ></button>
         {/each}
       </div>
