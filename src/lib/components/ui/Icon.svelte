@@ -42,6 +42,8 @@
     Settings,
     Palette,
     Target,
+    Code,
+    Eye,
   } from "lucide";
 
   export type IconName =
@@ -81,7 +83,9 @@
     | "flask-conical"
     | "settings"
     | "palette"
-    | "target";
+    | "target"
+    | "code"
+    | "eye";
 
   const MAP = {
     "plus": Plus,
@@ -121,6 +125,8 @@
     "settings": Settings,
     "palette": Palette,
     "target": Target,
+    "code": Code,
+    "eye": Eye,
   } satisfies Record<IconName, unknown>;
 </script>
 

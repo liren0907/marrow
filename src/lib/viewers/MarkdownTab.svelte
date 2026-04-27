@@ -20,6 +20,7 @@
   import type { PeekRequest } from "$lib/editor/milkdown/MilkdownEditor.svelte";
   import { openConflict } from "$lib/conflict/conflictState.svelte";
   import MilkdownEditor from "$lib/editor/milkdown/MilkdownEditor.svelte";
+  import MarkdownRawEditor from "$lib/editor/MarkdownRawEditor.svelte";
   import EditorMetaHeader from "$lib/editor/EditorMetaHeader.svelte";
   import type { WikiLinkSuggestion } from "$lib/editor/milkdown/wikiLink/suggest";
   import type { TransclusionSuggestion } from "$lib/editor/milkdown/transclusion/suggest";
@@ -110,7 +111,19 @@
   let reloadKey = $state(0);
   let lastHandledToken = 0;
 
-  let currentContent = "";
+  // pretty = Milkdown WYSIWYG, raw = CodeMirror plain markdown source.
+  // Lives on Tab so it survives tab switches (TabBody hides-don't-unmount,
+  // but we want this state to also persist if the tab is closed/reopened
+  // via session restore down the road).
+  const viewMode = $derived(tab.viewMode ?? "pretty");
+
+  // `currentContent` is $state so the value passed as `initial` to the
+  // active editor is always the latest at template-evaluation time —
+  // critical for the pretty↔raw toggle, which remounts the editor and
+  // needs to feed it the live (possibly unsaved) content. Strings are
+  // primitives so there's no proxy overhead, and downstream editors only
+  // read `initial` at onMount, so per-keystroke prop updates are no-ops.
+  let currentContent = $state("");
   let savedContent = "";
 
   async function save() {
@@ -245,20 +258,30 @@
   {:else if loaded}
     <EditorMetaHeader {tab} />
     <div class="flex-1 min-h-0 overflow-hidden">
-      {#key reloadKey}
-        <MilkdownEditor
-          initial={initialContent}
+      {#if viewMode === "raw"}
+        <!-- Raw mode: feed `currentContent` (the live in-memory string) so
+             a pretty→raw switch sees unsaved edits. Same `handleChange`
+             keeps the autosave / dirty pipeline identical across modes. -->
+        <MarkdownRawEditor
+          initial={currentContent}
           onChange={handleChange}
-          onWikiLinkClick={handleWikiLinkClick}
-          {getWikiLinkSuggestions}
-          {isWikiLinkResolved}
-          onTransclusionClick={handleTransclusionClick}
-          {getTransclusionSuggestions}
-          onReady={handleEditorReady}
-          onOutlineUpdate={handleOutlineUpdate}
-          onPeekRequest={handlePeekRequest}
         />
-      {/key}
+      {:else}
+        {#key reloadKey}
+          <MilkdownEditor
+            initial={currentContent}
+            onChange={handleChange}
+            onWikiLinkClick={handleWikiLinkClick}
+            {getWikiLinkSuggestions}
+            {isWikiLinkResolved}
+            onTransclusionClick={handleTransclusionClick}
+            {getTransclusionSuggestions}
+            onReady={handleEditorReady}
+            onOutlineUpdate={handleOutlineUpdate}
+            onPeekRequest={handlePeekRequest}
+          />
+        {/key}
+      {/if}
     </div>
   {:else}
     <div class="p-6 text-base-content/40 text-sm">Loading…</div>

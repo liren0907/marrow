@@ -54,6 +54,10 @@ export interface Tab {
   lastSavedTs?: number;
   reloadToken?: number;
   missing?: boolean;
+  // Markdown tabs only — toggles between Milkdown WYSIWYG ("pretty") and a
+  // CodeMirror plain-text source view ("raw"). Optional for back-compat;
+  // readers default to "pretty" when undefined.
+  viewMode?: "pretty" | "raw";
 }
 
 export interface Pane {

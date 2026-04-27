@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Tab } from "$lib/workspace/types";
   import { workspace } from "$lib/workspace/workspace.svelte";
+  import IconButton from "$lib/components/ui/IconButton.svelte";
 
   let { tab }: { tab: Tab } = $props();
 
@@ -24,14 +25,37 @@
     const pad = (n: number) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   });
+
+  // Pretty / Raw toggle. The button shows the icon for the *target* mode
+  // (so in pretty mode you see `code` meaning "click to view source").
+  const viewMode = $derived(tab.viewMode ?? "pretty");
+  function toggleViewMode(): void {
+    workspace.patchTab(tab.id, {
+      viewMode: viewMode === "pretty" ? "raw" : "pretty",
+    });
+  }
 </script>
 
 <div class="editor-meta mw-meta">
-  <span class="editor-meta-folder">{folder}</span>
-  {#if modified}
-    <span class="editor-meta-sep">·</span>
-    <span class="editor-meta-date">Modified {modified}</span>
-  {/if}
+  <div class="editor-meta-info">
+    <span class="editor-meta-folder">{folder}</span>
+    {#if modified}
+      <span class="editor-meta-sep">·</span>
+      <span class="editor-meta-date">Modified {modified}</span>
+    {/if}
+  </div>
+  <div class="editor-meta-actions">
+    <IconButton
+      icon={viewMode === "pretty" ? "code" : "eye"}
+      tooltip={viewMode === "pretty"
+        ? "Switch to source (⌘/)"
+        : "Switch to preview (⌘/)"}
+      size="sm"
+      variant="ghost"
+      active={viewMode === "raw"}
+      onclick={toggleViewMode}
+    />
+  </div>
 </div>
 
 <style>
@@ -40,8 +64,21 @@
     margin: 0 auto;
     padding: 20px 48px 0 48px;
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .editor-meta-info {
+    display: flex;
     align-items: baseline;
     gap: 10px;
+    min-width: 0;
+  }
+  .editor-meta-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     flex-shrink: 0;
   }
   .editor-meta-folder {

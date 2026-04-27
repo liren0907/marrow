@@ -113,6 +113,18 @@ export function initShortcuts(): () => void {
       workspace.prevTab();
       return;
     }
+    // Cmd+/ — toggle markdown view mode (pretty WYSIWYG ↔ raw source)
+    // on the active markdown tab. No-op on other tab kinds.
+    if (k === "/" && !e.shiftKey) {
+      e.preventDefault();
+      const pane = workspace.activePane;
+      const tab = pane.tabs.find((t) => t.id === pane.activeTabId);
+      if (tab && tab.kind === "markdown") {
+        const next = (tab.viewMode ?? "pretty") === "pretty" ? "raw" : "pretty";
+        workspace.patchTab(tab.id, { viewMode: next });
+      }
+      return;
+    }
     // Cmd+Shift+, — open Settings page (full overlay, all tabs)
     if (k === "," && e.shiftKey) {
       e.preventDefault();
