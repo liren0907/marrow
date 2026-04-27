@@ -2,6 +2,7 @@
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { formatRelative } from "$lib/utils/formatRelative";
   import { getCurrentWindow } from "@tauri-apps/api/window";
+  import { isInTauri } from "$lib/devmock/detect";
 
   let lastClickAt = 0;
 
@@ -10,6 +11,9 @@
     const now = Date.now();
     const isDoubleClick = now - lastClickAt < 400;
     lastClickAt = isDoubleClick ? 0 : now;
+    // In browser mock mode there's no Tauri window to drag/maximize —
+    // the titlebar still renders for visual fidelity, but click is a no-op.
+    if (!isInTauri) return;
     const win = getCurrentWindow();
     if (isDoubleClick) {
       void win.toggleMaximize();

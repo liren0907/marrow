@@ -1,5 +1,13 @@
-import { listen } from "@tauri-apps/api/event";
+import { listen as tauriListen } from "@tauri-apps/api/event";
+import { isInTauri } from "$lib/devmock/detect";
+import { listen as mockListen } from "$lib/devmock/events";
 import type { FsEventPayload } from "./types";
+
+// Pick the listen() implementation at module load. The mock variant just
+// registers into an in-memory map and never fires unless the (future)
+// DevPanel calls `emitMock("fs-event", ...)`. Real Tauri `listen` only
+// works inside the webview — calling it in a plain browser tab throws.
+const listen = isInTauri ? tauriListen : mockListen;
 import { workspace } from "./workspace.svelte";
 import { updateBacklinksForFile } from "./backlinkIndex.svelte";
 import { updateTagsForFile } from "./tagIndex.svelte";
