@@ -9,6 +9,8 @@
   } from "$lib/workspace/shortcuts.svelte";
   import {
     outlines,
+    activeHeading,
+    collapsedHeadings,
     registerTabScroll,
     unregisterTabScroll,
     registerTabPeek,
@@ -191,6 +193,10 @@
     outlines.byTab.set(tab.id, headings);
   }
 
+  function handleActiveHeadingChange(pos: number | null) {
+    activeHeading.byTab.set(tab.id, pos);
+  }
+
   function handleEditorReady(api: {
     scrollToPos: (pos: number) => void;
     peekAtCursor: () => void;
@@ -221,6 +227,8 @@
     unregisterTabScroll(tab.id);
     unregisterTabPeek(tab.id);
     outlines.byTab.delete(tab.id);
+    activeHeading.byTab.delete(tab.id);
+    collapsedHeadings.byTab.delete(tab.id);
   });
 
   $effect(() => {
@@ -279,6 +287,7 @@
             {getTransclusionSuggestions}
             onReady={handleEditorReady}
             onOutlineUpdate={handleOutlineUpdate}
+            onActiveHeadingChange={handleActiveHeadingChange}
             onPeekRequest={handlePeekRequest}
           />
         {/key}

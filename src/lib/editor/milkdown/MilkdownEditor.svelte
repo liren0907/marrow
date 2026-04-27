@@ -46,6 +46,7 @@
     getTransclusionSuggestions = () => [],
     onReady = null,
     onOutlineUpdate = null,
+    onActiveHeadingChange = null,
     onPeekRequest = null,
   }: {
     initial: string;
@@ -62,6 +63,10 @@
         }) => void)
       | null;
     onOutlineUpdate?: ((headings: Heading[]) => void) | null;
+    /** Pushed when the editor scrolls and a different heading becomes the
+     *  topmost-visible one (or null when scrolled above the first). The
+     *  outline aside in Pane.svelte uses this to highlight + scroll-sync. */
+    onActiveHeadingChange?: ((pos: number | null) => void) | null;
     onPeekRequest?: ((request: PeekRequest) => void) | null;
   } = $props();
 
@@ -71,9 +76,15 @@
   let errorMsg = $state<string | null>(null);
   let suppressNextChange = false;
   let outlineTimer: ReturnType<typeof setTimeout> | null = null;
+  // Local cache of headings used by the active-heading detector. Updated
+  // every time we push the outline upstream so the scroll listener doesn't
+  // have to traverse the doc itself on every scroll tick.
+  let cachedHeadings: Heading[] = [];
+  let activeRafId: number | null = null;
+  let lastActivePos: number | null | undefined = undefined; // undefined = never reported
 
   function pushOutline(): void {
-    if (!editor || !onOutlineUpdate) return;
+    if (!editor) return;
     editor.action((ctx) => {
       const view = ctx.get(editorViewCtx);
       const out: Heading[] = [];
@@ -84,7 +95,57 @@
           out.push({ level, text: node.textContent, pos });
         }
       });
-      onOutlineUpdate!(out);
+      cachedHeadings = out;
+      onOutlineUpdate?.(out);
+      // Re-evaluate active heading once after every outline rebuild so a
+      // doc-edit that adds/removes headings updates the highlight without
+      // waiting for the next scroll event.
+      detectActiveHeading();
+    });
+  }
+
+  /** Find the heading whose top edge is just above an "I am reading here"
+   *  line ~80px from the top of the editor's scroll container. Push it as
+   *  the new active heading if it changed. Cheap: O(n) over headings (~50
+   *  for typical docs) with one coordsAtPos call per heading. Throttled
+   *  via rAF in the scroll handler. */
+  function detectActiveHeading(): void {
+    if (!editor || !onActiveHeadingChange) return;
+    if (cachedHeadings.length === 0) {
+      if (lastActivePos !== null) {
+        lastActivePos = null;
+        onActiveHeadingChange(null);
+      }
+      return;
+    }
+    editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const containerRect = host.getBoundingClientRect();
+      const readingLine = containerRect.top + 80;
+      let active: number | null = null;
+      for (const h of cachedHeadings) {
+        try {
+          const coords = view.coordsAtPos(h.pos);
+          if (coords.top <= readingLine) active = h.pos;
+          else break; // headings are doc-ordered, so first miss = done
+        } catch {
+          // coordsAtPos can throw if the doc/view is in an unusual state;
+          // skip silently and let the next scroll re-try.
+          break;
+        }
+      }
+      if (active !== lastActivePos) {
+        lastActivePos = active;
+        onActiveHeadingChange(active);
+      }
+    });
+  }
+
+  function onScroll(): void {
+    if (activeRafId !== null) return; // rAF already queued — coalesce
+    activeRafId = requestAnimationFrame(() => {
+      activeRafId = null;
+      detectActiveHeading();
     });
   }
 
@@ -205,7 +266,10 @@
         });
 
         // Push initial outline + hand the scroll / peek API to the parent.
+        // pushOutline() also seeds the activeHeading so the outline aside
+        // can highlight the topmost-visible heading immediately.
         pushOutline();
+        host.addEventListener("scroll", onScroll, { passive: true });
         onReady?.({ scrollToPos, peekAtCursor });
       } catch (e) {
         errorMsg = e instanceof Error ? e.message : String(e);
@@ -220,6 +284,11 @@
       clearTimeout(outlineTimer);
       outlineTimer = null;
     }
+    if (activeRafId !== null) {
+      cancelAnimationFrame(activeRafId);
+      activeRafId = null;
+    }
+    if (host) host.removeEventListener("scroll", onScroll);
     if (editor) {
       try {
         editor.destroy();

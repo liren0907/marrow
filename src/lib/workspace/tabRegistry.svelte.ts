@@ -1,4 +1,4 @@
-import { SvelteMap } from "svelte/reactivity";
+import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
 export interface Heading {
   level: 1 | 2 | 3 | 4 | 5 | 6;
@@ -7,6 +7,23 @@ export interface Heading {
 }
 
 export const outlines = $state<{ byTab: SvelteMap<string, Heading[]> }>({
+  byTab: new SvelteMap(),
+});
+
+// Currently-active heading position per tab — pushed by MilkdownEditor's
+// scroll listener so the outline aside can highlight "where am I right
+// now" as the user reads. `null` = scrolled above any heading (or no
+// heading yet detected).
+export const activeHeading = $state<{ byTab: SvelteMap<string, number | null> }>({
+  byTab: new SvelteMap(),
+});
+
+// Per-tab in-memory set of heading positions whose subtree the user has
+// collapsed in the outline. Lives outside the tab object so it survives
+// outline rebuilds without forcing a Tab patch on every keystroke. Stale
+// entries (positions that no longer exist after edits) are pruned by
+// Pane.svelte when the outline updates.
+export const collapsedHeadings = $state<{ byTab: SvelteMap<string, SvelteSet<number>> }>({
   byTab: new SvelteMap(),
 });
 
