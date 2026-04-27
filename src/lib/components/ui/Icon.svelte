@@ -44,6 +44,8 @@
     Target,
     Code,
     Eye,
+    PanelRightClose,
+    PanelRightOpen,
   } from "lucide";
 
   export type IconName =
@@ -85,7 +87,9 @@
     | "palette"
     | "target"
     | "code"
-    | "eye";
+    | "eye"
+    | "panel-right-close"
+    | "panel-right-open";
 
   const MAP = {
     "plus": Plus,
@@ -127,6 +131,8 @@
     "target": Target,
     "code": Code,
     "eye": Eye,
+    "panel-right-close": PanelRightClose,
+    "panel-right-open": PanelRightOpen,
   } satisfies Record<IconName, unknown>;
 </script>
 

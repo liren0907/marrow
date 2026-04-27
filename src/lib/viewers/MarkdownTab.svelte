@@ -21,7 +21,6 @@
   import { openConflict } from "$lib/conflict/conflictState.svelte";
   import MilkdownEditor from "$lib/editor/milkdown/MilkdownEditor.svelte";
   import MarkdownRawEditor from "$lib/editor/MarkdownRawEditor.svelte";
-  import EditorMetaHeader from "$lib/editor/EditorMetaHeader.svelte";
   import type { WikiLinkSuggestion } from "$lib/editor/milkdown/wikiLink/suggest";
   import type { TransclusionSuggestion } from "$lib/editor/milkdown/transclusion/suggest";
   import { debounce } from "$lib/utils/debounce";
@@ -256,7 +255,9 @@
   {#if loadError}
     <div class="p-6 text-error text-sm">Failed to load: {loadError}</div>
   {:else if loaded}
-    <EditorMetaHeader {tab} />
+    <!-- Folder breadcrumb + edited time + view-mode toggle now live in
+         Pane's <Breadcrumb>, the single chrome row above the editor.
+         MarkdownTab renders only the editor body here. -->
     <div class="flex-1 min-h-0 overflow-hidden">
       {#if viewMode === "raw"}
         <!-- Raw mode: feed `currentContent` (the live in-memory string) so

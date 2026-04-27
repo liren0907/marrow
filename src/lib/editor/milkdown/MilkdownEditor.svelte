@@ -254,7 +254,12 @@
     min-height: 100%;
     max-width: 46rem;
     margin: 0 auto;
-    padding: 2.5rem 3rem 6rem 3rem;
+    /* 24px top padding gives breathing room under the Breadcrumb chrome
+       row (28px h-7 + 1px border). The legacy 40px from when there was a
+       separate EditorMetaHeader felt like a visual "drop"; 24px keeps the
+       reading column anchored close to its label. bottom 6rem leaves room
+       for last-line breathing under any fixed bottom panel. */
+    padding: 1.5rem 3rem 6rem 3rem;
     /* User-tunable via Settings → Appearance → Editor font / size.
        Falls back to var(--font-body) / 16px when unset. */
     font-family: var(--mw-editor-font, var(--font-body));
