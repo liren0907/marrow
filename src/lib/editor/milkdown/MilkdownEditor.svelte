@@ -329,11 +329,11 @@
        reading column anchored close to its label. bottom 6rem leaves room
        for last-line breathing under any fixed bottom panel. */
     padding: 1.5rem 3rem 6rem 3rem;
-    /* User-tunable via Settings → Appearance → Editor font / size.
-       Falls back to var(--font-body) / 16px when unset. */
+    /* User-tunable via Settings → Appearance → Editor font / size /
+       line-height. Falls back to historical defaults when unset. */
     font-family: var(--mw-editor-font, var(--font-body));
     font-size: var(--mw-editor-font-size, 16px);
-    line-height: 1.65;
+    line-height: var(--mw-editor-line-height, 1.65);
     color: var(--color-base-content);
     text-wrap: pretty;
   }

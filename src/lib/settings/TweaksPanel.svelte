@@ -7,10 +7,31 @@
     type AccentKey,
   } from "./accentState.svelte";
   import { tweaks, closeTweaks } from "./tweaksState.svelte";
+  import {
+    appearance,
+    setEditorFont,
+    setEditorFontSize,
+    setEditorLineHeight,
+    EDITOR_FONT_LABELS,
+    EDITOR_FONT_STACKS,
+    FONT_SIZE_MIN,
+    FONT_SIZE_MAX,
+    LINE_HEIGHT_MIN,
+    LINE_HEIGHT_MAX,
+    type EditorFontKey,
+  } from "./appearanceSettings.svelte";
+  import { uiSettings, togglePaneOutline } from "./uiSettings.svelte";
+  import { openSettings } from "./settingsModalState.svelte";
+  import Icon from "$lib/components/ui/Icon.svelte";
 
   const accentEntries: { key: AccentKey; label: string }[] = (
     Object.keys(ACCENTS) as AccentKey[]
   ).map((k) => ({ key: k, label: ACCENTS[k].label }));
+
+  const fontEntries = Object.entries(EDITOR_FONT_LABELS) as [
+    EditorFontKey,
+    string,
+  ][];
 
   // Three modes mirror AppearanceSection. light → marrow-light (Notion-y soft
   // white), intermediate → marrow-pro-light (cream paper, Marrow's signature),
@@ -44,12 +65,38 @@
     theme === "dark" ? "dark" : "light",
   );
 
+  function onFontChange(e: Event) {
+    setEditorFont((e.currentTarget as HTMLSelectElement).value as EditorFontKey);
+  }
+  function onFontSizeInput(e: Event) {
+    const v = parseInt((e.target as HTMLInputElement).value, 10);
+    if (Number.isFinite(v)) setEditorFontSize(v);
+  }
+  function onLineHeightInput(e: Event) {
+    const v = parseFloat((e.target as HTMLInputElement).value);
+    if (Number.isFinite(v)) setEditorLineHeight(v);
+  }
+
+  function openFullSettings() {
+    closeTweaks();
+    openSettings();
+  }
+
   let panelEl: HTMLDivElement | undefined = $state();
 
   function onWindowMouseDown(e: MouseEvent) {
     if (!tweaks.isOpen) return;
     const target = e.target as Node;
     if (panelEl?.contains(target)) return;
+    // Skip clicks on any tweaks trigger button — they call toggleTweaks()
+    // themselves, and treating them as outside-clicks would close-then-reopen
+    // (or vice versa) leading to flicker / no-op.
+    if (
+      target instanceof Element &&
+      target.closest("[data-tweaks-trigger]")
+    ) {
+      return;
+    }
     closeTweaks();
   }
   function onWindowKeyDown(e: KeyboardEvent) {
@@ -101,6 +148,70 @@
       </div>
     </div>
 
+    <div class="tweaks-section">
+      <div class="tweaks-label">Editor font</div>
+      <select
+        class="tweaks-select"
+        value={appearance.editorFont}
+        onchange={onFontChange}
+      >
+        {#each fontEntries as [key, label] (key)}
+          <option value={key} style:font-family={EDITOR_FONT_STACKS[key]}>
+            {label}
+          </option>
+        {/each}
+      </select>
+    </div>
+
+    <div class="tweaks-section">
+      <div class="tweaks-row-head">
+        <span class="tweaks-label">Font size</span>
+        <span class="tweaks-value">{appearance.editorFontSize} px</span>
+      </div>
+      <input
+        class="tweaks-range"
+        type="range"
+        min={FONT_SIZE_MIN}
+        max={FONT_SIZE_MAX}
+        step="1"
+        value={appearance.editorFontSize}
+        oninput={onFontSizeInput}
+      />
+    </div>
+
+    <div class="tweaks-section">
+      <div class="tweaks-row-head">
+        <span class="tweaks-label">Line height</span>
+        <span class="tweaks-value">{appearance.editorLineHeight.toFixed(2)}</span>
+      </div>
+      <input
+        class="tweaks-range"
+        type="range"
+        min={LINE_HEIGHT_MIN}
+        max={LINE_HEIGHT_MAX}
+        step="0.05"
+        value={appearance.editorLineHeight}
+        oninput={onLineHeightInput}
+      />
+    </div>
+
+    <div class="tweaks-section">
+      <label class="tweaks-check">
+        <input
+          type="checkbox"
+          checked={uiSettings.showPaneOutline}
+          onchange={togglePaneOutline}
+        />
+        <span>Show document outline</span>
+      </label>
+    </div>
+
+    <button class="tweaks-more" onclick={openFullSettings}>
+      <Icon name="settings" size={12} />
+      <span>Open all settings</span>
+      <span class="tweaks-more-arrow">→</span>
+    </button>
+
     <div class="tweaks-hint">⌘P Quick Open · ⇧⌘P Command · ⌘, Tweaks</div>
   </div>
 {/if}
@@ -108,9 +219,13 @@
 <style>
   .tweaks-panel {
     position: fixed;
-    bottom: calc(var(--mw-statusbar-h) + 16px);
-    right: 20px;
-    width: 240px;
+    /* Anchored top-right to align with the Pane gear trigger that opens
+       this panel. Sits below the titlebar + tab row with a small gap. */
+    top: calc(var(--mw-titlebar-h) + var(--mw-tab-h) + 6px);
+    right: 16px;
+    width: 256px;
+    max-height: calc(100vh - var(--mw-titlebar-h) - var(--mw-statusbar-h) - 32px);
+    overflow-y: auto;
     background: var(--mw-bg-elev);
     border: 1px solid var(--mw-rule-strong);
     border-radius: var(--mw-radius-md);
@@ -141,10 +256,21 @@
   .tweaks-section {
     margin-bottom: 14px;
   }
+  .tweaks-row-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
   .tweaks-label {
     font-size: 11px;
     color: var(--mw-ink-2);
     margin-bottom: 6px;
+  }
+  .tweaks-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-base-content);
   }
   .tweaks-seg {
     display: flex;
@@ -186,11 +312,63 @@
   .tweaks-swatch.on {
     border-color: var(--color-base-content);
   }
+  .tweaks-select {
+    width: 100%;
+    background: var(--color-base-200);
+    border: 1px solid var(--mw-rule);
+    border-radius: var(--mw-radius-sm);
+    padding: 4px 8px;
+    font-size: 11.5px;
+    color: var(--color-base-content);
+    cursor: pointer;
+  }
+  .tweaks-select:focus {
+    outline: none;
+    border-color: var(--mw-accent);
+  }
+  .tweaks-range {
+    width: 100%;
+    accent-color: var(--mw-accent);
+  }
+  .tweaks-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--color-base-content);
+    cursor: pointer;
+  }
+  .tweaks-check input {
+    accent-color: var(--mw-accent);
+  }
+  .tweaks-more {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid var(--mw-rule);
+    border-radius: var(--mw-radius-sm);
+    padding: 6px 10px;
+    margin-top: 4px;
+    font-size: 11.5px;
+    color: var(--mw-ink-2);
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+  }
+  .tweaks-more:hover {
+    background: var(--color-base-300);
+    color: var(--color-base-content);
+  }
+  .tweaks-more-arrow {
+    margin-left: auto;
+    color: var(--mw-ink-3);
+  }
   .tweaks-hint {
     font-family: var(--font-mono);
     font-size: 10px;
     color: var(--mw-ink-3);
-    margin-top: 8px;
+    margin-top: 10px;
     line-height: 1.5;
   }
 </style>

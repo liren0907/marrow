@@ -5,6 +5,7 @@
   import Breadcrumb from "./Breadcrumb.svelte";
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { uiSettings } from "$lib/settings/uiSettings.svelte";
+  import { toggleTweaks } from "$lib/settings/tweaksState.svelte";
   import {
     outlines,
     activeHeading,
@@ -215,7 +216,26 @@
   class:pane-active={workspace.panes.length > 1 && workspace.activePaneId === pane.id}
   onmousedown={focus}
 >
-  <TabBar {pane} />
+  <!-- Pane chrome row: TabBar takes the remaining width (so its own
+       overflow-x scroll handles many tabs) and the tweaks trigger pins
+       to the right. The trigger is marked data-tweaks-trigger so
+       TweaksPanel's outside-click handler ignores it (otherwise toggling
+       would close-then-reopen). -->
+  <div class="pane-chrome-row">
+    <div class="pane-tabbar-slot">
+      <TabBar {pane} />
+    </div>
+    <button
+      type="button"
+      class="pane-tweaks-trigger"
+      data-tweaks-trigger
+      onclick={toggleTweaks}
+      aria-label="Editor tweaks"
+      title="Editor tweaks · ⌘,"
+    >
+      <Icon name="settings" size={14} />
+    </button>
+  </div>
   {#if uiSettings.showBreadcrumb && pane.activeTabId}
     <Breadcrumb {pane} />
   {/if}
@@ -306,6 +326,36 @@
 <style>
   .pane-active {
     box-shadow: inset 0 2px 0 0 var(--mw-accent);
+  }
+  /* Chrome row hosts TabBar (flex-1 with internal overflow-x) and the
+     tweaks gear trigger pinned right. min-width: 0 on the slot is
+     critical so flex doesn't refuse to shrink the tab bar — without it,
+     long tabs would push the gear off-screen. */
+  .pane-chrome-row {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+  }
+  .pane-tabbar-slot {
+    flex: 1;
+    min-width: 0;
+  }
+  .pane-tweaks-trigger {
+    width: 32px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    background: var(--color-base-100);
+    border: none;
+    /* Match TabBar's bottom border so the chrome row reads as one strip. */
+    border-bottom: 1px solid var(--color-base-200);
+    color: var(--mw-ink-2);
+    cursor: pointer;
+    transition: color 0.1s, background 0.1s;
+  }
+  .pane-tweaks-trigger:hover {
+    color: var(--color-base-content);
+    background: var(--color-base-200);
   }
   .pane-body {
     display: grid;

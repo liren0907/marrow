@@ -73,6 +73,8 @@ interface Persisted {
   editorFont: EditorFontKey;
   /** Editor body font size in pixels. */
   editorFontSize: number;
+  /** Editor body line-height as a unitless multiplier (e.g., 1.65). */
+  editorLineHeight: number;
 }
 
 const DEFAULTS: Persisted = {
@@ -80,10 +82,13 @@ const DEFAULTS: Persisted = {
   prismTheme: "default",
   editorFont: "system-serif",
   editorFontSize: 16,
+  editorLineHeight: 1.65,
 };
 
 export const FONT_SIZE_MIN = 12;
 export const FONT_SIZE_MAX = 22;
+export const LINE_HEIGHT_MIN = 1.2;
+export const LINE_HEIGHT_MAX = 2.4;
 
 const CM_VALID = new Set<string>(Object.keys(CM_THEME_LABELS));
 const PRISM_VALID = new Set<string>(Object.keys(PRISM_THEME_LABELS));
@@ -92,6 +97,12 @@ const FONT_VALID = new Set<string>(Object.keys(EDITOR_FONT_LABELS));
 function clamp(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, value));
+}
+
+// Snap line-height to 0.05 steps so the slider value is reproducible and
+// the persisted JSON stays clean (no 1.6500000000000001 artifacts).
+function roundLh(v: number): number {
+  return Math.round(v * 20) / 20;
 }
 
 function loadPersisted(): Persisted {
@@ -120,6 +131,13 @@ function loadPersisted(): Persisted {
           parsed.editorFontSize ?? DEFAULTS.editorFontSize,
           FONT_SIZE_MIN,
           FONT_SIZE_MAX,
+        ),
+      ),
+      editorLineHeight: roundLh(
+        clamp(
+          parsed.editorLineHeight ?? DEFAULTS.editorLineHeight,
+          LINE_HEIGHT_MIN,
+          LINE_HEIGHT_MAX,
         ),
       ),
     };
@@ -166,6 +184,7 @@ function persist(): void {
         prismTheme: appearance.prismTheme,
         editorFont: appearance.editorFont,
         editorFontSize: appearance.editorFontSize,
+        editorLineHeight: appearance.editorLineHeight,
       }),
     );
   } catch {
@@ -182,6 +201,10 @@ function applyEditorFontVars(): void {
   document.documentElement.style.setProperty(
     "--mw-editor-font-size",
     `${appearance.editorFontSize}px`,
+  );
+  document.documentElement.style.setProperty(
+    "--mw-editor-line-height",
+    String(appearance.editorLineHeight),
   );
 }
 
@@ -211,11 +234,20 @@ export function setEditorFontSize(px: number): void {
   applyEditorFontVars();
 }
 
+export function setEditorLineHeight(v: number): void {
+  appearance.editorLineHeight = roundLh(
+    clamp(v, LINE_HEIGHT_MIN, LINE_HEIGHT_MAX),
+  );
+  persist();
+  applyEditorFontVars();
+}
+
 export function resetAppearance(): void {
   appearance.cmTheme = DEFAULTS.cmTheme;
   appearance.prismTheme = DEFAULTS.prismTheme;
   appearance.editorFont = DEFAULTS.editorFont;
   appearance.editorFontSize = DEFAULTS.editorFontSize;
+  appearance.editorLineHeight = DEFAULTS.editorLineHeight;
   persist();
   applyEditorFontVars();
 }

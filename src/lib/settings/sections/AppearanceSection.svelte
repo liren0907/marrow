@@ -17,12 +17,15 @@
     setPrismTheme,
     setEditorFont,
     setEditorFontSize,
+    setEditorLineHeight,
     CM_THEME_LABELS,
     PRISM_THEME_LABELS,
     EDITOR_FONT_LABELS,
     EDITOR_FONT_STACKS,
     FONT_SIZE_MIN,
     FONT_SIZE_MAX,
+    LINE_HEIGHT_MIN,
+    LINE_HEIGHT_MAX,
     type CodeMirrorThemeKey,
     type PrismThemeKey,
     type EditorFontKey,
@@ -48,6 +51,10 @@
   function onFontSizeInput(e: Event) {
     const v = parseInt((e.target as HTMLInputElement).value, 10);
     if (Number.isFinite(v)) setEditorFontSize(v);
+  }
+  function onLineHeightInput(e: Event) {
+    const v = parseFloat((e.target as HTMLInputElement).value);
+    if (Number.isFinite(v)) setEditorLineHeight(v);
   }
   function onEditorFontChange(e: Event) {
     setEditorFont((e.currentTarget as HTMLSelectElement).value as EditorFontKey);
@@ -198,6 +205,25 @@
       oninput={onFontSizeInput}
     />
     <span class="value">{appearance.editorFontSize} px</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="section-title">Editor line height</h3>
+  <p class="section-desc">
+    Vertical spacing between lines in the markdown editor body. Lower =
+    denser, higher = more breathing room.
+  </p>
+  <div class="row">
+    <input
+      type="range"
+      min={LINE_HEIGHT_MIN}
+      max={LINE_HEIGHT_MAX}
+      step="0.05"
+      value={appearance.editorLineHeight}
+      oninput={onLineHeightInput}
+    />
+    <span class="value">{appearance.editorLineHeight.toFixed(2)}</span>
   </div>
 </div>
 
