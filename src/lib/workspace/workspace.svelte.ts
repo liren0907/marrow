@@ -373,6 +373,55 @@ export const workspace = {
     pane.activeTabId = tab.id;
   },
 
+  // Settings tab (virtual path "marrow://settings"). Dedup is GLOBAL across
+  // all panes — there's no scenario where two Settings tabs should coexist.
+  // If one already exists in another pane, focus it there rather than spawn
+  // a duplicate in the active pane.
+  openSettingsTab(): void {
+    for (const p of state.panes) {
+      const t = p.tabs.find((x) => x.kind === "settings");
+      if (t) {
+        state.activePaneId = p.id;
+        p.activeTabId = t.id;
+        return;
+      }
+    }
+    const pane = findPane(state.activePaneId) ?? state.panes[0];
+    const tab: Tab = {
+      id: crypto.randomUUID(),
+      path: "marrow://settings",
+      kind: "settings",
+      title: "Settings",
+      isDirty: false,
+    };
+    pane.tabs.push(tab);
+    pane.activeTabId = tab.id;
+  },
+
+  // Close any existing settings tab regardless of which pane hosts it.
+  // No-op if not currently open. Used by toggleSettings() in
+  // settingsModalState to implement the open/close toggle on ⇧⌘,.
+  closeSettingsTab(): void {
+    for (const p of state.panes) {
+      const t = p.tabs.find((x) => x.kind === "settings");
+      if (t) {
+        this.closeTab(p.id, t.id);
+        return;
+      }
+    }
+  },
+
+  // True when any pane currently hosts a settings tab. Read by +page.svelte
+  // so it can render the workspace shell (PaneContainer) even without an
+  // open workspace — Settings should be reachable on first launch before
+  // the user has picked a folder.
+  hasSettingsTab(): boolean {
+    for (const p of state.panes) {
+      if (p.tabs.some((x) => x.kind === "settings")) return true;
+    }
+    return false;
+  },
+
   openInOtherPane(path: string): void {
     if (state.panes.length < 2) {
       // Create the second pane (don't copy current tab — we want it to host

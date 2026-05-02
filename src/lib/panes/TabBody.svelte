@@ -8,6 +8,7 @@
   import TextTab from "$lib/viewers/TextTab.svelte";
   import GraphTab from "$lib/graph/GraphTab.svelte";
   import ConvertTab from "$lib/viewers/ConvertTab.svelte";
+  import SettingsTab from "$lib/settings/SettingsTab.svelte";
   import UnsupportedTab from "$lib/viewers/UnsupportedTab.svelte";
 
   let { pane }: { pane: PaneType } = $props();
@@ -31,6 +32,8 @@
       <GraphTab {tab} />
     {:else if tab.kind === "convert"}
       <ConvertTab {tab} />
+    {:else if tab.kind === "settings"}
+      <SettingsTab />
     {:else}
       <UnsupportedTab {tab} />
     {/if}

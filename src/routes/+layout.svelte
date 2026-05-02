@@ -21,7 +21,6 @@
   import ActivityBar from "$lib/chrome/ActivityBar.svelte";
   import StatusBar from "$lib/chrome/StatusBar.svelte";
   import TweaksPanel from "$lib/settings/TweaksPanel.svelte";
-  import SettingsModal from "$lib/settings/SettingsModal.svelte";
   import { initAccent } from "$lib/settings/accentState.svelte";
   import { initAppearanceFonts } from "$lib/settings/appearanceSettings.svelte";
   import { initPrismTheme } from "$lib/settings/prismThemeLoader";
@@ -202,7 +201,9 @@
 <FileHistoryModal />
 <RecentWorkspacePicker />
 <TweaksPanel />
-<SettingsModal />
+<!-- Settings is now a workspace tab (kind: "settings") rendered by
+     TabBody.svelte, not a modal. Removal is intentional — see
+     settingsModalState.svelte for the new tab-based open/close API. -->
 
 <style>
   .marrow-root {

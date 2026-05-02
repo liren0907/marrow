@@ -30,6 +30,8 @@
         return "P";
       case "text":
         return "T";
+      case "settings":
+        return "⚙";
       default:
         return "·";
     }
@@ -143,7 +145,8 @@
     text-align: center;
     flex-shrink: 0;
   }
-  .mw-tab-kind[data-kind="graph"] {
+  .mw-tab-kind[data-kind="graph"],
+  .mw-tab-kind[data-kind="settings"] {
     color: var(--mw-accent);
   }
   .mw-tab-title {

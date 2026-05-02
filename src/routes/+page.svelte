@@ -23,7 +23,10 @@
   <title>Marrow</title>
 </svelte:head>
 
-{#if workspace.info}
+<!-- Render the workspace shell when there's an open workspace OR when a
+     virtual tab (Settings) is open — the latter lets users reach Settings
+     on first launch before they've picked a folder. -->
+{#if workspace.info || workspace.hasSettingsTab()}
   <PaneContainer />
 {:else}
   <div class="flex-1 flex items-center justify-center p-8 overflow-y-auto">
