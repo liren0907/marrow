@@ -9,10 +9,12 @@
     outlines,
     activeHeading,
     collapsedHeadings,
+    emptyCollapsedSet,
+    getOrCreateCollapsedSet,
     tabScrollRegistry,
     type Heading,
   } from "$lib/workspace/tabRegistry.svelte";
-  import { SvelteSet } from "svelte/reactivity";
+  import type { SvelteSet } from "svelte/reactivity";
   import Icon from "$lib/components/ui/Icon.svelte";
 
   let { pane }: { pane: PaneType } = $props();
@@ -62,27 +64,39 @@
     return activeHeading.byTab.get(activeTab.id) ?? null;
   });
 
-  // Per-tab collapsed set (lazy-init). Wrapped in a derived so reads stay
-  // reactive when the SvelteMap mutates.
+  // Per-tab collapsed set — PURE READ. Returns the existing SvelteSet if
+  // one already exists for this tab, else a frozen empty sentinel. Lazy
+  // creation lives in `getOrCreateCollapsedSet` (called only from the
+  // toggle handler, which is an event-driven write site).
+  //
+  // Why this matters: Svelte 5 throws `state_unsafe_mutation` if a derived
+  // writes state during its computation. Calling `byTab.set()` here aborts
+  // the whole reactive flush mid-tick, which manifests as "TabBar doesn't
+  // update after clicking a tab while GraphTab is mounted" because the
+  // throw stops every downstream subscriber from rendering.
+  //
+  // Reading `byTab.size` keeps the subscription live, so when the toggle
+  // handler later creates a real set this derived re-runs and consumers
+  // automatically swap from sentinel to the real reactive set.
   const collapsedSet = $derived.by<SvelteSet<number>>(() => {
-    if (!activeTab) return new SvelteSet<number>();
+    if (!activeTab) return emptyCollapsedSet();
     void collapsedHeadings.byTab.size;
-    let set = collapsedHeadings.byTab.get(activeTab.id);
-    if (!set) {
-      set = new SvelteSet<number>();
-      collapsedHeadings.byTab.set(activeTab.id, set);
-    }
-    return set;
+    return collapsedHeadings.byTab.get(activeTab.id) ?? emptyCollapsedSet();
   });
 
   // Prune stale collapsed positions whenever the outline changes — once a
   // heading at position P is removed/edited away, P should drop out of the
   // collapsed set so a new heading that happens to land at the same pos
   // doesn't inherit "collapsed" state from a deleted ancestor.
+  //
+  // Reads `collapsedHeadings.byTab.get` directly (NOT `collapsedSet`) so we
+  // never accidentally mutate the empty sentinel. If no set exists for this
+  // tab there's nothing to prune anyway.
   $effect(() => {
     if (!activeTab) return;
+    const set = collapsedHeadings.byTab.get(activeTab.id);
+    if (!set || set.size === 0) return;
     const valid = new Set(headings.map((h) => h.pos));
-    const set = collapsedSet;
     for (const pos of set) {
       if (!valid.has(pos)) set.delete(pos);
     }
@@ -169,8 +183,12 @@
     // Stop propagation so the parent button (jumpTo) doesn't fire too —
     // chevron click is a pure folding action, not navigation.
     event.stopPropagation();
-    if (collapsedSet.has(pos)) collapsedSet.delete(pos);
-    else collapsedSet.add(pos);
+    if (!activeTab) return;
+    // Lazy-init the per-tab set HERE (event handler), not in the derived,
+    // so the reactive flush stays clean. See collapsedSet derived comment.
+    const set = getOrCreateCollapsedSet(activeTab.id);
+    if (set.has(pos)) set.delete(pos);
+    else set.add(pos);
   }
 
   // Auto-scroll the active heading button into view in the outline aside,
