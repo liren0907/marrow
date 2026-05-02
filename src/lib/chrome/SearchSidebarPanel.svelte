@@ -111,7 +111,7 @@
         {/if}
         <button
           type="button"
-          class="search-result"
+          class="sidebar-row sidebar-row--multiline search-result"
           onclick={() => open(ch)}
         >
           <div class="search-result-title">
@@ -202,27 +202,24 @@
   .ws-header {
     padding: 10px 10px 4px;
   }
+  /* .search-result tweaks left of what .sidebar-row provides:
+     - extra inline padding (10px instead of 8px) for slightly wider gutter
+     - 2px gap between consecutive results */
   .search-result {
-    width: 100%;
-    text-align: left;
-    padding: 6px 10px;
-    cursor: pointer;
-    border-radius: 3px;
+    padding-inline: 10px;
     margin-bottom: 2px;
-    background: transparent;
-    border: none;
-    color: inherit;
   }
-  .search-result:hover {
-    background: var(--color-base-300);
-  }
+  /* 首行對齊：title 佔一個 row-h 高度並垂直置中，
+     沒有 snippet 時整個 row 就是 row-h；有 snippet 時往下追加。 */
   .search-result-title {
-    font-size: 12px;
     color: var(--color-base-content);
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-height: var(--mw-row-h);
+    display: flex;
+    align-items: center;
   }
   .search-result-snippet {
     font-size: 11px;

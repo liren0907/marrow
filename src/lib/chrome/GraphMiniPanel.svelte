@@ -276,7 +276,7 @@
       {#each neighborhood as n (n.path)}
         <button
           type="button"
-          class="neighborhood-row"
+          class="sidebar-row neighborhood-row"
           onclick={() => open(n.path)}
           title={n.path}
         >
@@ -381,22 +381,15 @@
     flex-direction: column;
     gap: 1px;
   }
+  /* .neighborhood-row tweaks left of what .sidebar-row provides:
+     - 8px gap between dot / name / direction
+     - explicit ink-1 colour (sidebar-row uses inherit). Hover state of
+     .sidebar-row handles background; we add a slight content brightening. */
   .neighborhood-row {
-    display: flex;
-    align-items: center;
     gap: 8px;
-    padding: 3px 8px;
-    font-size: 12px;
     color: var(--mw-ink-1);
-    cursor: pointer;
-    border-radius: 3px;
-    background: transparent;
-    border: none;
-    text-align: left;
-    width: 100%;
   }
   .neighborhood-row:hover {
-    background: var(--color-base-300);
     color: var(--color-base-content);
   }
   .neighborhood-dot {

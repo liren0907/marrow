@@ -341,6 +341,53 @@ button:focus:not(:focus-visible) {
 	outline: none;
 }
 
+/* Shared primitive for clickable rows in sidebar / activity panels.
+   Use on the wrapping <button> (or <a>) of any panel list item. Bundles:
+   - row height + vertical centering pinned to --mw-row-h (single source
+     of truth for sidebar vertical density)
+   - hover / active background using accent-mix (matches FileTree's
+     existing .row-btn aesthetic; do not use bg-base-200 going forward)
+   - rounded corner per chrome radius scale
+   - font-size: var(--text-xs) baked in. Tailwind v4 preflight applies
+     `button { font-size: inherit }` as an unlayered rule that overrides
+     utility .text-xs on <button>; bundling font-size here means consumers
+     don't have to repeat the FileTreeNode `<span class="name text-xs">`
+     workaround on every panel.
+
+   For multi-line rows (file name + context snippet), add `.sidebar-row--multiline`.
+   Height becomes auto with min-height: row-h so the FIRST line still aligns
+   with single-line rows. The first content line should be wrapped in
+   `<span class="flex items-center min-h-[var(--mw-row-h)]">` to centre it
+   inside that row-h slot. */
+.sidebar-row {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	height: var(--mw-row-h);
+	padding-inline: 8px;
+	text-align: left;
+	background: transparent;
+	border: none;
+	border-radius: var(--mw-radius-xs);
+	font-size: var(--text-xs);
+	color: inherit;
+	transition: background-color 80ms ease;
+}
+.sidebar-row:hover {
+	background: color-mix(in oklch, var(--mw-accent) 6%, transparent);
+}
+.sidebar-row.is-active,
+.sidebar-row[aria-current="page"] {
+	background: color-mix(in oklch, var(--mw-accent) 10%, transparent);
+}
+.sidebar-row--multiline {
+	height: auto;
+	min-height: var(--mw-row-h);
+	flex-direction: column;
+	align-items: stretch;
+	padding-block: 0 4px;
+}
+
 /* Native <button> defaults to `cursor: default` per CSS spec (Chrome /
    Safari / Firefox all follow this). Tailwind v4's preflight intentionally
    doesn't restore the pointer cursor either, so every custom-styled button

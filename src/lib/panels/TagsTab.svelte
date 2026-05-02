@@ -60,7 +60,7 @@
           <li>
             <button
               type="button"
-              class="w-full flex items-center gap-2 px-2 py-1 text-left text-sm hover:bg-base-200 rounded"
+              class="sidebar-row gap-2"
               onclick={() => toggleTag(tag)}
             >
               <Icon
@@ -77,7 +77,7 @@
                   <li>
                     <button
                       type="button"
-                      class="w-full flex items-center gap-2 px-2 py-0.5 text-left text-xs hover:bg-base-200 rounded"
+                      class="sidebar-row gap-2"
                       onclick={() => open(path)}
                     >
                       <Icon name="file-text" size={12} class="text-base-content/40" />

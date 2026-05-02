@@ -46,10 +46,12 @@
         <li>
           <button
             type="button"
-            class="w-full flex flex-col items-stretch gap-0.5 px-2 py-1 text-left hover:bg-base-200 rounded"
+            class="sidebar-row sidebar-row--multiline"
             onclick={() => open(entry.sourcePath)}
           >
-            <span class="flex items-center gap-2 text-sm">
+            <!-- 首行對齊：第一行（檔名）佔一個 row-h 高度並垂直置中，
+                 跟其他單行 sidebar row 的視覺基準對齊。context 行自然往下排。 -->
+            <span class="flex items-center gap-2 min-h-[var(--mw-row-h)]">
               <Icon name="file-text" size={16} class="text-base-content/40" />
               <span class="truncate">{relPath(entry.sourcePath)}</span>
             </span>
