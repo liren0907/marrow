@@ -366,6 +366,10 @@
   .row-btn:hover .indent-rail.rail-branch::after {
     background: var(--mw-rule-strong);
   }
+  /* Width MUST stay 14px to match `.sidebar-chev-slot` in app.css —
+     keeps the chevron column aligned across panels. FileTree intentionally
+     keeps its own implementation because it's tangled with .indent-rail
+     and the per-row hover/active state machinery. */
   .chev-slot {
     width: 14px;
     flex-shrink: 0;

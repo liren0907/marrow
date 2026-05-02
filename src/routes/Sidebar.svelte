@@ -205,10 +205,14 @@
   <!-- Activity body -->
   <div class="flex-1 min-h-0 flex flex-col tree-scroll">
     {#if activityBar.current === "files"}
+      <!-- Files is intentionally headerless: the workspace switcher above
+           already labels what's being shown. Other panels get a header so
+           switching between them gives a clear visual anchor. -->
       <div class="flex-1 min-h-0 overflow-y-auto">
         <FileTree />
       </div>
     {:else if activityBar.current === "search"}
+      <div class="activity-panel-header mw-meta">Search</div>
       <SearchSidebarPanel />
     {:else if activityBar.current === "tags"}
       <div class="activity-panel-header mw-meta">Tags</div>
@@ -217,6 +221,7 @@
       <div class="activity-panel-header mw-meta">Backlinks</div>
       <BacklinksTab />
     {:else if activityBar.current === "graph"}
+      <div class="activity-panel-header mw-meta">Graph</div>
       <GraphMiniPanel />
     {/if}
   </div>
@@ -229,8 +234,5 @@
   .tree-scroll::-webkit-scrollbar {
     display: none;
   }
-  .activity-panel-header {
-    padding: 10px 14px 4px;
-    flex-shrink: 0;
-  }
+  /* .activity-panel-header lives in app.css now (shared with all panels). */
 </style>

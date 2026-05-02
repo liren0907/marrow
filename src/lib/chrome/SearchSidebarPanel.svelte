@@ -65,8 +65,9 @@
   }
 </script>
 
+<!-- "Search" header now injected by Sidebar.svelte (.activity-panel-header)
+     so all activity panels get a consistent label. -->
 <div class="panel">
-  <div class="panel-header mw-meta">Search</div>
   <div class="search-input-wrap">
     <input
       type="text"
@@ -140,13 +141,6 @@
     flex: 1;
     overflow: hidden;
   }
-  .panel-header {
-    padding: 10px 14px 8px;
-    position: sticky;
-    top: 0;
-    background: var(--color-base-200);
-    z-index: 2;
-  }
   .search-input-wrap {
     padding: 4px 12px 6px;
     display: flex;
@@ -197,16 +191,16 @@
   .search-results {
     flex: 1;
     overflow-y: auto;
-    padding: 0 6px 20px;
+    /* No horizontal padding — .sidebar-row sets its own 6px aligned with
+       FileTree. Bottom padding gives breathing room below the last hit. */
+    padding: 0 0 20px;
   }
   .ws-header {
-    padding: 10px 10px 4px;
+    padding: 10px 6px 4px;
   }
   /* .search-result tweaks left of what .sidebar-row provides:
-     - extra inline padding (10px instead of 8px) for slightly wider gutter
      - 2px gap between consecutive results */
   .search-result {
-    padding-inline: 10px;
     margin-bottom: 2px;
   }
   /* 首行對齊：title 佔一個 row-h 高度並垂直置中，

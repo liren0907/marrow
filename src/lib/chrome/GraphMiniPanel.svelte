@@ -226,9 +226,10 @@
   }
 </script>
 
+<!-- "Graph" panel header now injected by Sidebar.svelte (.activity-panel-header).
+     Internal panel-header-row keeps the "open full graph" zoom button only. -->
 <div class="panel">
   <div class="panel-header-row">
-    <span class="mw-meta">Graph</span>
     <button
       type="button"
       class="header-action"
@@ -310,8 +311,10 @@
   .panel-header-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 10px 10px 4px 14px;
+    /* Right-align the lone zoom button (no label here anymore — header
+       label moved to Sidebar's .activity-panel-header). */
+    justify-content: flex-end;
+    padding: 4px 10px 4px 6px;
   }
   .header-action {
     display: grid;

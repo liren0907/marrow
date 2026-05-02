@@ -364,7 +364,10 @@ button:focus:not(:focus-visible) {
 	align-items: center;
 	width: 100%;
 	height: var(--mw-row-h);
-	padding-inline: 8px;
+	/* 6px to match FileTreeNode `.row-btn` padding-left so the chevron
+	   column lines up across panels. Container wrappers should NOT add
+	   horizontal padding around the row list (use py-* only). */
+	padding-inline: 6px;
 	text-align: left;
 	background: transparent;
 	border: none;
@@ -386,6 +389,37 @@ button:focus:not(:focus-visible) {
 	flex-direction: column;
 	align-items: stretch;
 	padding-block: 0 4px;
+}
+
+/* Chevron column conventions for sidebar lists.
+   - .sidebar-chev-slot: wraps a 14px chevron icon and reserves its slot
+     (matches FileTreeNode's `.chev-slot` width — both must stay 14px so
+     the column lines up across panels even though FileTree keeps its own
+     scoped implementation).
+   - .sidebar-chev-spacer: same width as the slot but empty, used on leaf
+     rows nested under a chevron'd parent so their content starts at the
+     same X as the parent's content. */
+.sidebar-chev-slot,
+.sidebar-chev-spacer {
+	width: 14px;
+	flex-shrink: 0;
+}
+.sidebar-chev-slot {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--mw-ink-3);
+}
+
+/* Section header rendered above each activity panel body (Tags, Backlinks,
+   Search, Graph). Sidebar.svelte injects this so every non-Files panel
+   has a consistent label; Files is intentionally headerless because the
+   workspace name above the activity body already serves as that anchor.
+   Lives outside the panel's own scroll container so it doesn't need to
+   be sticky. */
+.activity-panel-header {
+	padding: 10px 6px 4px;
+	flex-shrink: 0;
 }
 
 /* Native <button> defaults to `cursor: default` per CSS spec (Chrome /

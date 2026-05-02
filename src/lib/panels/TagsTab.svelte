@@ -47,7 +47,7 @@
       bind:value={filter}
     />
   </div>
-  <div class="flex-1 overflow-y-auto p-2">
+  <div class="flex-1 overflow-y-auto py-2">
     {#if filtered.length === 0}
       <p class="px-3 py-2 text-xs text-base-content/40 italic">
         {allTags.length === 0
@@ -63,16 +63,22 @@
               class="sidebar-row gap-2"
               onclick={() => toggleTag(tag)}
             >
-              <Icon
-                name={openTags.has(tag) ? "chevron-down" : "chevron-right"}
-                size={14}
-                class="text-base-content/40"
-              />
+              <span class="sidebar-chev-slot">
+                <Icon
+                  name={openTags.has(tag) ? "chevron-down" : "chevron-right"}
+                  size={14}
+                />
+              </span>
+              <!-- `#tag` is a token, not natural language — the mono +
+                   primary-accent treatment makes it visually distinct from
+                   FileTree's plain-prose filenames. Keep this even though
+                   .sidebar-row standardizes everything else; the visual
+                   distinction is intentional, not an oversight. -->
               <span class="font-mono text-primary truncate flex-1">#{tag}</span>
               <span class="text-[11px] text-base-content/40">{count}</span>
             </button>
             {#if openTags.has(tag)}
-              <ul class="ml-6 mt-0.5 mb-1 flex flex-col gap-0.5">
+              <ul class="mt-0.5 mb-1 flex flex-col gap-0.5">
                 {#each filesForTag(tag) as path (path)}
                   <li>
                     <button
@@ -80,6 +86,9 @@
                       class="sidebar-row gap-2"
                       onclick={() => open(path)}
                     >
+                      <!-- chev-spacer keeps the file-text icon aligned under the
+                           parent tag's text (not under its chevron). -->
+                      <span class="sidebar-chev-spacer" aria-hidden="true"></span>
                       <Icon name="file-text" size={12} class="text-base-content/40" />
                       <span class="truncate">{relPath(path)}</span>
                     </button>
