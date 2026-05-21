@@ -7,7 +7,7 @@
     renderEmbeddedSection,
   } from "$lib/editor/milkdown/transclusion/renderer";
   import { debounce } from "$lib/utils/debounce";
-  import { tabSaveRegistry } from "$lib/workspace/shortcuts.svelte";
+  import { tabSaveRegistry } from "$lib/workspace/tabRegistry.svelte";
   import { showError } from "$lib/stores/toastStore.svelte";
   import Icon from "$lib/components/ui/Icon.svelte";
 

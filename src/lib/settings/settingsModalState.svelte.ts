@@ -17,6 +17,7 @@ import { workspace } from "$lib/workspace/workspace.svelte";
 export type SettingsTab =
   | "appearance"
   | "editor"
+  | "keyboard"
   | "workspace"
   | "advanced"
   | "about";
@@ -24,6 +25,7 @@ export type SettingsTab =
 const TABS: SettingsTab[] = [
   "appearance",
   "editor",
+  "keyboard",
   "workspace",
   "advanced",
   "about",

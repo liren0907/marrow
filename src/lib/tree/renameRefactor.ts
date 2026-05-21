@@ -4,7 +4,7 @@ import {
   backlinks,
   rebuildBacklinks,
 } from "$lib/workspace/backlinkIndex.svelte";
-import { tabSaveRegistry } from "$lib/workspace/shortcuts.svelte";
+import { tabSaveRegistry } from "$lib/workspace/tabRegistry.svelte";
 
 export interface RefactorPreview {
   oldPath: string;

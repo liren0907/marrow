@@ -15,6 +15,7 @@
   import Icon, { type IconName } from "$lib/components/ui/Icon.svelte";
   import AppearanceSection from "./sections/AppearanceSection.svelte";
   import EditorSection from "./sections/EditorSection.svelte";
+  import KeyboardSection from "./sections/KeyboardSection.svelte";
   import WorkspaceSection from "./sections/WorkspaceSection.svelte";
   import AdvancedSection from "./sections/AdvancedSection.svelte";
   import AboutSection from "./sections/AboutSection.svelte";
@@ -28,6 +29,7 @@
   const sections: SectionSpec[] = [
     { id: "appearance", label: "Appearance", icon: "sliders-horizontal" },
     { id: "editor", label: "Editor", icon: "pencil" },
+    { id: "keyboard", label: "Keyboard", icon: "keyboard" },
     { id: "workspace", label: "Workspace", icon: "folder" },
     { id: "advanced", label: "Advanced", icon: "flask-conical" },
     { id: "about", label: "About", icon: "info" },
@@ -54,6 +56,8 @@
       <AppearanceSection />
     {:else if settingsModal.activeTab === "editor"}
       <EditorSection />
+    {:else if settingsModal.activeTab === "keyboard"}
+      <KeyboardSection />
     {:else if settingsModal.activeTab === "workspace"}
       <WorkspaceSection />
     {:else if settingsModal.activeTab === "advanced"}

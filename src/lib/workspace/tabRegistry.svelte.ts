@@ -79,3 +79,19 @@ export function registerTabPeek(tabId: string, fn: () => void): void {
 export function unregisterTabPeek(tabId: string): void {
   tabPeekRegistry.delete(tabId);
 }
+
+// Per-tab save dispatcher. Tab viewers (e.g. MarkdownTab) register their
+// save fn on mount and unregister on destroy. The global save action /
+// Cmd+S shortcut looks up the active tab's entry and invokes it.
+export const tabSaveRegistry = new Map<string, () => void | Promise<void>>();
+
+export function registerTabSave(
+  tabId: string,
+  fn: () => void | Promise<void>,
+): void {
+  tabSaveRegistry.set(tabId, fn);
+}
+
+export function unregisterTabSave(tabId: string): void {
+  tabSaveRegistry.delete(tabId);
+}

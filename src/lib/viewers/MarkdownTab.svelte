@@ -4,10 +4,6 @@
   import { workspace } from "$lib/workspace/workspace.svelte";
   import { readTextFile, writeTextFile } from "$lib/workspace/tauri";
   import {
-    registerTabSave,
-    unregisterTabSave,
-  } from "$lib/workspace/shortcuts.svelte";
-  import {
     outlines,
     activeHeading,
     collapsedHeadings,
@@ -15,6 +11,8 @@
     unregisterTabScroll,
     registerTabPeek,
     unregisterTabPeek,
+    registerTabSave,
+    unregisterTabSave,
     type Heading,
   } from "$lib/workspace/tabRegistry.svelte";
   import { peek } from "$lib/peek/peekState.svelte";
