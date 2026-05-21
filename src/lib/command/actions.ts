@@ -23,6 +23,7 @@ import { peek } from "$lib/peek/peekState.svelte";
 import {
   toggleBreadcrumb,
   togglePaneOutline,
+  toggleSidebar,
 } from "$lib/settings/uiSettings.svelte";
 import { openRecentWorkspacePicker } from "$lib/workspace/recentWorkspacePickerState.svelte";
 import { toggleTweaks } from "$lib/settings/tweaksState.svelte";
@@ -188,6 +189,13 @@ export function getActions(): ActionDef[] {
     },
 
     // ─── View ───
+    {
+      id: "toggle-sidebar",
+      title: "Toggle sidebar",
+      category: "View",
+      defaultKeys: ["Mod+Shift+KeyB"],
+      run: toggleSidebar,
+    },
     {
       id: "toggle-bottom-panel",
       title: "Toggle bottom panel",

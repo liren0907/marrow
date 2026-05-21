@@ -6,6 +6,7 @@
   } from "./activityBarState.svelte";
   import { toggleCommandPalette } from "$lib/command/commandPaletteState.svelte";
   import { toggleSettings } from "$lib/settings/settingsModalState.svelte";
+  import { uiSettings, toggleSidebar } from "$lib/settings/uiSettings.svelte";
   import { workspace } from "$lib/workspace/workspace.svelte";
   import Icon, { type IconName } from "$lib/components/ui/Icon.svelte";
 
@@ -22,6 +23,18 @@
     { id: "graph", icon: "network", label: "Graph" },
     { id: "backlinks", icon: "arrow-left", label: "Backlinks" },
   ];
+
+  // Clicking the already-active panel while the Sidebar is open collapses it
+  // (VSCode parity); clicking any panel while collapsed re-opens it — so a
+  // collapsed Sidebar is never a dead end.
+  function onActivityClick(id: Activity) {
+    if (uiSettings.showSidebar && activityBar.current === id) {
+      toggleSidebar();
+      return;
+    }
+    setActivity(id);
+    if (!uiSettings.showSidebar) toggleSidebar();
+  }
 </script>
 
 <nav class="activity-bar" aria-label="Activity">
@@ -31,7 +44,7 @@
         type="button"
         class="activity-btn tooltip tooltip-right"
         class:active={activityBar.current === item.id}
-        onclick={() => setActivity(item.id)}
+        onclick={() => onActivityClick(item.id)}
         data-tip={item.label}
         aria-label={item.label}
         aria-pressed={activityBar.current === item.id}

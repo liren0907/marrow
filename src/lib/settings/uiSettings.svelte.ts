@@ -3,11 +3,13 @@ const STORAGE_KEY = "marrow.ui";
 interface Persisted {
   showBreadcrumb: boolean;
   showPaneOutline: boolean;
+  showSidebar: boolean;
 }
 
 const DEFAULTS: Persisted = {
   showBreadcrumb: true,
   showPaneOutline: true,
+  showSidebar: true,
 };
 
 function loadPersisted(): Persisted {
@@ -32,6 +34,7 @@ export function persistUiSettings(): void {
       JSON.stringify({
         showBreadcrumb: uiSettings.showBreadcrumb,
         showPaneOutline: uiSettings.showPaneOutline,
+        showSidebar: uiSettings.showSidebar,
       }),
     );
   } catch {
@@ -46,5 +49,10 @@ export function toggleBreadcrumb(): void {
 
 export function togglePaneOutline(): void {
   uiSettings.showPaneOutline = !uiSettings.showPaneOutline;
+  persistUiSettings();
+}
+
+export function toggleSidebar(): void {
+  uiSettings.showSidebar = !uiSettings.showSidebar;
   persistUiSettings();
 }

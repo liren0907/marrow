@@ -25,6 +25,7 @@
   import { initAppearanceFonts } from "$lib/settings/appearanceSettings.svelte";
   import { initPrismTheme } from "$lib/settings/prismThemeLoader";
   import { pushServerSettings } from "$lib/settings/serverSettings.svelte";
+  import { uiSettings } from "$lib/settings/uiSettings.svelte";
   import {
     listRecentWorkspaces,
     forgetWorkspace,
@@ -160,15 +161,17 @@
 >
   <TitleBar />
 
-  <div class="main-row">
+  <div class="main-row" class:sidebar-collapsed={!uiSettings.showSidebar}>
     <ActivityBar />
-    <Sidebar width={sidebarWidth} />
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div
-      class="resize-handle"
-      onmousedown={handleResizeStart}
-      class:active={isResizing}
-    ></div>
+    {#if uiSettings.showSidebar}
+      <Sidebar width={sidebarWidth} />
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        class="resize-handle"
+        onmousedown={handleResizeStart}
+        class:active={isResizing}
+      ></div>
+    {/if}
     <main class="main-pane">
       <div class="pane-children">
         {@render children()}
@@ -223,6 +226,9 @@
     grid-template-columns: var(--mw-activitybar-w) var(--mw-sidebar-width, 256px) 0 1fr;
     min-height: 0;
     min-width: 0;
+  }
+  .main-row.sidebar-collapsed {
+    grid-template-columns: var(--mw-activitybar-w) 1fr;
   }
   .main-pane {
     position: relative;
