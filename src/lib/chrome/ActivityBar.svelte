@@ -24,14 +24,10 @@
     { id: "backlinks", icon: "arrow-left", label: "Backlinks" },
   ];
 
-  // Clicking the already-active panel while the Sidebar is open collapses it
-  // (VSCode parity); clicking any panel while collapsed re-opens it — so a
-  // collapsed Sidebar is never a dead end.
+  // Clicking a panel while the Sidebar is collapsed re-opens it — so a
+  // collapsed Sidebar is never a dead end. A panel icon only ever shows a
+  // panel; collapsing is the dedicated toggle button's job.
   function onActivityClick(id: Activity) {
-    if (uiSettings.showSidebar && activityBar.current === id) {
-      toggleSidebar();
-      return;
-    }
     setActivity(id);
     if (!uiSettings.showSidebar) toggleSidebar();
   }
@@ -39,6 +35,19 @@
 
 <nav class="activity-bar" aria-label="Activity">
   <div class="activity-group">
+    <button
+      type="button"
+      class="activity-btn tooltip tooltip-right"
+      onclick={toggleSidebar}
+      data-tip="Toggle sidebar · ⇧⌘B"
+      aria-label="Toggle sidebar"
+    >
+      <Icon
+        name={uiSettings.showSidebar ? "panel-left-close" : "panel-left-open"}
+        size={20}
+      />
+    </button>
+    <div class="activity-divider" aria-hidden="true"></div>
     {#each items as item (item.id)}
       <button
         type="button"
@@ -102,6 +111,12 @@
     flex-direction: column;
     gap: 2px;
     align-items: center;
+  }
+  .activity-divider {
+    width: 18px;
+    height: 1px;
+    background: var(--mw-rule);
+    margin: 4px 0;
   }
   .activity-btn {
     width: 32px;

@@ -46,6 +46,8 @@
     Eye,
     PanelRightClose,
     PanelRightOpen,
+    PanelLeftClose,
+    PanelLeftOpen,
     Keyboard,
   } from "lucide";
 
@@ -91,6 +93,8 @@
     | "eye"
     | "panel-right-close"
     | "panel-right-open"
+    | "panel-left-close"
+    | "panel-left-open"
     | "keyboard";
 
   const MAP = {
@@ -135,6 +139,8 @@
     "eye": Eye,
     "panel-right-close": PanelRightClose,
     "panel-right-open": PanelRightOpen,
+    "panel-left-close": PanelLeftClose,
+    "panel-left-open": PanelLeftOpen,
     "keyboard": Keyboard,
   } satisfies Record<IconName, unknown>;
 </script>
