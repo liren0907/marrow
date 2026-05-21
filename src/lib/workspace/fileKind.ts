@@ -28,9 +28,10 @@ export function classifyFile(path: string): FileKind {
   return "unsupported";
 }
 
-// Extensions for which `uvx markitdown` can produce useful Markdown output.
-// `.md` is intentionally excluded (conversion is a no-op).
-const CONVERTIBLE = new Set([
+// Extensions for which a converter can produce useful Markdown output.
+// `.md` is intentionally excluded (conversion is a no-op). Single source of
+// truth — the Convert tab's file-dialog filter reuses CONVERTIBLE_EXTS.
+export const CONVERTIBLE_EXTS = [
   "pdf",
   "docx",
   "pptx",
@@ -46,7 +47,9 @@ const CONVERTIBLE = new Set([
   "msg",
   "eml",
   "zip",
-]);
+] as const;
+
+const CONVERTIBLE = new Set<string>(CONVERTIBLE_EXTS);
 
 export function isConvertible(path: string): boolean {
   const ext = (path.split(".").pop() ?? "").toLowerCase();

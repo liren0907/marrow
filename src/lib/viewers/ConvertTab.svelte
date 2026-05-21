@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import { EditorState, Compartment, type Extension } from "@codemirror/state";
   import { EditorView } from "@codemirror/view";
   import { basicSetup } from "codemirror";
@@ -12,6 +12,7 @@
     dirname,
     joinPath,
     isConvertible,
+    CONVERTIBLE_EXTS,
   } from "$lib/workspace/fileKind";
   import {
     convertToMarkdown,
@@ -25,7 +26,11 @@
   } from "$lib/workspace/tauri";
   import { pdfToMarkdown } from "$lib/convert/pdfToMarkdown";
   import { workspace } from "$lib/workspace/workspace.svelte";
-  import { getCached, setCached } from "./convertCache.svelte";
+  import {
+    getCached,
+    setCached,
+    type ConvertEngine,
+  } from "./convertCache.svelte";
   import { showError, showSuccess } from "$lib/stores/toastStore.svelte";
   import { openNamePrompt } from "$lib/tree/namePromptState.svelte";
   import { themeFor } from "./cm/theme";
@@ -33,30 +38,74 @@
   import ImageTab from "./ImageTab.svelte";
   import UnsupportedTab from "./UnsupportedTab.svelte";
   import Icon, { type IconName } from "$lib/components/ui/Icon.svelte";
-  import { Button } from "$lib/components/ui";
+  import { Button, ToggleButtonGroup } from "$lib/components/ui";
 
   let { tab }: { tab: Tab } = $props();
 
+  // Extensions the Native engine can convert with no external runtime.
   const NATIVE_EXTS = ["pdf", "html", "htm", "docx", "pptx"];
 
-  const isNativeMode = $derived(tab.path === "marrow://convert-native");
-  const isWorkspaceMode = $derived(
-    tab.path === "marrow://convert" || tab.path === "marrow://convert-native",
-  );
+  const extOf = (p: string): string =>
+    (p.split(".").pop() ?? "").toLowerCase();
+  const isNativeExt = (p: string): boolean => NATIVE_EXTS.includes(extOf(p));
+
+  const isWorkspaceMode = $derived(tab.path === "marrow://convert");
   let internalSource = $state<string | null>(null);
   const sourcePath = $derived<string | null>(
     isWorkspaceMode ? internalSource : tab.path,
   );
-  const sourceKind = $derived(sourcePath ? classifyFile(sourcePath) : "unsupported");
+  const sourceKind = $derived(
+    sourcePath ? classifyFile(sourcePath) : "unsupported",
+  );
   const sourceTab = $derived<Tab | null>(
     sourcePath
       ? { ...tab, path: sourcePath, kind: sourceKind, title: basename(sourcePath) }
       : null,
   );
 
+  // ─── Conversion engine ──────────────────────────────────────────────────
+  // "native"     — built-in converters, zero external deps (pdf via pdfjs;
+  //                html/docx/pptx via the marrow-convert Rust crate).
+  // "markitdown" — `uvx markitdown`, widest format support, needs `uv`.
+  const ENGINE_STORAGE_KEY = "marrow.convert.engine";
+
+  function loadStoredEngine(): ConvertEngine | null {
+    if (typeof localStorage === "undefined") return null;
+    const raw = localStorage.getItem(ENGINE_STORAGE_KEY);
+    return raw === "native" || raw === "markitdown" ? raw : null;
+  }
+
+  function storeEngine(e: ConvertEngine): void {
+    if (typeof localStorage === "undefined") return;
+    try {
+      localStorage.setItem(ENGINE_STORAGE_KEY, e);
+    } catch {
+      // ignore — private mode / quota
+    }
+  }
+
+  /** Smart initial engine: a known source the Native engine can't handle
+   * forces markitdown; otherwise honor the user's last choice, else native. */
+  function defaultEngineFor(path: string | null): ConvertEngine {
+    if (path && !isNativeExt(path)) return "markitdown";
+    return loadStoredEngine() ?? "native";
+  }
+
+  // One-time smart default; `untrack` since the initializer deliberately
+  // captures only the initial source/mode, not a reactive dependency.
+  let engine = $state<ConvertEngine>(
+    untrack(() => defaultEngineFor(isWorkspaceMode ? null : tab.path)),
+  );
+
+  function setEngine(next: ConvertEngine): void {
+    if (engine === next) return;
+    engine = next;
+    storeEngine(next);
+  }
+
   let status = $state<"idle" | "loading" | "ready" | "error">("idle");
   let markdown = $state("");
-  /** Sidecar assets for the current conversion (PPTX pictures today).
+  /** Sidecar assets for the current conversion (DOCX/PPTX pictures today).
    * Held in memory until the user saves; written under
    * `<saveDir>/attachments/` next to the .md. */
   let assets = $state<ConvertAsset[]>([]);
@@ -67,19 +116,19 @@
   let filterQuery = $state("");
   const convertibleFiles = $derived.by(() => {
     const q = filterQuery.trim().toLowerCase();
-    const predicate = isNativeMode
-      ? (p: string) => {
-          const ext = (p.split(".").pop() ?? "").toLowerCase();
-          return NATIVE_EXTS.includes(ext);
-        }
-      : isConvertible;
-    const all = workspace.fileIndex.filter((f) => predicate(f.path));
+    const all = workspace.fileIndex.filter((f) => isConvertible(f.path));
     if (!q) return all;
     return all.filter((f) => f.name.toLowerCase().includes(q));
   });
 
+  /** A source is picked but the Native engine cannot handle its extension —
+   * the markdown pane shows a one-click "switch to markitdown" hint. */
+  const engineMismatch = $derived(
+    !!sourcePath && engine === "native" && !isNativeExt(sourcePath),
+  );
+
   function iconForExt(path: string): IconName {
-    const ext = (path.split(".").pop() ?? "").toLowerCase();
+    const ext = extOf(path);
     if (ext === "pdf" || ext === "docx" || ext === "pptx") return "file-text";
     if (ext === "xlsx" || ext === "xls" || ext === "csv") return "file-text";
     if (ext === "html" || ext === "htm" || ext === "xml") return "file-code";
@@ -100,7 +149,11 @@
   let host: HTMLDivElement;
   let view: EditorView | null = null;
   let cancelled = false;
-  let lastConvertedPath: string | null = null;
+  /** Guard against redundant re-conversions. Composite of engine + path
+   * because the same file converts differently per engine. */
+  let lastConvertedKey: string | null = null;
+  const convKey = (e: ConvertEngine, p: string): string =>
+    JSON.stringify([e, p]);
   const themeCompartment = new Compartment();
   let themeObserver: MutationObserver | null = null;
 
@@ -146,8 +199,10 @@
   }
 
   async function runConvert(path: string, force = false) {
+    // Capture the engine at call time so a mid-flight toggle is well-defined.
+    const engineAtStart = engine;
     if (!force) {
-      const cached = getCached(path);
+      const cached = getCached(engineAtStart, path);
       if (cached !== null) {
         markdown = cached.markdown;
         assets = cached.assets;
@@ -160,10 +215,8 @@
     errorMessage = "";
     slowHint = false;
     if (slowTimer) clearTimeout(slowTimer);
-    const ext = (path.split(".").pop() ?? "").toLowerCase();
-    const isNativeExt = NATIVE_EXTS.includes(ext);
-    const useMarkitdown = !isNativeExt;
-    if (useMarkitdown && !isNativeMode) {
+    const ext = extOf(path);
+    if (engineAtStart === "markitdown") {
       slowTimer = setTimeout(() => {
         if (!cancelled) slowHint = true;
       }, 4000);
@@ -171,31 +224,35 @@
     try {
       let resultMd: string;
       let resultAssets: ConvertAsset[] = [];
-      if (ext === "pdf") {
-        resultMd = await pdfToMarkdown(path);
-      } else if (ext === "html" || ext === "htm") {
-        resultMd = await convertHtmlToMarkdown(path);
-      } else if (ext === "docx") {
-        const r = await convertDocxToMarkdown(path);
-        resultMd = r.markdown;
-        resultAssets = r.assets;
-      } else if (ext === "pptx") {
-        const r = await convertPptxToMarkdown(path);
-        resultMd = r.markdown;
-        resultAssets = r.assets;
-      } else if (isNativeMode) {
-        throw new Error(`Native convert does not support .${ext} yet`);
+      if (engineAtStart === "native") {
+        if (ext === "pdf") {
+          resultMd = await pdfToMarkdown(path);
+        } else if (ext === "html" || ext === "htm") {
+          resultMd = await convertHtmlToMarkdown(path);
+        } else if (ext === "docx") {
+          const r = await convertDocxToMarkdown(path);
+          resultMd = r.markdown;
+          resultAssets = r.assets;
+        } else if (ext === "pptx") {
+          const r = await convertPptxToMarkdown(path);
+          resultMd = r.markdown;
+          resultAssets = r.assets;
+        } else {
+          throw new Error(
+            `The Native engine does not support .${ext} files. Switch to markitdown.`,
+          );
+        }
       } else {
         resultMd = await convertToMarkdown(path);
       }
-      if (cancelled || sourcePath !== path) return;
+      if (cancelled || sourcePath !== path || engine !== engineAtStart) return;
       markdown = resultMd;
       assets = resultAssets;
-      setCached(path, resultMd, resultAssets);
+      setCached(engineAtStart, path, resultMd, resultAssets);
       status = "ready";
       queueMicrotask(() => mountEditorIfNeeded(resultMd));
     } catch (e) {
-      if (cancelled || sourcePath !== path) return;
+      if (cancelled || sourcePath !== path || engine !== engineAtStart) return;
       errorMessage = e instanceof Error ? e.message : String(e);
       status = "error";
     } finally {
@@ -217,7 +274,7 @@
     assets = [];
     errorMessage = "";
     status = "idle";
-    lastConvertedPath = null;
+    lastConvertedKey = null;
   }
 
   async function handleBrowseExternal() {
@@ -225,17 +282,7 @@
       const picked = await openDialog({
         multiple: false,
         filters: [
-          {
-            name: isNativeMode ? "Native-supported files" : "Convertible files",
-            extensions: isNativeMode
-              ? ["pdf", "html", "htm", "docx", "pptx"]
-              : [
-                  "pdf", "docx", "pptx", "xlsx", "xls",
-                  "html", "htm", "epub", "ipynb",
-                  "csv", "json", "xml",
-                  "msg", "eml", "zip",
-                ],
-          },
+          { name: "Convertible files", extensions: [...CONVERTIBLE_EXTS] },
         ],
       });
       if (typeof picked === "string") {
@@ -318,13 +365,6 @@
     errorMessage.toLowerCase().includes("failed to spawn uvx"),
   );
 
-  onMount(() => {
-    if (!isWorkspaceMode && tab.path) {
-      void runConvert(tab.path, false);
-      lastConvertedPath = tab.path;
-    }
-  });
-
   onDestroy(() => {
     cancelled = true;
     if (slowTimer) clearTimeout(slowTimer);
@@ -334,28 +374,36 @@
     view = null;
   });
 
-  // Trigger convert when the workspace-mode user picks a source.
+  // Convert when the source OR the engine changes — drives both the initial
+  // pinned-mode conversion and every workspace-mode pick / engine toggle.
   $effect(() => {
-    if (!isWorkspaceMode) return;
-    const current = sourcePath;
-    if (!current) return;
-    if (current === lastConvertedPath) return;
-    lastConvertedPath = current;
-    void runConvert(current, false);
+    const path = sourcePath;
+    const e = engine;
+    if (!path) return;
+    // Native engine can't handle this ext — skip (runConvert would only
+    // throw); the inline mismatch hint offers a one-click switch instead.
+    if (e === "native" && !isNativeExt(path)) {
+      lastConvertedKey = convKey(e, path);
+      return;
+    }
+    const key = convKey(e, path);
+    if (key === lastConvertedKey) return;
+    lastConvertedKey = key;
+    void runConvert(path, false);
   });
 
   // Keep the tab title in sync with current source (workspace mode only).
   $effect(() => {
     if (!isWorkspaceMode) return;
-    const prefix = isNativeMode ? "Native Convert" : "Convert";
-    const title = sourcePath ? `${prefix}: ${basename(sourcePath)}` : prefix;
+    const title = sourcePath ? `Convert: ${basename(sourcePath)}` : "Convert";
     if (tab.title !== title) workspace.patchTab(tab.id, { title });
   });
 
-  // External reload token — re-run conversion with current source.
+  // External reload token — re-run conversion with current source + engine.
   $effect(() => {
     const token = tab.reloadToken ?? 0;
     if (token === 0 || !sourcePath) return;
+    if (engine === "native" && !isNativeExt(sourcePath)) return;
     void runConvert(sourcePath, true);
   });
 </script>
@@ -367,17 +415,35 @@
         <span class="truncate">{basename(sourcePath)}</span>
         <span class="text-base-content/40">→ Markdown</span>
       {:else}
-        <span>{isNativeMode ? "Native Convert (playground)" : "Convert to Markdown"}</span>
+        <span>Convert to Markdown</span>
       {/if}
     </div>
     <div class="flex items-center gap-2 shrink-0">
+      <ToggleButtonGroup
+        size="sm"
+        tooltipPosition="bottom"
+        value={engine}
+        onchange={setEngine}
+        options={[
+          {
+            value: "native",
+            label: "Native",
+            tooltip: "Built-in converters · pdf, html, docx, pptx · no setup",
+          },
+          {
+            value: "markitdown",
+            label: "markitdown",
+            tooltip: "uvx markitdown · all formats · needs uv installed",
+          },
+        ]}
+      />
       {#if isWorkspaceMode && sourcePath}
         <Button size="xs" onclick={handleChangeSource}>
           <Icon name="arrow-left" size={14} class="mr-1" />
           Change
         </Button>
       {/if}
-      {#if status === "ready"}
+      {#if status === "ready" && !engineMismatch}
         <Button size="xs" onclick={handleSave}>
           <Icon name="file-plus" size={14} class="mr-1" />
           Save as .md
@@ -391,9 +457,7 @@
       {#if isWorkspaceMode && !sourcePath}
         <div class="picker p-4 h-full flex flex-col gap-3 min-h-0">
           <div class="text-xs text-base-content/60">
-            {isNativeMode
-              ? "Pick a PDF / HTML / DOCX / PPTX to test native conversion"
-              : "Pick a file to convert to Markdown"}
+            Pick a file to convert to Markdown
           </div>
           <input
             type="text"
@@ -443,6 +507,23 @@
         <div class="w-full h-full flex items-center justify-center text-xs text-base-content/40">
           Pick a source file on the left to see the Markdown here.
         </div>
+      {:else if engineMismatch}
+        <div class="w-full h-full flex items-center justify-center p-6">
+          <div class="max-w-sm flex flex-col gap-3 items-start">
+            <span class="text-sm font-semibold">
+              Native engine can't convert this file
+            </span>
+            <p class="text-xs text-base-content/60 leading-relaxed">
+              The Native engine handles PDF, HTML, DOCX and PPTX only.
+              <code class="bg-base-200 px-1 rounded">.{extOf(sourcePath ?? "")}</code>
+              files need the markitdown engine.
+            </p>
+            <Button size="sm" onclick={() => setEngine("markitdown")}>
+              <Icon name="flask-conical" size={14} class="mr-1" />
+              Switch to markitdown
+            </Button>
+          </div>
+        </div>
       {:else if status === "loading"}
         <div class="w-full h-full flex flex-col items-center justify-center gap-3 text-base-content/60 text-sm">
           <span class="loading loading-spinner loading-md"></span>
@@ -461,7 +542,7 @@
               <span class="text-sm font-semibold">Conversion failed</span>
             </div>
             <pre class="text-xs whitespace-pre-wrap break-words text-base-content/70 bg-base-200 p-3 rounded max-h-48 overflow-auto w-full">{errorMessage}</pre>
-            {#if isMissingUv && !isNativeMode}
+            {#if isMissingUv && engine === "markitdown"}
               <div class="text-xs text-base-content/60">
                 Install <code class="bg-base-200 px-1 rounded">uv</code> with:
                 <pre class="text-xs bg-base-200 p-2 mt-1 rounded">curl -LsSf https://astral.sh/uv/install.sh | sh</pre>
@@ -477,7 +558,7 @@
       <div
         bind:this={host}
         class="cm-host w-full h-full overflow-auto"
-        class:hidden={status !== "ready"}
+        class:hidden={status !== "ready" || engineMismatch}
       ></div>
     </div>
   </div>

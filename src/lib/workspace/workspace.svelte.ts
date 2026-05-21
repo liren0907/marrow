@@ -353,26 +353,6 @@ export const workspace = {
     pane.activeTabId = tab.id;
   },
 
-  openNativeConvertView(): void {
-    const pane = findPane(state.activePaneId) ?? state.panes[0];
-    const existing = pane.tabs.find(
-      (t) => t.kind === "convert" && t.path === "marrow://convert-native",
-    );
-    if (existing) {
-      pane.activeTabId = existing.id;
-      return;
-    }
-    const tab: Tab = {
-      id: crypto.randomUUID(),
-      path: "marrow://convert-native",
-      kind: "convert",
-      title: "Native Convert",
-      isDirty: false,
-    };
-    pane.tabs.push(tab);
-    pane.activeTabId = tab.id;
-  },
-
   // Settings tab (virtual path "marrow://settings"). Dedup is GLOBAL across
   // all panes — there's no scenario where two Settings tabs should coexist.
   // If one already exists in another pane, focus it there rather than spawn
