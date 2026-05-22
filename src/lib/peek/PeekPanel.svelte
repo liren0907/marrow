@@ -184,7 +184,7 @@
 >
   {#if peek.isOpen}
     <div
-      class="flex items-center gap-1 px-3 py-1.5 border-b border-base-200 shrink-0 overflow-x-auto text-[11px]"
+      class="flex items-center gap-1 px-3 py-1.5 border-b border-[color:var(--mw-rule)] shrink-0 overflow-x-auto text-[11px]"
     >
       {#each peek.layers as layer, i (i + ":" + layer.path + ":" + (layer.section ?? ""))}
         {#if i > 0}

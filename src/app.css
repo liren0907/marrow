@@ -144,8 +144,8 @@
 	--mw-ink-1: #55493c;
 	--mw-ink-2: #7a6d5e;
 	--mw-ink-3: #9e9280;
-	--mw-rule: rgba(60, 45, 30, 0.10);
-	--mw-rule-strong: rgba(60, 45, 30, 0.18);
+	--mw-rule: rgba(60, 45, 30, 0.18);
+	--mw-rule-strong: rgba(60, 45, 30, 0.28);
 	--mw-bg-elev: #f6f0e1;
 	--mw-selection: rgba(168, 106, 44, 0.22);
 	--mw-tab-inactive: #e0d8c6;
@@ -158,8 +158,8 @@
 	--mw-ink-1: #c9bfae;
 	--mw-ink-2: #9a9080;
 	--mw-ink-3: #6b6358;
-	--mw-rule: rgba(230, 215, 190, 0.08);
-	--mw-rule-strong: rgba(230, 215, 190, 0.14);
+	--mw-rule: rgba(230, 215, 190, 0.14);
+	--mw-rule-strong: rgba(230, 215, 190, 0.22);
 	--mw-bg-elev: #2f2823;
 	--mw-selection: rgba(230, 195, 120, 0.22);
 	--mw-tab-inactive: #241f1b;
@@ -175,8 +175,8 @@
 	--mw-ink-1: #494742;
 	--mw-ink-2: #6b6862;
 	--mw-ink-3: #94908a;
-	--mw-rule: rgba(50, 45, 35, 0.07);
-	--mw-rule-strong: rgba(50, 45, 35, 0.13);
+	--mw-rule: rgba(50, 45, 35, 0.14);
+	--mw-rule-strong: rgba(50, 45, 35, 0.22);
 	--mw-bg-elev: #ffffff;
 	--mw-selection: rgba(168, 106, 44, 0.16);
 	--mw-tab-inactive: #f0eeea;

@@ -348,7 +348,7 @@
     background: var(--color-base-100);
     border: none;
     /* Match TabBar's bottom border so the chrome row reads as one strip. */
-    border-bottom: 1px solid var(--color-base-200);
+    border-bottom: 1px solid var(--mw-rule);
     color: var(--mw-ink-2);
     cursor: pointer;
     transition: color 0.1s, background 0.1s;

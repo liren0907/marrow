@@ -80,7 +80,7 @@
 
 {#if segments.length > 0}
   <nav
-    class="flex items-center gap-2 px-3 h-7 shrink-0 border-b border-base-200 text-[11px] text-base-content/60"
+    class="flex items-center gap-2 px-3 h-7 shrink-0 border-b border-[color:var(--mw-rule)] text-[11px] text-base-content/60"
     aria-label="Editor breadcrumb"
   >
     <!-- Path segments — flex-1 + min-w-0 + overflow-x-auto so very deep

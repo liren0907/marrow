@@ -71,7 +71,7 @@
 </script>
 
 <div
-  class="bottom-panel border-t border-base-200 bg-base-100 flex flex-col shrink-0"
+  class="bottom-panel border-t border-[color:var(--mw-rule)] bg-base-100 flex flex-col shrink-0"
   style:height="{bottomPanel.height}px"
 >
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -89,7 +89,7 @@
     tabindex="0"
   ></div>
   <div
-    class="flex items-center justify-between px-2 py-1 border-b border-base-200 shrink-0"
+    class="flex items-center justify-between px-2 py-1 border-b border-[color:var(--mw-rule)] shrink-0"
   >
     <div class="flex items-center gap-0">
       <button

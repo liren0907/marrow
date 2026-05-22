@@ -63,7 +63,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   bind:this={barEl}
-  class="relative flex flex-row items-stretch h-9 border-b border-base-200 bg-base-100 overflow-x-auto shrink-0 tab-bar"
+  class="relative flex flex-row items-stretch h-7 border-b border-[color:var(--mw-rule)] bg-base-100 overflow-x-auto shrink-0 tab-bar"
   ondragover={onDragOver}
   ondragleave={onDragLeave}
   ondrop={onDrop}

@@ -97,13 +97,13 @@
 <svelte:window onmousedown={onWindowMouseDown} onkeydown={onWindowKeyDown} />
 
 <div
-  class="flex flex-col bg-base-100 border-r border-base-200 h-full"
+  class="flex flex-col bg-base-100 border-r border-[color:var(--mw-rule)] h-full"
   style="width: {width}px"
 >
   <!-- Header -->
   <div
     bind:this={switcherAnchorEl}
-    class="flex items-center gap-2 px-3 py-2.5 border-b border-base-200 shrink-0 relative"
+    class="flex items-center gap-2 px-3 py-2.5 border-b border-[color:var(--mw-rule)] shrink-0 relative"
   >
     <Icon name="folder-open" size={20} class="text-primary" />
     <button
@@ -155,7 +155,7 @@
               <span class="text-xs truncate flex-1">{entry.name}</span>
             </button>
           {/each}
-          <div class="my-1 border-t border-base-200"></div>
+          <div class="my-1 border-t border-[color:var(--mw-rule)]"></div>
         {/if}
         <button
           type="button"
@@ -174,7 +174,7 @@
           <span class="text-xs">Open recent workspace…</span>
         </button>
         {#if workspace.info}
-          <div class="my-1 border-t border-base-200"></div>
+          <div class="my-1 border-t border-[color:var(--mw-rule)]"></div>
           <button
             type="button"
             class="w-full flex items-center gap-2 px-2 py-1 text-left hover:bg-base-200/70"
@@ -190,7 +190,7 @@
 
   <!-- Workspace actions (when no workspace) -->
   {#if !workspace.info}
-    <div class="px-3 py-3 border-b border-base-200">
+    <div class="px-3 py-3 border-b border-[color:var(--mw-rule)]">
       <button
         onclick={pickFolder}
         class="btn btn-sm btn-primary w-full"

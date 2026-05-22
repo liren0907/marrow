@@ -39,7 +39,7 @@
 </script>
 
 <div class="flex-1 flex flex-col min-h-0">
-  <div class="px-2 py-1 border-b border-base-200 shrink-0">
+  <div class="px-2 py-1 border-b border-[color:var(--mw-rule)] shrink-0">
     <input
       type="text"
       class="w-full bg-transparent outline-none text-xs px-2 py-1 placeholder:text-base-content/40"
