@@ -321,7 +321,7 @@
   :global(.milkdown-host .ProseMirror) {
     outline: none;
     min-height: 100%;
-    max-width: 46rem;
+    max-width: var(--mw-editor-max-width, 46rem);
     margin: 0 auto;
     /* 24px top padding gives breathing room under the Breadcrumb chrome
        row (28px h-7 + 1px border). The legacy 40px from when there was a

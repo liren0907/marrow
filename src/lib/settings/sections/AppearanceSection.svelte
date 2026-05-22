@@ -18,6 +18,7 @@
     setEditorFont,
     setEditorFontSize,
     setEditorLineHeight,
+    setEditorWidth,
     CM_THEME_LABELS,
     PRISM_THEME_LABELS,
     EDITOR_FONT_LABELS,
@@ -26,6 +27,9 @@
     FONT_SIZE_MAX,
     LINE_HEIGHT_MIN,
     LINE_HEIGHT_MAX,
+    EDITOR_WIDTH_MIN,
+    EDITOR_WIDTH_MAX,
+    formatEditorWidth,
     type CodeMirrorThemeKey,
     type PrismThemeKey,
     type EditorFontKey,
@@ -55,6 +59,10 @@
   function onLineHeightInput(e: Event) {
     const v = parseFloat((e.target as HTMLInputElement).value);
     if (Number.isFinite(v)) setEditorLineHeight(v);
+  }
+  function onEditorWidthInput(e: Event) {
+    const v = parseInt((e.target as HTMLInputElement).value, 10);
+    if (Number.isFinite(v)) setEditorWidth(v);
   }
   function onEditorFontChange(e: Event) {
     setEditorFont((e.currentTarget as HTMLSelectElement).value as EditorFontKey);
@@ -224,6 +232,26 @@
       oninput={onLineHeightInput}
     />
     <span class="value">{appearance.editorLineHeight.toFixed(2)}</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="section-title">Editor content width</h3>
+  <p class="section-desc">
+    Maximum width of the reading column. Drag to the top for
+    <strong>Full</strong> — the text fills the whole pane instead of
+    leaving side margins on wide windows.
+  </p>
+  <div class="row">
+    <input
+      type="range"
+      min={EDITOR_WIDTH_MIN}
+      max={EDITOR_WIDTH_MAX}
+      step="2"
+      value={appearance.editorWidth}
+      oninput={onEditorWidthInput}
+    />
+    <span class="value">{formatEditorWidth(appearance.editorWidth)}</span>
   </div>
 </div>
 

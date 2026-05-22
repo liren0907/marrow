@@ -12,12 +12,16 @@
     setEditorFont,
     setEditorFontSize,
     setEditorLineHeight,
+    setEditorWidth,
     EDITOR_FONT_LABELS,
     EDITOR_FONT_STACKS,
     FONT_SIZE_MIN,
     FONT_SIZE_MAX,
     LINE_HEIGHT_MIN,
     LINE_HEIGHT_MAX,
+    EDITOR_WIDTH_MIN,
+    EDITOR_WIDTH_MAX,
+    formatEditorWidth,
     type EditorFontKey,
   } from "./appearanceSettings.svelte";
   import { uiSettings, togglePaneOutline } from "./uiSettings.svelte";
@@ -75,6 +79,10 @@
   function onLineHeightInput(e: Event) {
     const v = parseFloat((e.target as HTMLInputElement).value);
     if (Number.isFinite(v)) setEditorLineHeight(v);
+  }
+  function onWidthInput(e: Event) {
+    const v = parseInt((e.target as HTMLInputElement).value, 10);
+    if (Number.isFinite(v)) setEditorWidth(v);
   }
 
   function openFullSettings() {
@@ -192,6 +200,22 @@
         step="0.05"
         value={appearance.editorLineHeight}
         oninput={onLineHeightInput}
+      />
+    </div>
+
+    <div class="tweaks-section">
+      <div class="tweaks-row-head">
+        <span class="tweaks-label">Content width</span>
+        <span class="tweaks-value">{formatEditorWidth(appearance.editorWidth)}</span>
+      </div>
+      <input
+        class="tweaks-range"
+        type="range"
+        min={EDITOR_WIDTH_MIN}
+        max={EDITOR_WIDTH_MAX}
+        step="2"
+        value={appearance.editorWidth}
+        oninput={onWidthInput}
       />
     </div>
 

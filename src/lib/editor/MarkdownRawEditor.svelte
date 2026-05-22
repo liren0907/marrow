@@ -105,7 +105,7 @@
     height: 100%;
     /* Match the central column width of the Milkdown view so toggling
        between modes doesn't shift the visual reading position. */
-    max-width: 46rem;
+    max-width: var(--mw-editor-max-width, 46rem);
     margin: 0 auto;
     font-size: 14px;
   }

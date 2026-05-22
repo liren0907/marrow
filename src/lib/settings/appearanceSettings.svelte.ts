@@ -75,6 +75,9 @@ interface Persisted {
   editorFontSize: number;
   /** Editor body line-height as a unitless multiplier (e.g., 1.65). */
   editorLineHeight: number;
+  /** Editor reading-column max width in rem. The slider's top notch
+   *  (=== EDITOR_WIDTH_MAX) means "Full" — no cap, fills the pane. */
+  editorWidth: number;
 }
 
 const DEFAULTS: Persisted = {
@@ -83,12 +86,21 @@ const DEFAULTS: Persisted = {
   editorFont: "system-serif",
   editorFontSize: 16,
   editorLineHeight: 1.65,
+  editorWidth: 46,
 };
 
 export const FONT_SIZE_MIN = 12;
 export const FONT_SIZE_MAX = 22;
 export const LINE_HEIGHT_MIN = 1.2;
 export const LINE_HEIGHT_MAX = 2.4;
+export const EDITOR_WIDTH_MIN = 40;
+export const EDITOR_WIDTH_MAX = 88;
+
+/** Human-readable label for a content-width value. The top notch means
+ *  the cap is removed entirely, so it reads "Full" rather than a number. */
+export function formatEditorWidth(rem: number): string {
+  return rem >= EDITOR_WIDTH_MAX ? "Full" : `${rem} rem`;
+}
 
 const CM_VALID = new Set<string>(Object.keys(CM_THEME_LABELS));
 const PRISM_VALID = new Set<string>(Object.keys(PRISM_THEME_LABELS));
@@ -140,6 +152,13 @@ function loadPersisted(): Persisted {
           LINE_HEIGHT_MAX,
         ),
       ),
+      editorWidth: Math.round(
+        clamp(
+          parsed.editorWidth ?? DEFAULTS.editorWidth,
+          EDITOR_WIDTH_MIN,
+          EDITOR_WIDTH_MAX,
+        ),
+      ),
     };
   } catch {
     return { ...DEFAULTS };
@@ -185,6 +204,7 @@ function persist(): void {
         editorFont: appearance.editorFont,
         editorFontSize: appearance.editorFontSize,
         editorLineHeight: appearance.editorLineHeight,
+        editorWidth: appearance.editorWidth,
       }),
     );
   } catch {
@@ -205,6 +225,14 @@ function applyEditorFontVars(): void {
   document.documentElement.style.setProperty(
     "--mw-editor-line-height",
     String(appearance.editorLineHeight),
+  );
+  // Top notch removes the cap entirely (fills the pane); otherwise a rem
+  // cap. The editors read this via `var(--mw-editor-max-width, 46rem)`.
+  document.documentElement.style.setProperty(
+    "--mw-editor-max-width",
+    appearance.editorWidth >= EDITOR_WIDTH_MAX
+      ? "none"
+      : `${appearance.editorWidth}rem`,
   );
 }
 
@@ -242,12 +270,21 @@ export function setEditorLineHeight(v: number): void {
   applyEditorFontVars();
 }
 
+export function setEditorWidth(rem: number): void {
+  appearance.editorWidth = Math.round(
+    clamp(rem, EDITOR_WIDTH_MIN, EDITOR_WIDTH_MAX),
+  );
+  persist();
+  applyEditorFontVars();
+}
+
 export function resetAppearance(): void {
   appearance.cmTheme = DEFAULTS.cmTheme;
   appearance.prismTheme = DEFAULTS.prismTheme;
   appearance.editorFont = DEFAULTS.editorFont;
   appearance.editorFontSize = DEFAULTS.editorFontSize;
   appearance.editorLineHeight = DEFAULTS.editorLineHeight;
+  appearance.editorWidth = DEFAULTS.editorWidth;
   persist();
   applyEditorFontVars();
 }
