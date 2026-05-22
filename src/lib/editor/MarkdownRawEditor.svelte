@@ -103,17 +103,18 @@
 <style>
   :global(.md-raw-host .cm-editor) {
     height: 100%;
-    /* Match the central column width of the Milkdown view so toggling
-       between modes doesn't shift the visual reading position. */
+    /* Mirror the Milkdown view's reading column + body type so toggling
+       pretty↔raw doesn't shift the visual reading position. font-family
+       stays monospace — raw mode is a source view by design. */
     max-width: var(--mw-editor-max-width, 46rem);
     margin: 0 auto;
-    font-size: 14px;
+    font-size: var(--mw-editor-font-size, 16px);
   }
   :global(.md-raw-host .cm-scroller) {
     font-family: var(--font-mono, ui-monospace, monospace);
     padding: 1rem 1.25rem 6rem 1.25rem;
   }
   :global(.md-raw-host .cm-content) {
-    line-height: 1.6;
+    line-height: var(--mw-editor-line-height, 1.65);
   }
 </style>

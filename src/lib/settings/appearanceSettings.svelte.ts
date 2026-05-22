@@ -78,6 +78,9 @@ interface Persisted {
   /** Editor reading-column max width in rem. The slider's top notch
    *  (=== EDITOR_WIDTH_MAX) means "Full" — no cap, fills the pane. */
   editorWidth: number;
+  /** Gap below each body paragraph, as an em multiplier of the editor
+   *  font size (applied to `.ProseMirror p`'s margin-bottom). */
+  editorParaSpacing: number;
 }
 
 const DEFAULTS: Persisted = {
@@ -87,6 +90,7 @@ const DEFAULTS: Persisted = {
   editorFontSize: 16,
   editorLineHeight: 1.65,
   editorWidth: 46,
+  editorParaSpacing: 0.5,
 };
 
 export const FONT_SIZE_MIN = 12;
@@ -95,11 +99,18 @@ export const LINE_HEIGHT_MIN = 1.2;
 export const LINE_HEIGHT_MAX = 2.4;
 export const EDITOR_WIDTH_MIN = 40;
 export const EDITOR_WIDTH_MAX = 88;
+export const PARA_SPACING_MIN = 0;
+export const PARA_SPACING_MAX = 2;
 
 /** Human-readable label for a content-width value. The top notch means
  *  the cap is removed entirely, so it reads "Full" rather than a number. */
 export function formatEditorWidth(rem: number): string {
   return rem >= EDITOR_WIDTH_MAX ? "Full" : `${rem} rem`;
+}
+
+/** Human-readable label for a paragraph-spacing value. */
+export function formatParaSpacing(em: number): string {
+  return `${em.toFixed(1)} em`;
 }
 
 const CM_VALID = new Set<string>(Object.keys(CM_THEME_LABELS));
@@ -115,6 +126,11 @@ function clamp(value: number, min: number, max: number): number {
 // the persisted JSON stays clean (no 1.6500000000000001 artifacts).
 function roundLh(v: number): number {
   return Math.round(v * 20) / 20;
+}
+
+// Same idea for paragraph spacing — snap to the slider's 0.1 step.
+function roundPs(v: number): number {
+  return Math.round(v * 10) / 10;
 }
 
 function loadPersisted(): Persisted {
@@ -157,6 +173,13 @@ function loadPersisted(): Persisted {
           parsed.editorWidth ?? DEFAULTS.editorWidth,
           EDITOR_WIDTH_MIN,
           EDITOR_WIDTH_MAX,
+        ),
+      ),
+      editorParaSpacing: roundPs(
+        clamp(
+          parsed.editorParaSpacing ?? DEFAULTS.editorParaSpacing,
+          PARA_SPACING_MIN,
+          PARA_SPACING_MAX,
         ),
       ),
     };
@@ -205,6 +228,7 @@ function persist(): void {
         editorFontSize: appearance.editorFontSize,
         editorLineHeight: appearance.editorLineHeight,
         editorWidth: appearance.editorWidth,
+        editorParaSpacing: appearance.editorParaSpacing,
       }),
     );
   } catch {
@@ -233,6 +257,12 @@ function applyEditorFontVars(): void {
     appearance.editorWidth >= EDITOR_WIDTH_MAX
       ? "none"
       : `${appearance.editorWidth}rem`,
+  );
+  // Paragraph gap as an em multiplier so it scales with the font size.
+  // Read by `.ProseMirror p` via `var(--mw-editor-para-spacing, 0.5em)`.
+  document.documentElement.style.setProperty(
+    "--mw-editor-para-spacing",
+    `${appearance.editorParaSpacing}em`,
   );
 }
 
@@ -278,6 +308,14 @@ export function setEditorWidth(rem: number): void {
   applyEditorFontVars();
 }
 
+export function setEditorParaSpacing(em: number): void {
+  appearance.editorParaSpacing = roundPs(
+    clamp(em, PARA_SPACING_MIN, PARA_SPACING_MAX),
+  );
+  persist();
+  applyEditorFontVars();
+}
+
 export function resetAppearance(): void {
   appearance.cmTheme = DEFAULTS.cmTheme;
   appearance.prismTheme = DEFAULTS.prismTheme;
@@ -285,6 +323,7 @@ export function resetAppearance(): void {
   appearance.editorFontSize = DEFAULTS.editorFontSize;
   appearance.editorLineHeight = DEFAULTS.editorLineHeight;
   appearance.editorWidth = DEFAULTS.editorWidth;
+  appearance.editorParaSpacing = DEFAULTS.editorParaSpacing;
   persist();
   applyEditorFontVars();
 }

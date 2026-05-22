@@ -263,6 +263,7 @@
 	--mw-editor-font-size: 16px;
 	--mw-editor-line-height: 1.65;
 	--mw-editor-max-width: 46rem;
+	--mw-editor-para-spacing: 0.5em;
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
 	font-family: var(--font-ui);

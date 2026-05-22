@@ -13,6 +13,7 @@
     setEditorFontSize,
     setEditorLineHeight,
     setEditorWidth,
+    setEditorParaSpacing,
     EDITOR_FONT_LABELS,
     EDITOR_FONT_STACKS,
     FONT_SIZE_MIN,
@@ -21,7 +22,10 @@
     LINE_HEIGHT_MAX,
     EDITOR_WIDTH_MIN,
     EDITOR_WIDTH_MAX,
+    PARA_SPACING_MIN,
+    PARA_SPACING_MAX,
     formatEditorWidth,
+    formatParaSpacing,
     type EditorFontKey,
   } from "./appearanceSettings.svelte";
   import { uiSettings, togglePaneOutline } from "./uiSettings.svelte";
@@ -83,6 +87,10 @@
   function onWidthInput(e: Event) {
     const v = parseInt((e.target as HTMLInputElement).value, 10);
     if (Number.isFinite(v)) setEditorWidth(v);
+  }
+  function onParaSpacingInput(e: Event) {
+    const v = parseFloat((e.target as HTMLInputElement).value);
+    if (Number.isFinite(v)) setEditorParaSpacing(v);
   }
 
   function openFullSettings() {
@@ -200,6 +208,22 @@
         step="0.05"
         value={appearance.editorLineHeight}
         oninput={onLineHeightInput}
+      />
+    </div>
+
+    <div class="tweaks-section">
+      <div class="tweaks-row-head">
+        <span class="tweaks-label">Paragraph spacing</span>
+        <span class="tweaks-value">{formatParaSpacing(appearance.editorParaSpacing)}</span>
+      </div>
+      <input
+        class="tweaks-range"
+        type="range"
+        min={PARA_SPACING_MIN}
+        max={PARA_SPACING_MAX}
+        step="0.1"
+        value={appearance.editorParaSpacing}
+        oninput={onParaSpacingInput}
       />
     </div>
 

@@ -365,15 +365,21 @@
     font-weight: 600;
     margin-top: 1rem;
     margin-bottom: 0.5rem;
+    /* Pinned like h1/h2 so headings stay tight regardless of the body
+       line-height setting — small headings shouldn't out-space big ones. */
+    line-height: 1.3;
   }
   :global(.milkdown-host .ProseMirror h4, .milkdown-host .ProseMirror h5, .milkdown-host .ProseMirror h6) {
     font-size: 1rem;
     font-weight: 600;
     margin-top: 0.75rem;
     margin-bottom: 0.25rem;
+    line-height: 1.3;
   }
   :global(.milkdown-host .ProseMirror p) {
-    margin-bottom: 0.5rem;
+    /* User-tunable via Settings → Appearance → Editor paragraph spacing.
+       em unit so the gap scales with the editor font size. */
+    margin-bottom: var(--mw-editor-para-spacing, 0.5em);
   }
   :global(.milkdown-host .ProseMirror ul),
   :global(.milkdown-host .ProseMirror ol) {
@@ -407,6 +413,9 @@
     overflow-x: auto;
     margin-bottom: 0.75rem;
     font-size: 0.875em;
+    /* Pinned so a high body line-height setting doesn't blow code blocks
+       open — code reads better dense regardless of the prose setting. */
+    line-height: 1.5;
   }
   :global(.milkdown-host .ProseMirror pre code) {
     background: none;

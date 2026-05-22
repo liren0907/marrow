@@ -19,6 +19,7 @@
     setEditorFontSize,
     setEditorLineHeight,
     setEditorWidth,
+    setEditorParaSpacing,
     CM_THEME_LABELS,
     PRISM_THEME_LABELS,
     EDITOR_FONT_LABELS,
@@ -29,7 +30,10 @@
     LINE_HEIGHT_MAX,
     EDITOR_WIDTH_MIN,
     EDITOR_WIDTH_MAX,
+    PARA_SPACING_MIN,
+    PARA_SPACING_MAX,
     formatEditorWidth,
+    formatParaSpacing,
     type CodeMirrorThemeKey,
     type PrismThemeKey,
     type EditorFontKey,
@@ -63,6 +67,10 @@
   function onEditorWidthInput(e: Event) {
     const v = parseInt((e.target as HTMLInputElement).value, 10);
     if (Number.isFinite(v)) setEditorWidth(v);
+  }
+  function onParaSpacingInput(e: Event) {
+    const v = parseFloat((e.target as HTMLInputElement).value);
+    if (Number.isFinite(v)) setEditorParaSpacing(v);
   }
   function onEditorFontChange(e: Event) {
     setEditorFont((e.currentTarget as HTMLSelectElement).value as EditorFontKey);
@@ -232,6 +240,26 @@
       oninput={onLineHeightInput}
     />
     <span class="value">{appearance.editorLineHeight.toFixed(2)}</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="section-title">Editor paragraph spacing</h3>
+  <p class="section-desc">
+    Gap between paragraphs in the WYSIWYG editor. Scales with the font
+    size. This is separate from line height — it spaces paragraphs apart,
+    not the wrapped lines inside one.
+  </p>
+  <div class="row">
+    <input
+      type="range"
+      min={PARA_SPACING_MIN}
+      max={PARA_SPACING_MAX}
+      step="0.1"
+      value={appearance.editorParaSpacing}
+      oninput={onParaSpacingInput}
+    />
+    <span class="value">{formatParaSpacing(appearance.editorParaSpacing)}</span>
   </div>
 </div>
 
