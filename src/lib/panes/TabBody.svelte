@@ -6,6 +6,7 @@
   import AudioTab from "$lib/viewers/AudioTab.svelte";
   import PdfTab from "$lib/viewers/PdfTab.svelte";
   import TextTab from "$lib/viewers/TextTab.svelte";
+  import ExcalidrawTab from "$lib/viewers/ExcalidrawTab.svelte";
   import GraphTab from "$lib/graph/GraphTab.svelte";
   import ConvertTab from "$lib/viewers/ConvertTab.svelte";
   import SettingsTab from "$lib/settings/SettingsTab.svelte";
@@ -28,6 +29,8 @@
       <PdfTab {tab} />
     {:else if tab.kind === "text"}
       <TextTab {tab} />
+    {:else if tab.kind === "excalidraw"}
+      <ExcalidrawTab {tab} />
     {:else if tab.kind === "graph"}
       <GraphTab {tab} />
     {:else if tab.kind === "convert"}

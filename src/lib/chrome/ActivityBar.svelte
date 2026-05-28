@@ -8,6 +8,7 @@
   import { toggleSettings } from "$lib/settings/settingsModalState.svelte";
   import { uiSettings, toggleSidebar } from "$lib/settings/uiSettings.svelte";
   import { workspace } from "$lib/workspace/workspace.svelte";
+  import { newExcalidrawCanvas } from "$lib/tree/treeOps";
   import Icon, { type IconName } from "$lib/components/ui/Icon.svelte";
 
   interface Item {
@@ -63,6 +64,15 @@
     {/each}
   </div>
   <div class="activity-group">
+    <button
+      type="button"
+      class="activity-btn tooltip tooltip-right"
+      onclick={() => newExcalidrawCanvas()}
+      data-tip="New canvas"
+      aria-label="New Excalidraw canvas"
+    >
+      <Icon name="brush" size={20} />
+    </button>
     <button
       type="button"
       class="activity-btn tooltip tooltip-right"

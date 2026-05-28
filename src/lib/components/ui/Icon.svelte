@@ -49,6 +49,7 @@
     PanelLeftClose,
     PanelLeftOpen,
     Keyboard,
+    Brush,
   } from "lucide";
 
   export type IconName =
@@ -95,7 +96,8 @@
     | "panel-right-open"
     | "panel-left-close"
     | "panel-left-open"
-    | "keyboard";
+    | "keyboard"
+    | "brush";
 
   const MAP = {
     "plus": Plus,
@@ -142,6 +144,7 @@
     "panel-left-close": PanelLeftClose,
     "panel-left-open": PanelLeftOpen,
     "keyboard": Keyboard,
+    "brush": Brush,
   } satisfies Record<IconName, unknown>;
 </script>
 

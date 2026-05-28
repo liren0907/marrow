@@ -7,6 +7,7 @@ const IMAGE = new Set([
 const VIDEO = new Set(["mp4", "webm", "mov", "avi", "mkv", "m4v"]);
 const AUDIO = new Set(["mp3", "wav", "ogg", "flac", "m4a", "aac"]);
 const PDF = new Set(["pdf"]);
+const EXCALIDRAW = new Set(["excalidraw"]);
 const TEXT = new Set([
   "txt", "json", "yaml", "yml", "toml", "xml", "csv", "log", "ini", "conf",
   "sh", "bash", "zsh", "js", "ts", "jsx", "tsx", "mjs", "cjs",
@@ -24,6 +25,7 @@ export function classifyFile(path: string): FileKind {
   if (VIDEO.has(ext)) return "video";
   if (AUDIO.has(ext)) return "audio";
   if (PDF.has(ext)) return "pdf";
+  if (EXCALIDRAW.has(ext)) return "excalidraw";
   if (TEXT.has(ext)) return "text";
   return "unsupported";
 }

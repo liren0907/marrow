@@ -5,6 +5,7 @@ export type FileKind =
   | "audio"
   | "text"
   | "pdf"
+  | "excalidraw"
   | "graph"
   | "convert"
   | "settings"

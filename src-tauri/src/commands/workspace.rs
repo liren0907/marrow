@@ -437,7 +437,7 @@ pub async fn rename_path(
     state.note_own_write(dst);
     fs::rename(src, dst).map_err(|e| format!("rename: {}", e))?;
     // Record the rename in history DB (only for markdown files).
-    if is_markdown(src) {
+    if is_snapshotted(src) {
         if let Some(ctx) = db.current_ctx().await {
             if let (Some(from_rel), Some(to_rel)) = (
                 DbState::to_rel_path(&ctx, src),
@@ -452,10 +452,15 @@ pub async fn rename_path(
     Ok(())
 }
 
-fn is_markdown(p: &Path) -> bool {
+fn is_snapshotted(p: &Path) -> bool {
     p.extension()
         .and_then(|e| e.to_str())
-        .map(|e| matches!(e.to_ascii_lowercase().as_str(), "md" | "markdown" | "mdx"))
+        .map(|e| {
+            matches!(
+                e.to_ascii_lowercase().as_str(),
+                "md" | "markdown" | "mdx" | "excalidraw"
+            )
+        })
         .unwrap_or(false)
 }
 
@@ -500,9 +505,10 @@ pub async fn write_text_file(
     state.note_own_write(p);
     fs::write(&path, &contents).map_err(|e| format!("Failed to write {}: {}", path, e))?;
     let md = fs::metadata(&path).map_err(|e| e.to_string())?;
-    // Snapshot markdown saves into the history DB. Bounded by timeout so a
-    // stuck DB can never block saves. Errors logged but never surface to UI.
-    if is_markdown(p) {
+    // Snapshot saves of versioned file types (markdown + excalidraw) into
+    // the history DB. Bounded by timeout so a stuck DB can never block
+    // saves. Errors logged but never surface to UI.
+    if is_snapshotted(p) {
         if let Some(ctx) = db.current_ctx().await {
             if let Some(rel) = DbState::to_rel_path(&ctx, p) {
                 let bytes = contents.as_bytes().to_vec();

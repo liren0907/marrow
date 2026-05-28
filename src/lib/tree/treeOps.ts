@@ -44,6 +44,42 @@ export async function newFile(parentDir: string, name: string): Promise<void> {
   }
 }
 
+const EMPTY_EXCALIDRAW = JSON.stringify({
+  type: "excalidraw",
+  version: 2,
+  source: "marrow",
+  elements: [],
+  appState: {},
+  files: {},
+});
+
+function timestampSlug(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
+    `${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`
+  );
+}
+
+export async function newExcalidrawCanvas(): Promise<void> {
+  const info = workspace.info;
+  if (!info) {
+    showError("Open a workspace first");
+    return;
+  }
+  const name = `Canvas ${timestampSlug()}.excalidraw`;
+  const path = joinPath(info.root, name);
+  try {
+    await cmd.writeTextFile(path, EMPTY_EXCALIDRAW);
+    await refreshAfterMutation(info.root);
+    workspace.openFile(path);
+    showSuccess(`Created ${name}`);
+  } catch (e) {
+    showError(`Failed to create canvas: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
 export async function newFolder(parentDir: string, name: string): Promise<void> {
   if (!name.trim()) return;
   const path = joinPath(parentDir, name.trim());
