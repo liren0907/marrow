@@ -1,6 +1,10 @@
 pub mod commands;
 pub mod core;
 
+// Dev-only HTTP bridge for the Distill page — debug builds only, never release.
+#[cfg(debug_assertions)]
+mod devserver;
+
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -19,6 +23,10 @@ pub fn run() {
             let db = tauri::async_runtime::block_on(core::db::DbState::open_global(&handle))
                 .expect("open global db");
             app.manage(db);
+            // Dev-only: expose the Distill extraction over localhost HTTP so a
+            // browser can exercise the real backend. Compiled out of releases.
+            #[cfg(debug_assertions)]
+            devserver::spawn();
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -50,8 +58,17 @@ pub fn run() {
             commands::convert::convert_html_to_markdown,
             commands::convert::convert_docx_to_markdown,
             commands::convert::convert_pptx_to_markdown,
+            commands::distill::extract_annotations,
             core::app_config::set_app_config,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app_handle, _event| {
+            // Dev-only: stop the :7080 HTTP bridge when the app exits so the
+            // port is released deterministically. Compiled out of releases.
+            #[cfg(debug_assertions)]
+            if let tauri::RunEvent::Exit = _event {
+                devserver::shutdown();
+            }
+        });
 }

@@ -1,5 +1,6 @@
 pub mod convert;
 pub mod dialog;
+pub mod distill;
 pub mod git;
 pub mod graph;
 pub mod history;

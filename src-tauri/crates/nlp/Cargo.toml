@@ -1,0 +1,10 @@
+[package]
+name = "nlp"
+version = "0.1.0"
+edition = "2024"
+description = "Pre-LLM NLP pipeline (tokenization + POS) for Marrow's multi-layer notes (L0→L1)."
+
+[dependencies]
+jieba-rs = "0.7"
+pulldown-cmark = { version = "0.12", default-features = false }
+serde = { version = "1", features = ["derive"] }

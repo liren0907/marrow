@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "crates/marrow-convert"]
+members = [".", "crates/marrow-convert", "crates/nlp"]
 
 [package]
 name = "marrow"
@@ -35,3 +35,8 @@ tokio = { version = "1", features = ["fs", "sync", "time", "rt-multi-thread"] }
 uuid = { version = "1", features = ["v4"] }
 base64 = "0.22"
 marrow-convert = { path = "crates/marrow-convert" }
+nlp = { path = "crates/nlp" }
+# Dev-only HTTP bridge for the Distill page (see src/devserver.rs). Only ever
+# used behind #[cfg(debug_assertions)] — never serves in a release build.
+axum = "0.8"
+tower-http = { version = "0.6", features = ["cors"] }

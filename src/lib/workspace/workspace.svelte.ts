@@ -353,6 +353,42 @@ export const workspace = {
     pane.activeTabId = tab.id;
   },
 
+  // Distill view (virtual path "marrow://distill") — L0→L1 extraction for the
+  // multi-layer notes feature. Opens as a SINGLE full-page tab in the active
+  // pane (like Convert / Settings): Distill is self-contained — it brings its
+  // OWN file explorer and no longer follows a neighbouring pane. Dedup is
+  // global — at most one Distill tab across all panes.
+  openDistillView(): void {
+    for (const p of state.panes) {
+      const t = p.tabs.find((x) => x.kind === "distill");
+      if (t) {
+        state.activePaneId = p.id;
+        p.activeTabId = t.id;
+        return;
+      }
+    }
+    const pane = findPane(state.activePaneId) ?? state.panes[0];
+    const tab: Tab = {
+      id: crypto.randomUUID(),
+      path: "marrow://distill",
+      kind: "distill",
+      title: "Distill",
+      isDirty: false,
+    };
+    pane.tabs.push(tab);
+    pane.activeTabId = tab.id;
+  },
+
+  // True when any pane currently hosts a Distill tab. Read by +page.svelte so
+  // the workspace shell renders even without an open workspace — Distill is
+  // self-contained (own explorer) and should be reachable like Settings.
+  hasDistillTab(): boolean {
+    for (const p of state.panes) {
+      if (p.tabs.some((x) => x.kind === "distill")) return true;
+    }
+    return false;
+  },
+
   // Settings tab (virtual path "marrow://settings"). Dedup is GLOBAL across
   // all panes — there's no scenario where two Settings tabs should coexist.
   // If one already exists in another pane, focus it there rather than spawn

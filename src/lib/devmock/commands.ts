@@ -291,3 +291,15 @@ export async function convertPptxToMarkdown(_path: string): Promise<ConvertResul
 export async function convertDocxToMarkdown(_path: string): Promise<ConvertResult> {
   throw new Error(CONVERT_NOT_SUPPORTED);
 }
+
+export async function extractAnnotations(
+  _path: string,
+): Promise<{ text: string; pos: string; count: number; spans: [number, number][] }[]> {
+  // Browser dev mode has no NLP backend — return a small fixed sample so the
+  // Distill view renders something instead of erroring.
+  return [
+    { text: "範例名詞", pos: "n", count: 3, spans: [] },
+    { text: "知識圖譜", pos: "n", count: 2, spans: [] },
+    { text: "marrow", pos: "eng", count: 1, spans: [] },
+  ];
+}

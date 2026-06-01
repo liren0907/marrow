@@ -9,6 +9,7 @@
   import ExcalidrawTab from "$lib/viewers/ExcalidrawTab.svelte";
   import GraphTab from "$lib/graph/GraphTab.svelte";
   import ConvertTab from "$lib/viewers/ConvertTab.svelte";
+  import DistillTab from "$lib/distill/DistillTab.svelte";
   import SettingsTab from "$lib/settings/SettingsTab.svelte";
   import UnsupportedTab from "$lib/viewers/UnsupportedTab.svelte";
 
@@ -35,6 +36,8 @@
       <GraphTab {tab} />
     {:else if tab.kind === "convert"}
       <ConvertTab {tab} />
+    {:else if tab.kind === "distill"}
+      <DistillTab />
     {:else if tab.kind === "settings"}
       <SettingsTab />
     {:else}

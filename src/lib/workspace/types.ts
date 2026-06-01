@@ -8,6 +8,7 @@ export type FileKind =
   | "excalidraw"
   | "graph"
   | "convert"
+  | "distill"
   | "settings"
   | "unsupported";
 

@@ -12,6 +12,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { isInTauri } from "$lib/devmock/detect";
 import * as mock from "$lib/devmock/commands";
+import { extractAnnotationsHttp } from "./distillHttp";
 import type {
   DirEntry,
   FileMeta,
@@ -208,6 +209,55 @@ export function getWatcherStatus(): Promise<WatcherStatus> {
 export function convertToMarkdown(path: string): Promise<string> {
   if (!isInTauri) return mock.convertToMarkdown(path);
   return invoke<string>("convert_to_markdown", { path });
+}
+
+/** One extracted L1 term (multi-layer notes — Distill view). Mirrors
+ * `nlp::Annotation` on the Rust side. `spans` are char offsets into the
+ * extracted plain text (forward-compat; unused by the current view). */
+export interface Annotation {
+  text: string;
+  pos: string;
+  count: number;
+  spans: [number, number][];
+}
+
+/** Which backend the Distill page talks to.
+ * - `invoke`: Tauri IPC (native app)
+ * - `http`:   dev HTTP bridge on :7080 (real backend, reachable from a browser)
+ * - `mock`:   in-memory fake data (offline / no backend)
+ * Default: Tauri → invoke, browser → http. A localStorage override
+ * (`marrow.distill.transport`) wins if present — the toggle hook; its UI is
+ * deferred. Only the Distill page uses this; every other command is unchanged. */
+export type DistillTransport = "invoke" | "http" | "mock";
+const DISTILL_TRANSPORT_KEY = "marrow.distill.transport";
+
+/** Effective Distill transport: explicit localStorage override wins, else the
+ * environment default (Tauri → invoke, browser → http). */
+export function distillTransport(): DistillTransport {
+  if (typeof localStorage !== "undefined") {
+    const o = localStorage.getItem(DISTILL_TRANSPORT_KEY);
+    if (o === "invoke" || o === "http" || o === "mock") return o;
+  }
+  return isInTauri ? "invoke" : "http";
+}
+
+/** Persist an explicit Distill transport override (drives the dev-only chip in
+ * DistillTab). Pass through the same values the resolver accepts. */
+export function setDistillTransport(t: DistillTransport): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(DISTILL_TRANSPORT_KEY, t);
+  } catch {
+    // ignore — private mode / quota
+  }
+}
+
+/** L0 → L1: extract noun-ish terms (with frequency) from a Markdown file. */
+export function extractAnnotations(path: string): Promise<Annotation[]> {
+  const transport = distillTransport();
+  if (transport === "invoke") return invoke<Annotation[]>("extract_annotations", { path });
+  if (transport === "mock") return mock.extractAnnotations(path);
+  return extractAnnotationsHttp(path);
 }
 
 export function convertHtmlToMarkdown(path: string): Promise<string> {

@@ -85,6 +85,15 @@
     <button
       type="button"
       class="activity-btn tooltip tooltip-right"
+      onclick={() => workspace.openDistillView()}
+      data-tip="Distill"
+      aria-label="Distill"
+    >
+      <Icon name="flask-conical" size={20} />
+    </button>
+    <button
+      type="button"
+      class="activity-btn tooltip tooltip-right"
       onclick={toggleCommandPalette}
       data-tip="Command palette · ⇧⌘P"
       aria-label="Command palette"
