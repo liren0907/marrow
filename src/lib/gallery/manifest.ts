@@ -310,8 +310,8 @@ export const MANIFEST: ManifestRoute[] = [
             ],
           },
           {
-            name: "DistillResult",
-            importPath: "$lib/distill/DistillResult.svelte",
+            name: "DistillPanel",
+            importPath: "$lib/distill/DistillPanel.svelte",
             kind: "props",
             blurb:
               "提煉結果面板(DistillTab 的右半,已抽成獨立元件)。純展示:依 status 顯示 5 種畫面,ready 時列出 詞 + 詞性 Badge + 次數。",

@@ -21,7 +21,7 @@
   } from "$lib/workspace/tauri";
   import { basename } from "$lib/workspace/fileKind";
   import DistillExplorer from "./DistillExplorer.svelte";
-  import DistillResult from "./DistillResult.svelte";
+  import DistillPanel from "./DistillPanel.svelte";
   import Icon from "$lib/components/ui/Icon.svelte";
 
   // Normally self-contained (no props): Distill derives its source from its own
@@ -197,7 +197,7 @@
       </div>
     </header>
 
-    <DistillResult {status} {annotations} {errorMessage} />
+    <DistillPanel {status} {annotations} {errorMessage} />
   </div>
 </div>
 

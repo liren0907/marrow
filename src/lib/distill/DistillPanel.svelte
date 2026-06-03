@@ -1,6 +1,6 @@
 <script lang="ts">
-  // The Distill result panel — a PURE presentational view of an extraction
-  // result (the right half of DistillTab, minus the header). Given a status
+  // The Distill panel — a PURE presentational view of an extraction result
+  // (the right half of DistillTab, minus the header). Given a status
   // (+ annotations / error message) it renders the term list or one of the
   // empty / loading / error / no-terms states. No store, no localStorage, no
   // backend calls: DistillTab owns all of that and feeds this via props — which
