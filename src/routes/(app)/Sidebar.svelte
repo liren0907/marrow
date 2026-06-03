@@ -15,6 +15,7 @@
   import GraphMiniPanel from "$lib/chrome/GraphMiniPanel.svelte";
   import TagsTab from "$lib/panels/TagsTab.svelte";
   import BacklinksTab from "$lib/panels/BacklinksTab.svelte";
+  import DistillSidebarPanel from "$lib/distill/DistillSidebarPanel.svelte";
   import Icon from "$lib/components/ui/Icon.svelte";
 
   let { width = 256 }: { width?: number } = $props();
@@ -223,6 +224,9 @@
     {:else if activityBar.current === "graph"}
       <div class="activity-panel-header mw-meta">Graph</div>
       <GraphMiniPanel />
+    {:else if activityBar.current === "distill"}
+      <div class="activity-panel-header mw-meta">Distill</div>
+      <DistillSidebarPanel />
     {/if}
   </div>
 </div>

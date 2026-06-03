@@ -32,6 +32,15 @@
     setActivity(id);
     if (!uiSettings.showSidebar) toggleSidebar();
   }
+
+  // Distill is an activity (its sidebar panel is the DistillExplorer) AND a
+  // feature launcher: clicking it swaps the sidebar to the explorer and opens
+  // the panel tab beside the current note.
+  function onDistillClick() {
+    setActivity("distill");
+    if (!uiSettings.showSidebar) toggleSidebar();
+    workspace.openDistillView();
+  }
 </script>
 
 <nav class="activity-bar" aria-label="Activity">
@@ -85,9 +94,11 @@
     <button
       type="button"
       class="activity-btn tooltip tooltip-right"
-      onclick={() => workspace.openDistillView()}
+      class:active={activityBar.current === "distill"}
+      onclick={onDistillClick}
       data-tip="Distill"
       aria-label="Distill"
+      aria-pressed={activityBar.current === "distill"}
     >
       <Icon name="flask-conical" size={20} />
     </button>

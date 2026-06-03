@@ -21,7 +21,7 @@
 
 <div class="distill-body">
   {#if status === "empty"}
-    <p class="distill-hint">在左側選一個資料夾，再挑一篇 <code>.md</code> 來提煉它的名詞。</p>
+    <p class="distill-hint">在另一欄開一篇 <code>.md</code>，Distill 會自動提煉它的名詞。</p>
   {:else if status === "loading"}
     <p class="distill-hint">提煉中…</p>
   {:else if status === "error"}

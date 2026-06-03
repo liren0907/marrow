@@ -354,10 +354,12 @@ export const workspace = {
   },
 
   // Distill view (virtual path "marrow://distill") — L0→L1 extraction for the
-  // multi-layer notes feature. Opens as a SINGLE full-page tab in the active
-  // pane (like Convert / Settings): Distill is self-contained — it brings its
-  // OWN file explorer and no longer follows a neighbouring pane. Dedup is
-  // global — at most one Distill tab across all panes.
+  // multi-layer notes feature. Distill is a panel-only tab that follows the
+  // markdown open in a NEIGHBOURING pane, so when a note is active we open it in
+  // the OTHER pane (splitting if needed) and keep focus on the note pane — the
+  // panel ends up beside the note and the user keeps editing. With no markdown
+  // open (e.g. first launch) we open it in the active pane like Settings, so
+  // it's reachable on its own. Dedup is global — at most one Distill tab.
   openDistillView(): void {
     for (const p of state.panes) {
       const t = p.tabs.find((x) => x.kind === "distill");
@@ -367,16 +369,28 @@ export const workspace = {
         return;
       }
     }
-    const pane = findPane(state.activePaneId) ?? state.panes[0];
-    const tab: Tab = {
+    const makeTab = (): Tab => ({
       id: crypto.randomUUID(),
       path: "marrow://distill",
       kind: "distill",
       title: "Distill",
       isDirty: false,
-    };
-    pane.tabs.push(tab);
-    pane.activeTabId = tab.id;
+    });
+    const activePane = findPane(state.activePaneId) ?? state.panes[0];
+    const activeTab = activePane.tabs.find((t) => t.id === activePane.activeTabId);
+    if (activeTab?.kind === "markdown") {
+      // Beside the note, in the other pane; focus stays on the note pane.
+      if (state.panes.length < 2) state.panes.push(newPane());
+      const other = state.panes.find((p) => p.id !== activePane.id) ?? activePane;
+      const tab = makeTab();
+      other.tabs.push(tab);
+      other.activeTabId = tab.id;
+    } else {
+      const tab = makeTab();
+      activePane.tabs.push(tab);
+      activePane.activeTabId = tab.id;
+      state.activePaneId = activePane.id;
+    }
   },
 
   // True when any pane currently hosts a Distill tab. Read by +page.svelte so

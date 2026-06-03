@@ -170,14 +170,17 @@
 
 <style>
   .dx {
+    /* Fills its host (the global Sidebar's activity body, or a framed gallery
+       box) — no fixed width / own border / own background; it inherits from
+       whatever it's mounted in. */
     display: flex;
     flex-direction: column;
     height: 100%;
-    width: 240px;
-    flex-shrink: 0;
-    border-right: 1px solid var(--mw-rule);
-    background: var(--color-base-200);
+    width: 100%;
+    flex: 1;
     min-width: 0;
+    min-height: 0;
+    background: transparent;
   }
   .dx-root {
     display: flex;

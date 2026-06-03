@@ -378,7 +378,8 @@ export const MANIFEST: ManifestRoute[] = [
             name: "DistillExplorer",
             importPath: "$lib/distill/DistillExplorer.svelte",
             kind: "seed",
-            blurb: "Distill 自帶的左欄選檔器。此處用 mock transport,列出 devmock 範例 .md。",
+            blurb: "Distill activity 的 sidebar 選檔器(列 .md,挑檔→開成 MarkdownTab)。此處用 mock transport 列 devmock 範例 .md。",
+            previewHeight: 360,
             examples: [
               {
                 props: () => ({
@@ -421,14 +422,13 @@ export const MANIFEST: ManifestRoute[] = [
             importPath: "$lib/distill/DistillTab.svelte",
             kind: "seed",
             blurb:
-              "整頁 Distill 視圖(左 explorer + 右名詞提煉)。此處以 preview 模式用 mock transport 離線真渲染,預選一篇 .md 顯示提煉結果(devmock 範例詞),不讀寫真實 Distill 狀態。",
+              "Distill 分頁(只放 DistillPanel,跟鄰居 pane 的 markdown)。此處以 preview 模式用 mock transport + 注入來源離線真渲染,顯示提煉結果(devmock 範例詞),不讀寫真實 workspace。",
             previewHeight: 440,
             examples: [
               {
                 props: () => {
-                  const root = workspace.info?.root ?? "";
                   const md = workspace.fileIndex.find((f) => f.kind === "markdown");
-                  return { transport: "mock", initialRoot: root, initialSource: md?.path };
+                  return { transport: "mock", previewSource: md?.path };
                 },
               },
             ],

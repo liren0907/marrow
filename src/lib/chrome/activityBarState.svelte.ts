@@ -1,4 +1,4 @@
-export type Activity = "files" | "search" | "tags" | "graph" | "backlinks";
+export type Activity = "files" | "search" | "tags" | "graph" | "backlinks" | "distill";
 
 const STORAGE_KEY = "marrow.activity";
 const VALID: Set<Activity> = new Set([
@@ -7,6 +7,7 @@ const VALID: Set<Activity> = new Set([
   "tags",
   "graph",
   "backlinks",
+  "distill",
 ]);
 
 function loadInitial(): Activity {

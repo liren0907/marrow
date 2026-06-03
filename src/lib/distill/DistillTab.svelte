@@ -1,15 +1,13 @@
 <script lang="ts">
-  // Distill — the L0→L1 view of the multi-layer notes feature. A self-contained
-  // full page: its OWN file explorer (left) + the extracted noun-ish terms
-  // (right). It does NOT reuse the global Sidebar / FileTree / workspace store
-  // and no longer follows a neighbouring pane — the source is whatever the user
-  // picks in Distill's own explorer, uniformly across every transport.
-  //
-  // Read-only: no editor overlay, no DB write — a pure `path → annotations`
-  // projection. Listing + extraction are transport-aware:
-  //   - invoke → native IPC (real files via `list_workspace_files`).
+  // Distill — the L0→L1 view of the multi-layer notes feature. A panel-only tab:
+  // it renders ONLY the extracted noun-ish terms (DistillPanel) and follows the
+  // markdown open in a NEIGHBOURING pane. There's no embedded editor and no own
+  // explorer — the L0 source is just a normal MarkdownTab sitting beside it, so
+  // you edit your note as usual and the panel re-extracts when you switch notes
+  // or save. Extraction is transport-aware:
+  //   - invoke → native IPC (reads the real file by path).
   //   - http   → dev-only :7080 bridge (real files from a browser).
-  //   - mock   → in-memory devmock (offline sample).
+  //   - mock   → in-memory devmock (offline sample / gallery preview).
   import { untrack } from "svelte";
   import { workspace } from "$lib/workspace/workspace.svelte";
   import {
@@ -20,36 +18,30 @@
     type DistillTransport,
   } from "$lib/workspace/tauri";
   import { basename } from "$lib/workspace/fileKind";
-  import DistillExplorer from "./DistillExplorer.svelte";
   import DistillPanel from "./DistillPanel.svelte";
   import Icon from "$lib/components/ui/Icon.svelte";
 
-  // Normally self-contained (no props): Distill derives its source from its own
-  // explorer and persists root/source to localStorage. The dev-only /gallery
-  // can inject a transport + initial source to render the page OFFLINE without
-  // reading or writing the user's real Distill localStorage — "preview mode".
-  // In normal app use no props are passed, so behaviour is unchanged.
+  // Normally no props: Distill follows the neighbouring markdown pane. The
+  // dev-only /gallery injects a transport + a fixed source path to render the
+  // tab OFFLINE without a real pane behind it — "preview mode". In normal app
+  // use no props are passed, so behaviour is unchanged.
   let {
     transport: transportProp = undefined,
-    initialRoot = undefined,
-    initialSource = undefined,
+    previewSource = undefined,
   }: {
     transport?: DistillTransport;
-    initialRoot?: string;
-    initialSource?: string;
+    previewSource?: string;
   } = $props();
 
-  // Preview-injection props are read ONCE at init by design (the gallery passes
-  // static values); untrack makes that intent explicit and avoids the
-  // state_referenced_locally lint.
+  // Read ONCE at init by design (the gallery passes static values); untrack
+  // makes that intent explicit and avoids the state_referenced_locally lint.
   const preview = untrack(() => transportProp !== undefined);
 
   // ── Transport (dev-only chip) ────────────────────────────────────────────
   // The :7080 HTTP bridge only exists in debug builds, so the chip is gated on
-  // import.meta.env.DEV. The explorer re-lists automatically when `transport`
-  // changes (it's a prop), and extraction re-runs via the $effect below.
-  // Hidden in preview mode: cycling would write localStorage and switch to a
-  // backend (http/invoke) that isn't reachable from the gallery.
+  // import.meta.env.DEV. Extraction re-runs via the $effect below when the
+  // transport changes. Hidden in preview mode: cycling would switch to a backend
+  // (http/invoke) that isn't reachable from the gallery.
   const showTransport = import.meta.env.DEV && !preview;
   const TRANSPORT_CYCLE: DistillTransport[] = ["invoke", "http", "mock"];
   const TRANSPORT_LABEL: Record<DistillTransport, string> = {
@@ -59,59 +51,27 @@
   };
   let transport = $state<DistillTransport>(untrack(() => transportProp ?? distillTransport()));
 
-  // ── Own source state (root + picked file), persisted ─────────────────────
-  const ROOT_KEY = "marrow.distill.root";
-  const SOURCE_KEY = "marrow.distill.source";
-  function lsGet(key: string): string {
-    if (typeof localStorage === "undefined") return "";
-    try {
-      return localStorage.getItem(key) ?? "";
-    } catch {
-      return "";
+  // ── Source resolution (follow the neighbouring markdown pane) ─────────────
+  // The source is the active markdown tab in whichever pane isn't this Distill
+  // tab. Distill's own pane has a `distill`-kind active tab, so it's skipped
+  // naturally; we just take the first pane whose active tab is markdown.
+  const sourceTab = $derived.by(() => {
+    if (preview) return null;
+    for (const pane of workspace.panes) {
+      const active = pane.tabs.find((t) => t.id === pane.activeTabId);
+      if (active?.kind === "markdown") return active;
     }
-  }
-  function lsSet(key: string, value: string): void {
-    if (typeof localStorage === "undefined") return;
-    try {
-      if (value) localStorage.setItem(key, value);
-      else localStorage.removeItem(key);
-    } catch {
-      // ignore — private mode / quota
-    }
-  }
-
-  // Default root = a persisted choice, else the currently open workspace as a
-  // convenient starting point (fully overridable — it's Distill's own copy).
-  let root = $state(
-    untrack(() =>
-      preview
-        ? (initialRoot ?? workspace.info?.root ?? "")
-        : lsGet(ROOT_KEY) || workspace.info?.root || "",
-    ),
-  );
-  let selected = $state<string | null>(
-    untrack(() => (preview ? (initialSource ?? null) : lsGet(SOURCE_KEY) || null)),
+    return null;
+  });
+  const sourcePath = $derived(preview ? (previewSource ?? null) : (sourceTab?.path ?? null));
+  // Bumps when the source switches, is saved (lastSavedTs) or is reloaded after
+  // an external change (reloadToken) — drives a re-extract so the panel tracks
+  // the note's saved content.
+  const sourceVersion = $derived(
+    sourceTab ? `${sourceTab.lastSavedTs ?? 0}:${sourceTab.reloadToken ?? 0}` : "",
   );
 
-  function onroot(next: string): void {
-    if (next === root) return;
-    root = next;
-    if (!preview) lsSet(ROOT_KEY, next);
-    // The previous pick belonged to the old folder — drop it so the result
-    // panel doesn't show stale terms for a file outside the new listing.
-    selected = null;
-    if (!preview) lsSet(SOURCE_KEY, "");
-  }
-
-  function onpick(path: string): void {
-    selected = path || null;
-    if (!preview) lsSet(SOURCE_KEY, selected ?? "");
-    // sourcePath ($derived) updates → the $effect below re-extracts.
-  }
-
-  // ── Source resolution + extraction ───────────────────────────────────────
-  const sourcePath = $derived(selected);
-
+  // ── Extraction ────────────────────────────────────────────────────────────
   let status = $state<"empty" | "loading" | "ready" | "error">("empty");
   let annotations = $state<Annotation[]>([]);
   let errorMessage = $state("");
@@ -139,11 +99,11 @@
     }
   }
 
-  // Re-extract whenever the source OR the transport changes. Reading
-  // `transport` here registers it as a dependency so cycling the chip
-  // re-extracts the same file through the newly selected backend.
+  // Re-extract whenever the source path/version OR the transport changes.
+  // Reading each here registers it as a dependency.
   $effect(() => {
     void transport;
+    void sourceVersion;
     void run(sourcePath);
   });
 
@@ -158,64 +118,55 @@
 </script>
 
 <div class="distill">
-  <DistillExplorer {root} {transport} {selected} {onpick} {onroot} />
-
-  <div class="distill-main">
-    <header class="distill-header">
-      <div class="distill-title">
-        <Icon name="flask-conical" size={15} />
-        <span>Distill</span>
-        {#if sourcePath}
-          <span class="distill-source" title={sourcePath}>{basename(sourcePath)}</span>
-        {/if}
-      </div>
-      <div class="distill-actions">
-        {#if showTransport}
-          <button
-            type="button"
-            class="distill-mode"
-            title={`提煉來源：${TRANSPORT_LABEL[transport]}（dev 切換 IPC / HTTP / MOCK）`}
-            aria-label={`Distill transport: ${TRANSPORT_LABEL[transport]}`}
-            onclick={cycleTransport}
-          >
-            {TRANSPORT_LABEL[transport]}
-          </button>
-        {/if}
-        {#if status === "ready"}
-          <span class="mw-meta">{totalTerms} terms</span>
-        {/if}
+  <header class="distill-header">
+    <div class="distill-title">
+      <Icon name="flask-conical" size={15} />
+      <span>Distill</span>
+      {#if sourcePath}
+        <span class="distill-source" title={sourcePath}>{basename(sourcePath)}</span>
+      {/if}
+    </div>
+    <div class="distill-actions">
+      {#if showTransport}
         <button
           type="button"
-          class="distill-refresh"
-          title="Re-extract"
-          aria-label="Re-extract"
-          disabled={!sourcePath || status === "loading"}
-          onclick={() => run(sourcePath)}
+          class="distill-mode"
+          title={`提煉來源：${TRANSPORT_LABEL[transport]}（dev 切換 IPC / HTTP / MOCK）`}
+          aria-label={`Distill transport: ${TRANSPORT_LABEL[transport]}`}
+          onclick={cycleTransport}
         >
-          <Icon name="rotate-ccw" size={14} />
+          {TRANSPORT_LABEL[transport]}
         </button>
-      </div>
-    </header>
+      {/if}
+      {#if status === "ready"}
+        <span class="mw-meta">{totalTerms} terms</span>
+      {/if}
+      <button
+        type="button"
+        class="distill-refresh"
+        title="Re-extract"
+        aria-label="Re-extract"
+        disabled={!sourcePath || status === "loading"}
+        onclick={() => run(sourcePath)}
+      >
+        <Icon name="rotate-ccw" size={14} />
+      </button>
+    </div>
+  </header>
 
-    <DistillPanel {status} {annotations} {errorMessage} />
-  </div>
+  <DistillPanel {status} {annotations} {errorMessage} />
 </div>
 
 <style>
   .distill {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     height: 100%;
     width: 100%;
-    background: var(--color-base-100);
-    color: var(--color-base-content);
-  }
-  .distill-main {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
     min-width: 0;
     min-height: 0;
+    background: var(--color-base-100);
+    color: var(--color-base-content);
   }
   .distill-header {
     display: flex;
