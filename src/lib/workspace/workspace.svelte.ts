@@ -355,11 +355,19 @@ export const workspace = {
 
   // Distill view (virtual path "marrow://distill") — L0→L1 extraction for the
   // multi-layer notes feature. Distill is a panel-only tab that follows the
-  // markdown open in a NEIGHBOURING pane, so when a note is active we open it in
-  // the OTHER pane (splitting if needed) and keep focus on the note pane — the
-  // panel ends up beside the note and the user keeps editing. With no markdown
-  // open (e.g. first launch) we open it in the active pane like Settings, so
-  // it's reachable on its own. Dedup is global — at most one Distill tab.
+  // markdown open in a NEIGHBOURING pane. It pairs with the "distill" activity:
+  // clicking the flask swaps the sidebar to the DistillExplorer (a file picker)
+  // and calls this to lay out the panes, giving the three-zone Distill workspace
+  // [ DistillExplorer | editor | Distill panel ]. Behaviour:
+  //   • An existing Distill tab is focused (dedup — at most one globally).
+  //   • With a markdown note active (the focused pane's note, or any pane's
+  //     active markdown), the panel opens beside it guaranteeing [ note | Distill ]
+  //     order: split if needed, then if the note pane sits right of the Distill
+  //     pane, swap their array positions. Reordering the id-keyed pane #each
+  //     moves panes WITHOUT remounting editors, so the note's cursor/undo survive.
+  //   • With no note open, the panel opens on the right and the left pane is left
+  //     empty for the editor; picking a file in the DistillExplorer opens it there
+  //     and the panel follows. No blocking toast.
   openDistillView(): void {
     for (const p of state.panes) {
       const t = p.tabs.find((x) => x.kind === "distill");
@@ -369,27 +377,50 @@ export const workspace = {
         return;
       }
     }
-    const makeTab = (): Tab => ({
+    const tab: Tab = {
       id: crypto.randomUUID(),
       path: "marrow://distill",
       kind: "distill",
       title: "Distill",
       isDirty: false,
-    });
+    };
+    // Distill needs two panes: the note/editor on the left, the panel on the
+    // right. Split if there's only one.
+    if (state.panes.length < 2) state.panes.push(newPane());
+    // Prefer to distill the focused pane's markdown, else any pane's active
+    // markdown.
     const activePane = findPane(state.activePaneId) ?? state.panes[0];
-    const activeTab = activePane.tabs.find((t) => t.id === activePane.activeTabId);
-    if (activeTab?.kind === "markdown") {
-      // Beside the note, in the other pane; focus stays on the note pane.
-      if (state.panes.length < 2) state.panes.push(newPane());
-      const other = state.panes.find((p) => p.id !== activePane.id) ?? activePane;
-      const tab = makeTab();
-      other.tabs.push(tab);
-      other.activeTabId = tab.id;
+    const activeIsMarkdown =
+      activePane.tabs.find((t) => t.id === activePane.activeTabId)?.kind ===
+      "markdown";
+    const notePane = activeIsMarkdown
+      ? activePane
+      : (state.panes.find(
+          (p) => p.tabs.find((t) => t.id === p.activeTabId)?.kind === "markdown",
+        ) ?? null);
+    if (notePane) {
+      // Panel beside the note; guarantee [ note | Distill ] order (swap if the
+      // note pane sits right of the Distill pane). Focus stays on the note.
+      const distillPane =
+        state.panes.find((p) => p.id !== notePane.id) ?? notePane;
+      distillPane.tabs.push(tab);
+      distillPane.activeTabId = tab.id;
+      const noteIdx = state.panes.findIndex((p) => p.id === notePane.id);
+      const distillIdx = state.panes.findIndex((p) => p.id === distillPane.id);
+      if (noteIdx > distillIdx) {
+        const tmp = state.panes[noteIdx];
+        state.panes[noteIdx] = state.panes[distillIdx];
+        state.panes[distillIdx] = tmp;
+      }
     } else {
-      const tab = makeTab();
-      activePane.tabs.push(tab);
-      activePane.activeTabId = tab.id;
-      state.activePaneId = activePane.id;
+      // No note yet: Distill on the right, left pane left empty for the editor.
+      // Focus the editor pane so the DistillExplorer's pick lands there.
+      const distillPane = state.panes[state.panes.length - 1];
+      distillPane.tabs.push(tab);
+      distillPane.activeTabId = tab.id;
+      const editorPane =
+        state.panes.find((p) => p.id !== distillPane.id) ?? distillPane;
+      state.activePaneId = editorPane.id;
     }
   },
 

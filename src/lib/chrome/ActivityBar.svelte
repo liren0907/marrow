@@ -33,9 +33,9 @@
     if (!uiSettings.showSidebar) toggleSidebar();
   }
 
-  // Distill is an activity (its sidebar panel is the DistillExplorer) AND a
-  // feature launcher: clicking it swaps the sidebar to the explorer and opens
-  // the panel tab beside the current note.
+  // Distill is an activity whose sidebar panel is the DistillExplorer (a file
+  // picker). Clicking the flask swaps the sidebar to it AND lays out the panes
+  // (editor | Distill panel) so you land in the full three-zone Distill view.
   function onDistillClick() {
     setActivity("distill");
     if (!uiSettings.showSidebar) toggleSidebar();
@@ -73,6 +73,22 @@
     {/each}
   </div>
   <div class="activity-group">
+    <!-- Distill is an activity (swaps the sidebar to the DistillExplorer, which
+         lets you pick a note to distill). The divider sets it apart from the
+         one-shot launchers below so its persistent active state reads as
+         intentional. -->
+    <button
+      type="button"
+      class="activity-btn tooltip tooltip-right"
+      class:active={activityBar.current === "distill"}
+      onclick={onDistillClick}
+      data-tip="Distill"
+      aria-label="Distill"
+      aria-pressed={activityBar.current === "distill"}
+    >
+      <Icon name="flask-conical" size={20} />
+    </button>
+    <div class="activity-divider" aria-hidden="true"></div>
     <button
       type="button"
       class="activity-btn tooltip tooltip-right"
@@ -90,17 +106,6 @@
       aria-label="Convert to Markdown"
     >
       <Icon name="file-code" size={20} />
-    </button>
-    <button
-      type="button"
-      class="activity-btn tooltip tooltip-right"
-      class:active={activityBar.current === "distill"}
-      onclick={onDistillClick}
-      data-tip="Distill"
-      aria-label="Distill"
-      aria-pressed={activityBar.current === "distill"}
-    >
-      <Icon name="flask-conical" size={20} />
     </button>
     <button
       type="button"
