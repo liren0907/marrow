@@ -1,6 +1,14 @@
 import type { IconName } from "$lib/components/ui/Icon.svelte";
 import { workspace } from "$lib/workspace/workspace.svelte";
 import { pathForImport } from "./discovery";
+import {
+  imageTab,
+  videoTab,
+  audioTab,
+  unsupportedTab,
+  textTab,
+  seededMarkdownTab,
+} from "./sampleTabs";
 
 // Curated catalog for the dev-only /gallery, organised the way the user's
 // reference project does it: ROUTE (a logical view/page of the app) → semantic
@@ -268,14 +276,88 @@ export const MANIFEST: ManifestRoute[] = [
           { name: "OutlineTab", importPath: "$lib/panels/OutlineTab.svelte", kind: "seed", blurb: "目前 markdown 的標題大綱。", examples: [{}] },
         ],
       },
+    ],
+  },
+
+  // ── viewers (file-content viewers, dispatched by TabBody on tab.kind) ────────
+  {
+    id: "viewers",
+    title: "viewers",
+    chip: "$lib/viewers",
+    blurb:
+      "開檔時負責渲染檔案內容的元件(TabBody 依 tab.kind 分派)。gallery 端用假 tab / 範例素材離線真渲染,不發任何 Tauri、不改 viewer 本身。MarkdownTab 重用 seed 開好的真 tab。",
+    groups: [
       {
-        label: "Editor & viewers",
+        label: "Text & code",
         accent: "primary",
         items: [
-          { name: "MarkdownTab", importPath: "$lib/viewers/MarkdownTab.svelte", kind: "note", blurb: "Notion 風 WYSIWYG markdown 分頁。", note: "Milkdown 編輯器實例(架構規則 #1:handle 不進 $state)+ 需真實 markdown tab,不在 gallery 內掛載。" },
-          { name: "PdfTab", importPath: "$lib/viewers/PdfTab.svelte", kind: "note", blurb: "PDF.js 虛擬化頁面預覽。", note: "需真實 PDF bytes(read_binary_file),不在 gallery 內掛載。" },
-          { name: "TextTab", importPath: "$lib/viewers/TextTab.svelte", kind: "note", blurb: "CodeMirror 唯讀 + 語言偵測。", note: "需真實檔案內容 + CodeMirror 實例,不在 gallery 內掛載。" },
-          { name: "ImageTab", importPath: "$lib/viewers/ImageTab.svelte", kind: "note", blurb: "圖片預覽分頁。", note: "需真實圖片路徑(asset 協定),不在 gallery 內掛載。" },
+          {
+            name: "MarkdownTab",
+            importPath: "$lib/viewers/MarkdownTab.svelte",
+            kind: "seed",
+            blurb: "Notion 風 WYSIWYG markdown 分頁(Milkdown)。此處重用 seed 開好的真 markdown tab 渲染。",
+            previewHeight: 460,
+            examples: [{ props: () => ({ tab: seededMarkdownTab() }) }],
+          },
+          {
+            name: "TextTab",
+            importPath: "$lib/viewers/TextTab.svelte",
+            kind: "seed",
+            blurb: "CodeMirror 唯讀 + 語言偵測。此處餵一個 mock .md 當來源,顯示其原始碼。",
+            previewHeight: 320,
+            examples: [{ props: () => ({ tab: textTab() }) }],
+          },
+        ],
+      },
+      {
+        label: "Media",
+        accent: "accent",
+        items: [
+          {
+            name: "ImageTab",
+            importPath: "$lib/viewers/ImageTab.svelte",
+            kind: "props",
+            blurb: "圖片預覽分頁。此處用內嵌 SVG 範例圖。",
+            previewHeight: 200,
+            examples: [{ props: () => ({ tab: imageTab() }) }],
+          },
+          {
+            name: "VideoTab",
+            importPath: "$lib/viewers/VideoTab.svelte",
+            kind: "props",
+            blurb: "影片預覽分頁(原生 <video> controls)。此處用幾 KB 範例 mp4。",
+            previewHeight: 200,
+            examples: [{ props: () => ({ tab: videoTab() }) }],
+          },
+          {
+            name: "AudioTab",
+            importPath: "$lib/viewers/AudioTab.svelte",
+            kind: "props",
+            blurb: "音訊預覽分頁(原生 <audio> controls)。此處用範例 wav。",
+            previewHeight: 200,
+            examples: [{ props: () => ({ tab: audioTab() }) }],
+          },
+        ],
+      },
+      {
+        label: "Document",
+        accent: "secondary",
+        items: [
+          {
+            name: "UnsupportedTab",
+            importPath: "$lib/viewers/UnsupportedTab.svelte",
+            kind: "props",
+            blurb: "無對應 viewer 的檔案 fallback(icon + 標題 +「以系統開啟」)。",
+            previewHeight: 200,
+            examples: [{ props: () => ({ tab: unsupportedTab() }) }],
+          },
+          {
+            name: "PdfTab",
+            importPath: "$lib/viewers/PdfTab.svelte",
+            kind: "note",
+            blurb: "PDF.js 虛擬化頁面預覽。",
+            note: "需真實 PDF bytes(走 read_binary_file 讀取路徑),gallery 端餵不進去,維持不掛載。",
+          },
         ],
       },
     ],
