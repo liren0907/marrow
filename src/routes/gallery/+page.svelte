@@ -6,13 +6,19 @@
   // demo workspace (no Tauri). Only the SELECTED route is mounted at a time, so
   // we never mount every heavy component at once.
   import { onMount, tick } from "svelte";
+  import { SvelteSet } from "svelte/reactivity";
   import { MANIFEST } from "$lib/gallery/manifest";
   import GallerySidebar from "$lib/gallery/GallerySidebar.svelte";
   import ComponentDoc from "$lib/gallery/ComponentDoc.svelte";
   import { seedWorkspace } from "$lib/gallery/fixtures";
 
   const routes = MANIFEST;
+  // `selected` drives the main panel; `expanded` drives which tree nodes are
+  // open. They're decoupled so each route node collapses independently (the
+  // selected one included) and an all-collapsed tree is allowed — the main
+  // panel keeps showing the last-picked route regardless of tree state.
   let selected = $state(routes[0]?.id ?? "");
+  const expanded = new SvelteSet<string>(routes[0] ? [routes[0].id] : []);
   let ready = $state(false);
   const route = $derived(routes.find((r) => r.id === selected) ?? routes[0]);
 
@@ -27,11 +33,26 @@
     document.documentElement.setAttribute("data-theme", t);
   }
 
+  // Route header click: a plain expand/collapse toggle. Expanding also makes the
+  // route the one shown in the main panel; collapsing leaves the main panel as-is
+  // (so you can tidy the tree without losing what you're reading).
+  function ontoggle(routeId: string): void {
+    if (expanded.has(routeId)) {
+      expanded.delete(routeId);
+    } else {
+      expanded.add(routeId);
+      selected = routeId;
+    }
+  }
+
+  // Child item click: show that route in the main panel, ensure its node is
+  // open, then scroll to the component anchor.
   async function onselect(routeId: string, anchor?: string): Promise<void> {
     if (routeId !== selected) {
       selected = routeId;
       await tick();
     }
+    expanded.add(routeId);
     if (anchor) {
       document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -52,7 +73,7 @@
 
 {#if import.meta.env.DEV}
   <div class="gallery">
-    <GallerySidebar {routes} {selected} {onselect} />
+    <GallerySidebar {routes} {selected} {expanded} {onselect} {ontoggle} />
 
     <main class="gallery-main">
       <header class="gx-head">

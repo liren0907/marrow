@@ -7,11 +7,15 @@
   let {
     routes,
     selected,
+    expanded,
     onselect,
+    ontoggle,
   }: {
     routes: ManifestRoute[];
     selected: string;
+    expanded: Set<string>;
     onselect: (routeId: string, anchor?: string) => void;
+    ontoggle: (routeId: string) => void;
   } = $props();
 </script>
 
@@ -24,9 +28,15 @@
 
   <nav class="gs-tree">
     {#each routes as r (r.id)}
-      {@const open = r.id === selected}
+      {@const open = expanded.has(r.id)}
       <div class="gs-route">
-        <button class="gs-route-head" class:open onclick={() => onselect(r.id)}>
+        <button
+          class="gs-route-head"
+          class:open
+          class:active={r.id === selected}
+          aria-expanded={open}
+          onclick={() => ontoggle(r.id)}
+        >
           <Icon name={open ? "chevron-down" : "chevron-right"} size={13} />
           <span>{r.title}</span>
         </button>
@@ -86,6 +96,10 @@
   }
   .gs-route-head:hover {
     background: color-mix(in oklch, var(--mw-accent) 7%, transparent);
+  }
+  .gs-route-head.active {
+    background: color-mix(in oklch, var(--mw-accent) 12%, transparent);
+    color: var(--mw-accent);
   }
   .gs-children {
     margin: 2px 0 8px 13px;
