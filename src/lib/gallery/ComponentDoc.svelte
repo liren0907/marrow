@@ -42,8 +42,11 @@
       <span class="cd-dim">seeding…</span>
     {:else}
       {#each examples as ex, i (i)}
-        <div class="cd-ex">
-          <div class="cd-ex-render">
+        <div class="cd-ex" class:cd-ex-page={item.previewHeight}>
+          <div
+            class="cd-ex-render"
+            style={item.previewHeight ? `height:${item.previewHeight}px` : undefined}
+          >
             <ComponentPreview {path} props={ex.props ?? {}} text={ex.text} />
           </div>
           {#if ex.label}<span class="cd-ex-label">{ex.label}</span>{/if}
@@ -126,6 +129,18 @@
   .cd-ex-label {
     font-size: 10px;
     color: var(--mw-ink-3);
+  }
+  /* Full-page components (previewHeight): one framed, fixed-height box so a
+     height:100% component has a bounded parent to fill instead of collapsing. */
+  .cd-ex-page {
+    width: 100%;
+  }
+  .cd-ex-page .cd-ex-render {
+    width: 100%;
+    border: 1px solid var(--mw-rule);
+    border-radius: var(--mw-radius-sm, 8px);
+    overflow: hidden;
+    background: var(--color-base-100);
   }
   .cd-note {
     display: flex;

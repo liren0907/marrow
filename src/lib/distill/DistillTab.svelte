@@ -10,6 +10,7 @@
   //   - invoke → native IPC (real files via `list_workspace_files`).
   //   - http   → dev-only :7080 bridge (real files from a browser).
   //   - mock   → in-memory devmock (offline sample).
+  import { untrack } from "svelte";
   import { workspace } from "$lib/workspace/workspace.svelte";
   import {
     extractAnnotations,
@@ -20,24 +21,43 @@
   } from "$lib/workspace/tauri";
   import { basename } from "$lib/workspace/fileKind";
   import DistillExplorer from "./DistillExplorer.svelte";
+  import DistillResult from "./DistillResult.svelte";
   import Icon from "$lib/components/ui/Icon.svelte";
-  import Badge from "$lib/components/ui/Badge.svelte";
 
-  // No props — Distill is a self-contained page; it derives its source from its
-  // own explorer, not from the host tab.
+  // Normally self-contained (no props): Distill derives its source from its own
+  // explorer and persists root/source to localStorage. The dev-only /gallery
+  // can inject a transport + initial source to render the page OFFLINE without
+  // reading or writing the user's real Distill localStorage — "preview mode".
+  // In normal app use no props are passed, so behaviour is unchanged.
+  let {
+    transport: transportProp = undefined,
+    initialRoot = undefined,
+    initialSource = undefined,
+  }: {
+    transport?: DistillTransport;
+    initialRoot?: string;
+    initialSource?: string;
+  } = $props();
+
+  // Preview-injection props are read ONCE at init by design (the gallery passes
+  // static values); untrack makes that intent explicit and avoids the
+  // state_referenced_locally lint.
+  const preview = untrack(() => transportProp !== undefined);
 
   // ── Transport (dev-only chip) ────────────────────────────────────────────
   // The :7080 HTTP bridge only exists in debug builds, so the chip is gated on
   // import.meta.env.DEV. The explorer re-lists automatically when `transport`
   // changes (it's a prop), and extraction re-runs via the $effect below.
-  const showTransport = import.meta.env.DEV;
+  // Hidden in preview mode: cycling would write localStorage and switch to a
+  // backend (http/invoke) that isn't reachable from the gallery.
+  const showTransport = import.meta.env.DEV && !preview;
   const TRANSPORT_CYCLE: DistillTransport[] = ["invoke", "http", "mock"];
   const TRANSPORT_LABEL: Record<DistillTransport, string> = {
     invoke: "IPC",
     http: "HTTP",
     mock: "MOCK",
   };
-  let transport = $state<DistillTransport>(distillTransport());
+  let transport = $state<DistillTransport>(untrack(() => transportProp ?? distillTransport()));
 
   // ── Own source state (root + picked file), persisted ─────────────────────
   const ROOT_KEY = "marrow.distill.root";
@@ -62,22 +82,30 @@
 
   // Default root = a persisted choice, else the currently open workspace as a
   // convenient starting point (fully overridable — it's Distill's own copy).
-  let root = $state(lsGet(ROOT_KEY) || workspace.info?.root || "");
-  let selected = $state<string | null>(lsGet(SOURCE_KEY) || null);
+  let root = $state(
+    untrack(() =>
+      preview
+        ? (initialRoot ?? workspace.info?.root ?? "")
+        : lsGet(ROOT_KEY) || workspace.info?.root || "",
+    ),
+  );
+  let selected = $state<string | null>(
+    untrack(() => (preview ? (initialSource ?? null) : lsGet(SOURCE_KEY) || null)),
+  );
 
   function onroot(next: string): void {
     if (next === root) return;
     root = next;
-    lsSet(ROOT_KEY, next);
+    if (!preview) lsSet(ROOT_KEY, next);
     // The previous pick belonged to the old folder — drop it so the result
     // panel doesn't show stale terms for a file outside the new listing.
     selected = null;
-    lsSet(SOURCE_KEY, "");
+    if (!preview) lsSet(SOURCE_KEY, "");
   }
 
   function onpick(path: string): void {
     selected = path || null;
-    lsSet(SOURCE_KEY, selected ?? "");
+    if (!preview) lsSet(SOURCE_KEY, selected ?? "");
     // sourcePath ($derived) updates → the $effect below re-extracts.
   }
 
@@ -100,7 +128,7 @@
     const id = ++reqSeq;
     status = "loading";
     try {
-      const result = await extractAnnotations(path);
+      const result = await extractAnnotations(path, transport);
       if (id !== reqSeq) return; // superseded
       annotations = result;
       status = "ready";
@@ -169,29 +197,7 @@
       </div>
     </header>
 
-    <div class="distill-body">
-      {#if status === "empty"}
-        <p class="distill-hint">在左側選一個資料夾，再挑一篇 <code>.md</code> 來提煉它的名詞。</p>
-      {:else if status === "loading"}
-        <p class="distill-hint">提煉中…</p>
-      {:else if status === "error"}
-        <p class="distill-hint distill-error">提煉失敗：{errorMessage}</p>
-      {:else if annotations.length === 0}
-        <p class="distill-hint">沒有抽到名詞。</p>
-      {:else}
-        <ul class="distill-list">
-          {#each annotations as a (a.text)}
-            <li class="distill-row">
-              <span class="distill-term">{a.text}</span>
-              <span class="distill-meta">
-                <Badge variant="ghost" size="xs">{a.pos}</Badge>
-                <span class="distill-count">{a.count}</span>
-              </span>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-    </div>
+    <DistillResult {status} {annotations} {errorMessage} />
   </div>
 </div>
 
@@ -271,58 +277,5 @@
   }
   .distill-refresh:disabled {
     opacity: 0.4;
-  }
-  .distill-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 6px 8px;
-    min-height: 0;
-  }
-  .distill-hint {
-    color: var(--mw-ink-3);
-    font-size: var(--text-xs);
-    padding: 12px 8px;
-    line-height: 1.5;
-  }
-  .distill-error {
-    color: var(--color-error);
-  }
-  .distill-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .distill-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 4px 8px;
-    border-radius: var(--mw-radius-xs);
-  }
-  .distill-row:hover {
-    background: color-mix(in oklch, var(--mw-accent) 6%, transparent);
-  }
-  .distill-term {
-    font-size: var(--text-sm);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .distill-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-  }
-  .distill-count {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--mw-ink-2);
-    min-width: 1.5em;
-    text-align: right;
   }
 </style>

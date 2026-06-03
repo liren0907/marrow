@@ -252,9 +252,14 @@ export function setDistillTransport(t: DistillTransport): void {
   }
 }
 
-/** L0 → L1: extract noun-ish terms (with frequency) from a Markdown file. */
-export function extractAnnotations(path: string): Promise<Annotation[]> {
-  const transport = distillTransport();
+/** L0 → L1: extract noun-ish terms (with frequency) from a Markdown file.
+ * `transport` defaults to the global resolver, but a caller (DistillTab) can
+ * pass its own so listing and extraction use the SAME backend — needed when an
+ * explicit transport is injected (e.g. the gallery's offline mock preview). */
+export function extractAnnotations(
+  path: string,
+  transport: DistillTransport = distillTransport(),
+): Promise<Annotation[]> {
   if (transport === "invoke") return invoke<Annotation[]>("extract_annotations", { path });
   if (transport === "mock") return mock.extractAnnotations(path);
   return extractAnnotationsHttp(path);

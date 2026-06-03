@@ -30,6 +30,9 @@ export interface ManifestItem {
   blurb: string;
   note?: string; // for kind "note"
   examples?: PreviewExample[]; // for kind "props" | "seed"
+  // Full-page components (height:100%) need a bounded height to render — when
+  // set, the preview renders inside a framed box of this many pixels tall.
+  previewHeight?: number;
 }
 
 export interface ManifestGroup {
@@ -307,11 +310,46 @@ export const MANIFEST: ManifestRoute[] = [
             ],
           },
           {
+            name: "DistillResult",
+            importPath: "$lib/distill/DistillResult.svelte",
+            kind: "props",
+            blurb:
+              "提煉結果面板(DistillTab 的右半,已抽成獨立元件)。純展示:依 status 顯示 5 種畫面,ready 時列出 詞 + 詞性 Badge + 次數。",
+            previewHeight: 104,
+            examples: [
+              {
+                label: "ready",
+                props: {
+                  status: "ready",
+                  annotations: [
+                    { text: "範例名詞", pos: "n", count: 3 },
+                    { text: "知識圖譜", pos: "n", count: 2 },
+                    { text: "marrow", pos: "eng", count: 1 },
+                  ],
+                },
+              },
+              { label: "empty", props: { status: "empty" } },
+              { label: "loading", props: { status: "loading" } },
+              { label: "error", props: { status: "error", errorMessage: "讀取失敗：ENOENT" } },
+              { label: "no terms", props: { status: "ready", annotations: [] } },
+            ],
+          },
+          {
             name: "DistillTab",
             importPath: "$lib/distill/DistillTab.svelte",
-            kind: "note",
-            blurb: "整頁 Distill 視圖(explorer + 提煉結果)。",
-            note: "瀏覽器下預設走 HTTP transport(:7080 bridge),且選檔後會呼叫 extractAnnotations;不在 gallery 內掛載。整頁效果見上方 route 說明。",
+            kind: "seed",
+            blurb:
+              "整頁 Distill 視圖(左 explorer + 右名詞提煉)。此處以 preview 模式用 mock transport 離線真渲染,預選一篇 .md 顯示提煉結果(devmock 範例詞),不讀寫真實 Distill 狀態。",
+            previewHeight: 440,
+            examples: [
+              {
+                props: () => {
+                  const root = workspace.info?.root ?? "";
+                  const md = workspace.fileIndex.find((f) => f.kind === "markdown");
+                  return { transport: "mock", initialRoot: root, initialSource: md?.path };
+                },
+              },
+            ],
           },
         ],
       },
