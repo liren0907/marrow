@@ -56,10 +56,11 @@
 
     {#if dismissible}
         <button
-            class="btn btn-sm btn-circle btn-ghost"
+            class="btn btn-ghost btn-circle btn-xs min-h-0 h-5 w-5"
+            aria-label="關閉"
             onclick={() => onclose?.()}
         >
-            <Icon name="x" size={18} />
+            <Icon name="x" size={16} />
         </button>
     {/if}
 </div>
