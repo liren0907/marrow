@@ -5,6 +5,7 @@
 // builds, so this transport is effectively dev-only too.
 
 import type { Annotation } from "./tauri";
+import type { ReadResult } from "./types";
 
 const BASE = "http://localhost:7080";
 
@@ -15,6 +16,18 @@ export async function extractAnnotationsHttp(path: string): Promise<Annotation[]
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ path }),
   });
+  if (!res.ok) {
+    throw new Error(`devserver ${res.status}: ${await res.text()}`);
+  }
+  return res.json();
+}
+
+/** Read a single file's text over the dev bridge (`GET /distill/file`). Lets the
+ *  browser Distill view open a REAL on-disk note in its editor pane — the
+ *  browser's normal read path is the in-memory mock, which has no real files.
+ *  Read-only; mirrors the `read_text_file` command's `{content, mtime}`. */
+export async function readTextFileHttp(path: string): Promise<ReadResult> {
+  const res = await fetch(`${BASE}/distill/file?path=${encodeURIComponent(path)}`);
   if (!res.ok) {
     throw new Error(`devserver ${res.status}: ${await res.text()}`);
   }

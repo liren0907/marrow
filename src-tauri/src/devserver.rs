@@ -10,7 +10,8 @@
 //! port, letting a browser (and browser automation) hit the real jieba pipeline.
 //!
 //! Security: bound to 127.0.0.1 only, CORS restricted to the Vite dev origin,
-//! and only the single read-only Distill endpoint is exposed.
+//! and only read-only Distill endpoints are exposed (list `.md`, read one
+//! file's text, extract annotations) — no write/delete surface.
 
 use std::sync::{Arc, OnceLock};
 
@@ -75,6 +76,7 @@ async fn serve(sig: Arc<Notify>) -> Result<(), String> {
     let app = Router::new()
         .route("/health", get(|| async { "ok" }))
         .route("/distill/tree", get(tree))
+        .route("/distill/file", get(file))
         .route("/distill/annotations", post(annotations))
         .layer(cors);
 
@@ -193,4 +195,40 @@ fn walk_md(root: &str) -> Result<Vec<TreeEntry>, String> {
     }
     out.sort_by(|a, b| a.rel.cmp(&b.rel));
     Ok(out)
+}
+
+#[derive(Deserialize)]
+struct FileQuery {
+    path: String,
+}
+
+#[derive(Serialize)]
+struct FileResult {
+    content: String,
+    mtime: u64,
+}
+
+/// `GET /distill/file?path=<abs>` — read a single file's text so the browser
+/// Distill view can open a REAL on-disk note in its editor pane (the browser's
+/// normal read path is the in-memory mock, which has no real files). Mirrors
+/// the `read_text_file` command's `{content, mtime}` shape. Read-only by
+/// design — there is deliberately no write counterpart. A bad path is a client
+/// error (400).
+async fn file(Query(q): Query<FileQuery>) -> Result<Json<FileResult>, (StatusCode, String)> {
+    let result = tokio::task::spawn_blocking(move || read_file(&q.path))
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("join: {e}")))?
+        .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
+    Ok(Json(result))
+}
+
+fn read_file(path: &str) -> Result<FileResult, String> {
+    let content = std::fs::read_to_string(path).map_err(|e| format!("read {path}: {e}"))?;
+    let mtime = std::fs::metadata(path)
+        .ok()
+        .and_then(|md| md.modified().ok())
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0);
+    Ok(FileResult { content, mtime })
 }

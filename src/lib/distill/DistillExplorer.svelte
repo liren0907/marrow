@@ -93,7 +93,7 @@
     <input
       class="dx-root-input"
       type="text"
-      placeholder="資料夾路徑…"
+      placeholder={isInTauri ? "資料夾路徑…" : "輸入絕對路徑後按 Enter…"}
       bind:value={rootDraft}
       spellcheck="false"
       title={root}
@@ -130,7 +130,11 @@
 
   <div class="dx-list">
     {#if status === "idle"}
-      <p class="dx-hint">選一個資料夾來列出 <code>.md</code>。</p>
+      {#if isInTauri}
+        <p class="dx-hint">選一個資料夾來列出 <code>.md</code>。</p>
+      {:else}
+        <p class="dx-hint">輸入資料夾的絕對路徑（按 Enter）來列出 <code>.md</code>。</p>
+      {/if}
     {:else if status === "loading"}
       <p class="dx-hint">載入中…</p>
     {:else if status === "error"}

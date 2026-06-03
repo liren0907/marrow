@@ -7,16 +7,22 @@
   // the explorer / editor / extractor stay fully decoupled.
   import { untrack } from "svelte";
   import { workspace } from "$lib/workspace/workspace.svelte";
-  import { distillTransport } from "$lib/workspace/tauri";
+  import { distillTransport, distillRoot, setDistillRoot } from "$lib/workspace/tauri";
+  import { isInTauri } from "$lib/devmock/detect";
   import DistillExplorer from "./DistillExplorer.svelte";
 
   const transport = distillTransport();
 
-  // Root = the open workspace; the explorer lists .md beneath it. Kept in sync
-  // if the workspace changes while the panel is mounted, but still overridable
-  // via the explorer's own root input (dev/http).
-  let root = $state(untrack(() => workspace.info?.root ?? ""));
+  // Root the explorer lists `.md` beneath:
+  //   - native (Tauri): the open workspace, kept in sync as it changes.
+  //   - browser (http/dev): there's no real workspace and no native folder
+  //     dialog, so seed from the persisted last-used root (onroot persists it)
+  //     and DON'T follow the empty/fake workspace.info.
+  let root = $state(
+    untrack(() => (isInTauri ? (workspace.info?.root ?? "") : distillRoot())),
+  );
   $effect(() => {
+    if (!isInTauri) return;
     const r = workspace.info?.root ?? "";
     if (r && r !== untrack(() => root)) root = r;
   });
@@ -43,6 +49,7 @@
 
   function onroot(next: string): void {
     root = next;
+    setDistillRoot(next); // remember it for the next (browser) session
   }
 </script>
 

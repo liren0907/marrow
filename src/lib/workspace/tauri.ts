@@ -12,7 +12,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { isInTauri } from "$lib/devmock/detect";
 import * as mock from "$lib/devmock/commands";
-import { extractAnnotationsHttp } from "./distillHttp";
+import { extractAnnotationsHttp, readTextFileHttp } from "./distillHttp";
 import type {
   DirEntry,
   FileMeta,
@@ -87,7 +87,18 @@ export function searchAllWorkspaces(
 }
 
 export function readTextFile(path: string): Promise<ReadResult> {
-  if (!isInTauri) return mock.readTextFile(path);
+  if (!isInTauri) {
+    // Dev: the browser's global workspace is the in-memory devmock (rooted at
+    // /demo), but the Distill explorer can open REAL on-disk files (listed via
+    // the :7080 bridge). Those paths aren't in the mock FS — when the Distill
+    // transport is http, try the mock first (the /demo workspace) and fall back
+    // to reading the real file's text over the same bridge. Read-only: there is
+    // no write counterpart, so edits to an http-opened note stay in mock memory.
+    if (distillTransport() === "http") {
+      return mock.readTextFile(path).catch(() => readTextFileHttp(path));
+    }
+    return mock.readTextFile(path);
+  }
   return invoke<ReadResult>("read_text_file", { path });
 }
 
@@ -247,6 +258,32 @@ export function setDistillTransport(t: DistillTransport): void {
   if (typeof localStorage === "undefined") return;
   try {
     localStorage.setItem(DISTILL_TRANSPORT_KEY, t);
+  } catch {
+    // ignore — private mode / quota
+  }
+}
+
+const DISTILL_ROOT_KEY = "marrow.distill.root";
+
+/** Last folder root the Distill explorer used, persisted across reloads. The
+ * native app seeds the explorer from the open workspace, but a browser (http)
+ * dev session has no real workspace and no native folder dialog — so it relies
+ * on this remembered root (typed once, sticky thereafter). */
+export function distillRoot(): string {
+  if (typeof localStorage === "undefined") return "";
+  try {
+    return localStorage.getItem(DISTILL_ROOT_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/** Persist the Distill explorer root (see distillRoot). Empty clears it. */
+export function setDistillRoot(root: string): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    if (root) localStorage.setItem(DISTILL_ROOT_KEY, root);
+    else localStorage.removeItem(DISTILL_ROOT_KEY);
   } catch {
     // ignore — private mode / quota
   }
